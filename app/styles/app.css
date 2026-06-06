@@ -226,6 +226,15 @@
 .app-loading, .app-error { padding: 60px 32px; font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
 .app-error { color: var(--neg); }
 
+/* ============================================================
+   Dashboard — three-up ranked lists
+   ============================================================ */
+.tri-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: start; }
+
+@media (max-width: 1080px) {
+  .tri-cols { grid-template-columns: 1fr; }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1080px) {
   .app-root { grid-template-columns: 1fr; }

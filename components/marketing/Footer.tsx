@@ -2,7 +2,7 @@
 import Link from "next/link";
 
 const COLS: [string, string[]][] = [
-  ["Product", ["Search", "Company profiles", "Watchlists", "Signals", "Analytics", "API"]],
+  ["Product", ["Search", "Company profiles", "Watchlists", "Signals", "Markets", "API"]],
   ["Data", ["Coverage", "Sources", "SIC explorer", "Methodology", "Changelog"]],
   ["Company", ["About", "Customers", "Careers", "Press", "Contact"]],
   ["Legal", ["Privacy", "Terms", "Data protection", "Status"]],
@@ -14,7 +14,7 @@ const ROUTES: Record<string, string> = {
   "Company profiles": "/app/companies",
   Watchlists: "/app/watchlists",
   Signals: "/app/alerts",
-  Analytics: "/app/analytics",
+  Markets: "/app/markets",
   Sources: "/sources",
   Methodology: "/sources",
   Coverage: "/sources",

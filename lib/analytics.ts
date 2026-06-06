@@ -64,7 +64,7 @@ export interface IntelligenceReport {
     emerging: string;
     momentum: string;
   };
-  recommendations: ReportSection & { items: string[] };
+  outlook: ReportSection & { items: string[] };
 }
 
 /** Share of UK companies a region holds, by population weight. */
@@ -179,19 +179,28 @@ export function buildIntelligenceReport(company: Company, economicLive?: Economi
           : `Growth is more evenly spread across regions for this sector.`,
       momentum: age != null && age < 2 ? "Newly incorporated — establishing momentum." : "Established presence in the sector.",
     },
-    recommendations: {
-      source: "Evidence-based · CompaniesIQ",
+    outlook: {
+      source: "Derived · Companies House, ONS & Nomis",
       items: [
-        `Monitor the ${densityFromCount(inSameIndustry).toLowerCase()}-density local market in ${region} for new entrants.`,
-        "Build industry partnerships within your SIC classification to widen referral channels.",
-        "Establish local visibility — register with relevant trade and business associations.",
-        regionalGrowth > nationalGrowth
-          ? "Lean into the regional tailwind: prioritise local customer-acquisition channels."
-          : "Differentiate clearly — the local market is competitive relative to its growth.",
-        "Track filing signals (accounts, charges, appointments) of nearby competitors to read the market.",
+        `${region} is a ${densityFromCount(inSameIndustry).toLowerCase()}-density market for ${sector.toLowerCase()}, with about ${fmtNumberLocal(inSameIndustry)} companies in the same industry.`,
+        regionalGrowth > nationalGrowth + 0.5
+          ? `Formation is running ahead of the national average here (${fmtDeltaLocal(regionalGrowth)} vs ${fmtDeltaLocal(nationalGrowth)}), pointing to a regional tailwind.`
+          : regionalGrowth < nationalGrowth - 0.5
+            ? `Formation is slower than the national average here (${fmtDeltaLocal(regionalGrowth)} vs ${fmtDeltaLocal(nationalGrowth)}), suggesting a maturing local market.`
+            : `Formation is broadly in line with the national average (${fmtDeltaLocal(regionalGrowth)}).`,
+        `Around ${fmtNumberLocal(newEntrants)} new companies registered in this industry locally over the last year.`,
+        `Sector survival sits at ${stat.survival.fiveYear.toFixed(0)}% over five years — the benchmark for businesses in this classification.`,
       ],
     },
   };
+}
+
+function fmtNumberLocal(n: number): string {
+  return n.toLocaleString("en-GB");
+}
+
+function fmtDeltaLocal(n: number): string {
+  return `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
 }
 
 // ---------------------------------------------------------------

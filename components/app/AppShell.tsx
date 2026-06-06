@@ -7,9 +7,8 @@ import { Icon, IconButton, CompanyAvatar, type IconName } from "@/components/ds"
 const NAV: { id: string; label: string; icon: IconName; href: string; count?: number }[] = [
   { id: "dashboard", label: "Dashboard", icon: "grid", href: "/app" },
   { id: "companies", label: "Companies", icon: "search", href: "/app/companies" },
-  { id: "insights", label: "Insights", icon: "star", href: "/app/insights" },
+  { id: "markets", label: "Markets", icon: "barChart", href: "/app/markets" },
   { id: "industries", label: "Industries", icon: "building", href: "/app/industries" },
-  { id: "markets", label: "Markets", icon: "barChart", href: "/app/analytics" },
   { id: "alerts", label: "Alerts", icon: "bell", href: "/app/alerts" },
   { id: "watchlist", label: "Watchlists", icon: "bookmark", href: "/app/watchlists" },
 ];

@@ -152,6 +152,9 @@ export async function advancedSearch(params: AdvancedSearchParams): Promise<{ to
       sicCodes: it.sic_codes || [],
       classification: primary ? classifySic(primary) : undefined,
       region: geo.region,
+      locality: geo.locality,
+      postcode: it.registered_office_address?.postal_code,
+      companyType: it.company_type,
     };
   });
   return { total: data.hits ?? results.length, results };

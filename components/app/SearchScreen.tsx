@@ -25,6 +25,17 @@ const TYPES = [
   { label: "Community interest (CIC)", value: "community-interest-company" },
 ];
 
+const NL_EXAMPLES = ["AI companies in London", "care companies in Scotland", "new construction firms", "fintech in the South East"];
+
+interface Parsed {
+  keywords: string[];
+  sector?: string;
+  region?: string;
+  status: string[];
+  name?: string;
+  source: "rules" | "llm";
+}
+
 function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="filter-group">
@@ -50,6 +61,37 @@ export function SearchScreen() {
   const [data, setData] = useState<{ total: number; results: EnrichedResult[]; live: boolean }>({ total: 0, results: [], live: true });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nl, setNl] = useState("");
+  const [parsed, setParsed] = useState<Parsed | null>(null);
+  const [nlLoading, setNlLoading] = useState(false);
+
+  // Plain-English search → fill the structured filters, then the fetch
+  // effect below re-queries the register with them.
+  async function runNL(phrase: string) {
+    const p = phrase.trim();
+    if (!p) return;
+    setNlLoading(true);
+    try {
+      const res = await fetch(`/api/parse?q=${encodeURIComponent(p)}`);
+      const { parsed: pq } = (await res.json()) as { parsed: Parsed | null };
+      if (!pq) return;
+      setParsed(pq);
+      setSector(pq.sector || "");
+      setSic("");
+      setCtype("");
+      setRegions(pq.region ? { [pq.region]: true } : {});
+      const st: Record<StatusKey, boolean> = { active: false, dormant: false, dissolved: false, liquidation: false };
+      if (pq.status.length) pq.status.forEach((s) => { if (s in st) st[s as StatusKey] = true; });
+      else st.active = true;
+      setStatus(st);
+      // With no explicit name or sector, fall back to a name search on the
+      // theme keywords so "AI companies" still returns something.
+      const text = pq.name || (!pq.sector ? (pq.keywords || []).join(" ") : "");
+      router.push(text ? `/app/companies?q=${encodeURIComponent(text)}` : "/app/companies");
+    } finally {
+      setNlLoading(false);
+    }
+  }
 
   const activeStatuses = useMemo(() => (Object.keys(status) as StatusKey[]).filter((k) => status[k]), [status]);
   const activeRegions = useMemo(() => REGIONS.filter((r) => regions[r]), [regions]);
@@ -146,6 +188,45 @@ export function SearchScreen() {
       </aside>
 
       <div className="results">
+        <form
+          className="nl-bar"
+          onSubmit={(e) => {
+            e.preventDefault();
+            runNL(nl);
+          }}
+        >
+          <Icon name="search" size={18} />
+          <input placeholder="Search in plain English — “AI companies in London”" value={nl} onChange={(e) => setNl(e.target.value)} />
+          <Button variant="primary" type="submit" disabled={nlLoading}>
+            {nlLoading ? "…" : "Search"}
+          </Button>
+        </form>
+        <div className="signal-chips" style={{ marginBottom: 12 }}>
+          <span className="sort-label">Try</span>
+          {NL_EXAMPLES.map((ex) => (
+            <button key={ex} type="button" className="signal-chip" style={{ cursor: "pointer" }} onClick={() => { setNl(ex); runNL(ex); }}>
+              {ex}
+            </button>
+          ))}
+        </div>
+        {parsed ? (
+          <div className="nl-parsed">
+            <span className="nl-parsed__label">Interpreted as</span>
+            {parsed.sector ? <Badge tone="info">{parsed.sector}</Badge> : null}
+            {parsed.keywords.map((k) => (
+              <Badge key={k} tone="info">{k}</Badge>
+            ))}
+            {parsed.region ? <Badge tone="pos">{parsed.region}</Badge> : null}
+            {parsed.status.map((s) => (
+              <Badge key={s} tone="neutral">{s}</Badge>
+            ))}
+            {!parsed.sector && !parsed.region && !parsed.status.length && !parsed.keywords.length ? <span className="muted">free-text name search</span> : null}
+            <Badge tone={parsed.source === "llm" ? "accent" : "neutral"} dot>
+              {parsed.source === "llm" ? "AI parsing" : "Rule-based"}
+            </Badge>
+          </div>
+        ) : null}
+
         <div className="results__bar">
           <div className="results__count">
             <span className="results__num mono">{fmtNumber(activeRegions.length ? rows.length : data.total)}</span> companies

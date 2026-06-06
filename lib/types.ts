@@ -121,4 +121,7 @@ export interface SearchResult {
   sicCodes: string[];
   classification?: SicClassification;
   region?: string;
+  locality?: string; // registered-office town / city
+  postcode?: string;
+  companyType?: string; // legal structure, e.g. "ltd", "llp"
 }

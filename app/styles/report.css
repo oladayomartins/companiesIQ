@@ -14,6 +14,7 @@
 .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .metric-row--2 { grid-template-columns: repeat(2, 1fr); }
 .metric-row--4 { grid-template-columns: repeat(4, 1fr); }
+.metric-row--5 { grid-template-columns: repeat(5, 1fr); }
 
 .bench { display: flex; flex-direction: column; gap: 14px; }
 .bench__row { display: grid; grid-template-columns: 150px 1fr 56px; align-items: center; gap: 14px; }
@@ -37,6 +38,6 @@
 .report__disclaimer { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); line-height: 1.6; padding: 14px 0 0; }
 
 @media (max-width: 1080px) {
-  .metric-row, .metric-row--4 { grid-template-columns: repeat(2, 1fr); }
+  .metric-row, .metric-row--4, .metric-row--5 { grid-template-columns: repeat(2, 1fr); }
   .bench__row { grid-template-columns: 120px 1fr 48px; }
 }

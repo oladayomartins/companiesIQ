@@ -28,6 +28,19 @@ export function IntelligenceReport({ report }: { report: Report }) {
         figure below is sourced and dated — educational, not promotional.
       </p>
 
+      {/* At-a-glance — the market verdict in one row */}
+      <Card>
+        <CardBody>
+          <div className="metric-row metric-row--5">
+            <Stat size="sm" label="Industry" value={r.overview.sector} />
+            <Stat size="sm" label={`Similar · ${r.local.region}`} value={fmtNumber(r.local.inSameIndustry)} />
+            <Stat size="sm" label="Regional growth" value={fmtDelta(r.regional.regionalGrowth)} />
+            <Stat size="sm" label="5-yr survival" value={fmtPercent(r.survival.fiveYear)} />
+            <Stat size="sm" label="New (12m)" value={fmtNumber(r.local.newEntrants)} />
+          </div>
+        </CardBody>
+      </Card>
+
       {/* 1 · Business Overview */}
       <Card>
         <CardHeader children={<SectionHead n={1} title="Business overview" />} />
@@ -112,9 +125,9 @@ export function IntelligenceReport({ report }: { report: Report }) {
         </CardBody>
       </Card>
 
-      {/* 5 · Regional Opportunity Analysis */}
+      {/* 5 · Regional growth analysis */}
       <Card>
-        <CardHeader children={<SectionHead n={5} title="Regional opportunity analysis" />} />
+        <CardHeader children={<SectionHead n={5} title="Regional growth analysis" />} />
         <CardBody>
           <div className="metric-row metric-row--2">
             <Stat size="sm" label="National sector growth" value={fmtDelta(r.regional.nationalGrowth)} />
@@ -170,19 +183,19 @@ export function IntelligenceReport({ report }: { report: Report }) {
         </CardBody>
       </Card>
 
-      {/* 8 · Recommended Actions */}
+      {/* 8 · Market outlook */}
       <Card>
-        <CardHeader children={<SectionHead n={8} title="Recommended actions" />} action={<Badge tone="accent">Evidence-based</Badge>} />
+        <CardHeader children={<SectionHead n={8} title="Market outlook" />} action={<Badge tone="accent">Evidence-based</Badge>} />
         <CardBody>
-          <ol className="recs">
-            {r.recommendations.items.map((item, i) => (
+          <ul className="recs">
+            {r.outlook.items.map((item, i) => (
               <li key={i}>
                 <span className="recs__num mono">{i + 1}</span>
                 <span>{item}</span>
               </li>
             ))}
-          </ol>
-          <Source>{r.recommendations.source}</Source>
+          </ul>
+          <Source>{r.outlook.source}</Source>
         </CardBody>
       </Card>
 

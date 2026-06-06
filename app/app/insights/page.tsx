@@ -1,5 +1,7 @@
-import { InsightsScreen } from "@/components/app/InsightsScreen";
-export const metadata = { title: "Insights · CompaniesIQ" };
+import { redirect } from "next/navigation";
+
+// Insights has been merged into Markets. Keep the route alive so any old
+// links/bookmarks land on the regional + industry intelligence screen.
 export default function InsightsPage() {
-  return <InsightsScreen />;
+  redirect("/app/markets");
 }
