@@ -1,0 +1,15 @@
+/* ============================================================
+   CompaniesIQ — Webfonts
+   ------------------------------------------------------------
+   Families:
+     Archivo        — display + UI sans (the data-terminal app)
+     Hanken Grotesk — body sans (marketing site)
+     Newsreader     — editorial serif headlines (marketing site)
+     IBM Plex Mono  — all data, figures, codes, identifiers
+
+   The Google Fonts stylesheet is loaded via a <link> in the root
+   layout (app/layout.tsx) rather than an @import here, so the remote
+   stylesheet always sits at the top of the document and is never
+   hoisted out of position by CSS bundling. For production these
+   should be self-hosted (.woff2) per readme.md › Typography.
+   ============================================================ */

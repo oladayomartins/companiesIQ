@@ -1,0 +1,28 @@
+/* ============================================================
+   CompaniesIQ — Base layer
+   Minimal element defaults + a few utilities. Consumers get
+   sensible body type and the .ciq-data / .ciq-eyebrow helpers.
+   ============================================================ */
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--lh-normal);
+  color: var(--text-body);
+  background: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+/* Tabular numbers everywhere data appears */
+.ciq-tnum { font-variant-numeric: tabular-nums lining-nums; }
+
+/* Hairline divider */
+.ciq-rule { border: 0; border-top: var(--border-w) solid var(--border-hair); margin: 0; }

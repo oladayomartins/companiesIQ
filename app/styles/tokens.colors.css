@@ -1,0 +1,131 @@
+/* ============================================================
+   CompaniesIQ — Color tokens
+   ------------------------------------------------------------
+   A single warm palette spans two surfaces:
+     · PAPER  — light, editorial (marketing site, reports)
+     · INK    — dark, data-terminal (the app/dashboard)
+   Base ramps first, then semantic aliases. Reference semantics
+   (--text-*, --surface-*, --border-*) in components, not raw hex.
+   ============================================================ */
+:root {
+  /* ---- Brand · warm orange ramp ---------------------------- */
+  --orange-50:  #FCEEE4;
+  --orange-100: #FAD9C2;
+  --orange-200: #F6B488;
+  --orange-300: #F38E50;
+  --orange-400: #F0641E;   /* primary accent (on dark) */
+  --orange-500: #D9531F;   /* primary accent (on light) */
+  --orange-600: #C8452A;   /* terracotta — editorial accent */
+  --orange-700: #A1361F;
+  --orange-800: #6E2614;
+  --orange-900: #3A1A11;
+
+  /* ---- Warm neutral ramp (paper → ink) --------------------- */
+  --warm-0:   #FFFFFF;
+  --warm-25:  #FAF6EF;   /* paper base */
+  --warm-50:  #F4EDE1;
+  --warm-100: #ECE2D3;
+  --warm-150: #E2D8C8;   /* paper hairline */
+  --warm-200: #D6C9B6;
+  --warm-300: #B8A892;
+  --warm-400: #948472;
+  --warm-500: #7A7065;   /* muted text on paper */
+  --warm-600: #5A5048;
+  --warm-700: #3D362F;
+  --warm-800: #2A241F;
+  --warm-850: #241F1B;   /* ink card */
+  --warm-900: #1C1815;   /* ink surface */
+  --warm-950: #14110F;   /* ink base */
+
+  /* ---- Data / status hues ---------------------------------- */
+  --green-500:  #2F7D5B;  /* positive — on light */
+  --green-400:  #4FB286;  /* positive — on dark */
+  --green-50:   #E4F1EA;
+  --red-500:    #C0382B;  /* negative / dissolved */
+  --red-400:    #E5705F;
+  --red-50:     #F8E5E2;
+  --amber-500:  #B5821B;  /* caution / dormant */
+  --amber-400:  #E0A93B;
+  --amber-50:   #F8EFD8;
+  --blue-500:   #2E5E8C;  /* informational / links-data */
+  --blue-400:   #6BA3D6;
+  --blue-50:    #E4EDF5;
+
+  /* =========================================================
+     SEMANTIC ALIASES — LIGHT (paper) is the default scope
+     ========================================================= */
+  --accent:            var(--orange-500);
+  --accent-hover:      var(--orange-600);
+  --accent-press:      var(--orange-700);
+  --accent-contrast:   #FFFFFF;
+  --accent-tint:       var(--orange-50);
+
+  --bg-page:           var(--warm-25);
+  --surface-card:      var(--warm-0);
+  --surface-sunken:    var(--warm-50);
+  --surface-raised:    var(--warm-0);
+  --surface-inverse:   var(--warm-950);
+
+  --text-strong:       var(--warm-950);
+  --text-body:         var(--warm-700);
+  --text-muted:        var(--warm-500);
+  --text-faint:        var(--warm-400);
+  --text-on-accent:    #FFFFFF;
+  --text-inverse:      var(--warm-25);
+
+  --border-hair:       var(--warm-150);
+  --border-strong:     var(--warm-200);
+  --border-focus:      var(--orange-500);
+
+  --pos:               var(--green-500);
+  --pos-bg:            var(--green-50);
+  --neg:               var(--red-500);
+  --neg-bg:            var(--red-50);
+  --warn:              var(--amber-500);
+  --warn-bg:           var(--amber-50);
+  --info:              var(--blue-500);
+  --info-bg:           var(--blue-50);
+
+  --focus-ring:        color-mix(in srgb, var(--orange-500) 35%, transparent);
+}
+
+/* =========================================================
+   DARK (ink) scope — the data-terminal app.
+   Apply to a subtree with class="ciq-dark" or [data-theme="ink"].
+   ========================================================= */
+.ciq-dark,
+[data-theme="ink"] {
+  --accent:            var(--orange-400);
+  --accent-hover:      var(--orange-300);
+  --accent-press:      var(--orange-500);
+  --accent-contrast:   var(--warm-950);
+  --accent-tint:       var(--orange-900);
+
+  --bg-page:           var(--warm-950);
+  --surface-card:      var(--warm-900);
+  --surface-sunken:    var(--warm-950);
+  --surface-raised:    var(--warm-850);
+  --surface-inverse:   var(--warm-25);
+
+  --text-strong:       var(--warm-25);
+  --text-body:         #D8CFC3;
+  --text-muted:        #A89D90;
+  --text-faint:        var(--warm-400);
+  --text-on-accent:    var(--warm-950);
+  --text-inverse:      var(--warm-950);
+
+  --border-hair:       #3A332D;
+  --border-strong:     #4A4138;
+  --border-focus:      var(--orange-400);
+
+  --pos:               var(--green-400);
+  --pos-bg:            color-mix(in srgb, var(--green-400) 16%, transparent);
+  --neg:               var(--red-400);
+  --neg-bg:            color-mix(in srgb, var(--red-400) 16%, transparent);
+  --warn:              var(--amber-400);
+  --warn-bg:           color-mix(in srgb, var(--amber-400) 16%, transparent);
+  --info:              var(--blue-400);
+  --info-bg:           color-mix(in srgb, var(--blue-400) 16%, transparent);
+
+  --focus-ring:        color-mix(in srgb, var(--orange-400) 45%, transparent);
+}

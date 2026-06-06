@@ -1,0 +1,21 @@
+/* ============================================================
+   CompaniesIQ — global entry point (Next.js)
+   Design tokens + base + component & page styles, all derived
+   from the Claude Design handoff bundle. Warm palette only:
+   orange accent, warm neutrals — no cool grey, no gradients,
+   no purple. Two surfaces: light "paper" (default) and dark
+   "ink" (class="ciq-dark").
+   ============================================================ */
+@import "./styles/tokens.fonts.css";
+@import "./styles/tokens.colors.css";
+@import "./styles/tokens.typography.css";
+@import "./styles/tokens.spacing.css";
+@import "./styles/tokens.base.css";
+@import "./styles/ds-components.css";
+@import "./styles/marketing.css";
+@import "./styles/app.css";
+@import "./styles/report.css";
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }

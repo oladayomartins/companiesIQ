@@ -1,0 +1,42 @@
+/* ============================================================
+   CompaniesIQ — Company Intelligence Report
+   The flagship 8-section market briefing. Lives on the dark app
+   surface as a profile tab; uses the same tokens + hairlines.
+   Evidence-first: every block carries a sourced citation.
+   ============================================================ */
+.report { display: flex; flex-direction: column; gap: 16px; }
+.report__intro { font-size: 14px; color: var(--text-muted); line-height: 1.55; max-width: 720px; margin: 2px 0 6px; }
+
+.rsec__head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.rsec__n { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.06em; }
+.rsec__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 17px; letter-spacing: -0.02em; color: var(--text-strong); margin: 0; }
+
+.metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.metric-row--2 { grid-template-columns: repeat(2, 1fr); }
+.metric-row--4 { grid-template-columns: repeat(4, 1fr); }
+
+.bench { display: flex; flex-direction: column; gap: 14px; }
+.bench__row { display: grid; grid-template-columns: 150px 1fr 56px; align-items: center; gap: 14px; }
+.bench__label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+.bench__track { height: 8px; background: var(--surface-sunken); border-radius: var(--radius-pill); overflow: hidden; }
+.bench__fill { height: 100%; background: var(--accent); border-radius: var(--radius-pill); transition: width var(--dur-slow) var(--ease-out); }
+.bench__val { font-family: var(--font-mono); font-size: 13px; color: var(--text-strong); text-align: right; font-variant-numeric: tabular-nums; }
+
+.insight { display: flex; gap: 12px; align-items: flex-start; background: var(--accent-tint); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); border-radius: var(--radius-md); padding: 14px 16px; margin-top: 4px; }
+.insight__icon { color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+.insight__text { font-size: 14px; color: var(--text-body); line-height: 1.5; }
+.insight__text strong { color: var(--text-strong); font-weight: 600; }
+
+.recs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.recs li { display: flex; gap: 11px; align-items: flex-start; font-size: 14px; color: var(--text-body); line-height: 1.5; }
+.recs li .recs__num { font-family: var(--font-mono); font-size: 11px; color: var(--accent); background: var(--accent-tint); border-radius: var(--radius-sm); width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.source { display: flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--text-faint); margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-hair); }
+.source__dot { color: var(--accent); }
+
+.report__disclaimer { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); line-height: 1.6; padding: 14px 0 0; }
+
+@media (max-width: 1080px) {
+  .metric-row, .metric-row--4 { grid-template-columns: repeat(2, 1fr); }
+  .bench__row { grid-template-columns: 120px 1fr 48px; }
+}

@@ -1,0 +1,66 @@
+/* ============================================================
+   CompaniesIQ — Spacing, radii, shadows, motion
+   ------------------------------------------------------------
+   4px base grid. Editorial surfaces breathe; the terminal app
+   tightens. Radii are restrained (8–12px on cards, pills for
+   status). Shadows are warm-tinted and soft, never blue-grey.
+   ============================================================ */
+:root {
+  /* ---- Spacing (4px grid) --------------------------------- */
+  --space-0:   0;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+  --space-24:  96px;
+  --space-32:  128px;
+
+  /* ---- Radii ---------------------------------------------- */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
+  --radius-pill: 999px;
+
+  /* ---- Borders -------------------------------------------- */
+  --border-w:        1px;          /* @kind spacing */
+  --border-w-strong: 1.5px;        /* @kind spacing */
+
+  /* ---- Warm-tinted shadows (paper) ------------------------ */
+  --shadow-xs:  0 1px 2px rgba(42, 27, 18, 0.05);
+  --shadow-sm:  0 1px 3px rgba(42, 27, 18, 0.07), 0 1px 2px rgba(42, 27, 18, 0.04);
+  --shadow-md:  0 4px 12px rgba(42, 27, 18, 0.08), 0 2px 4px rgba(42, 27, 18, 0.05);
+  --shadow-lg:  0 12px 28px rgba(42, 27, 18, 0.12), 0 4px 8px rgba(42, 27, 18, 0.06);
+  --shadow-xl:  0 24px 56px rgba(42, 27, 18, 0.16), 0 8px 16px rgba(42, 27, 18, 0.08);
+
+  /* ---- Shadows for ink surfaces --------------------------- */
+  --shadow-ink-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-ink-md: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --shadow-ink-lg: 0 18px 44px rgba(0, 0, 0, 0.55);
+
+  /* ---- Focus ring ----------------------------------------- */
+  --ring-w: 3px;  /* @kind spacing */
+
+  /* ---- Layout containers ---------------------------------- */
+  --container-sm: 720px;
+  --container-md: 980px;
+  --container-lg: 1180px;
+  --container-xl: 1320px;
+
+  /* ---- Motion --------------------------------------------- */
+  --ease-out:   cubic-bezier(0.22, 0.61, 0.36, 1);    /* @kind other */
+  --ease-in-out: cubic-bezier(0.65, 0.05, 0.36, 1);   /* @kind other */
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);    /* @kind other */
+  --dur-fast:   120ms;  /* @kind other */
+  --dur-base:   200ms;  /* @kind other */
+  --dur-slow:   320ms;  /* @kind other */
+}
