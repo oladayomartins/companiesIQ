@@ -150,6 +150,18 @@
 .placeholder__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 22px; color: var(--text-strong); margin: 6px 0 0; }
 .placeholder__sub { font-size: 14px; color: var(--text-muted); max-width: 360px; margin: 0 0 6px; line-height: 1.5; }
 
+/* ---------- Quick insights ---------- */
+.insight-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.insight-card { display: flex; gap: 12px; align-items: flex-start; }
+.insight-card__icon { width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--accent-tint); color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.insight-card__label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.insight-card__value { font-family: var(--font-grotesk); font-weight: 700; font-size: 15px; letter-spacing: -0.01em; color: var(--text-strong); margin-top: 3px; line-height: 1.2; }
+.insight-card__sub { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
+
+@media (max-width: 1080px) {
+  .insight-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ---------- Opportunity score (lead lens) ---------- */
 .score-pill { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; padding: 2px 9px; border-radius: var(--radius-pill); border: 1px solid transparent; }
 .score-pill__band { font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; }

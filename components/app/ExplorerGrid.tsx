@@ -3,8 +3,8 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { AgGridReact } from "ag-grid-react";
 import { ModuleRegistry, AllCommunityModule, themeQuartz, type ColDef, type ICellRendererParams } from "ag-grid-community";
-import { StatusPill, CompanyAvatar } from "@/components/ds";
-import { ScorePill, KeywordChips } from "@/components/app/ScorePill";
+import { StatusPill, CompanyAvatar, Badge } from "@/components/ds";
+import { FactualTags } from "@/components/app/Tags";
 import { ageLabel } from "@/lib/format";
 import type { EnrichedResult } from "@/lib/data";
 
@@ -62,11 +62,19 @@ export function ExplorerGrid({ rows }: { rows: EnrichedResult[] }) {
         cellRenderer: (p: ICellRendererParams<EnrichedResult>) => <StatusPill status={String(p.value)} />,
       },
       {
-        headerName: "SIGNALS",
+        headerName: "TAGS",
         flex: 1.4,
         minWidth: 160,
         sortable: false,
-        cellRenderer: (p: ICellRendererParams<EnrichedResult>) => <KeywordChips keywords={p.data?.keywords} strong={p.data?.score?.keywords ?? []} />,
+        cellRenderer: (p: ICellRendererParams<EnrichedResult>) => (
+          <FactualTags incorporated={p.data?.incorporated} sector={p.data?.classification?.sector} sicCodes={p.data?.sicCodes} status={p.data?.status} />
+        ),
+      },
+      {
+        headerName: "SIC",
+        width: 110,
+        sortable: false,
+        cellRenderer: (p: ICellRendererParams<EnrichedResult>) => (p.data?.sicCodes?.[0] ? <Badge tone="neutral">{p.data.sicCodes[0]}</Badge> : <span className="muted">—</span>),
       },
       { headerName: "REGION", field: "region", width: 150 },
       {
@@ -74,15 +82,8 @@ export function ExplorerGrid({ rows }: { rows: EnrichedResult[] }) {
         width: 100,
         type: "rightAligned",
         valueGetter: (p) => (p.data?.incorporated ? new Date().getFullYear() - Number(p.data.incorporated.slice(0, 4)) : -1),
-        cellRenderer: (p: ICellRendererParams<EnrichedResult>) => <span className="mono">{ageLabel(p.data?.incorporated)}</span>,
-      },
-      {
-        headerName: "OPPORTUNITY",
-        width: 150,
-        type: "rightAligned",
-        valueGetter: (p) => p.data?.score?.total ?? 0,
         sort: "desc",
-        cellRenderer: (p: ICellRendererParams<EnrichedResult>) => <ScorePill score={p.data?.score} />,
+        cellRenderer: (p: ICellRendererParams<EnrichedResult>) => <span className="mono">{ageLabel(p.data?.incorporated)}</span>,
       },
     ],
     []

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Card, CardHeader, CardBody, Stat, StatusPill, Badge, CompanyAvatar, Icon } from "@/components/ds";
-import { ScorePill } from "@/components/app/ScorePill";
+import { Card, CardHeader, CardBody, Stat, StatusPill, Badge, CompanyAvatar, Icon, type IconName } from "@/components/ds";
+import { FactualTags } from "@/components/app/Tags";
 import { DateRangeSelector } from "@/components/app/DateRangeSelector";
-import { getRegisterKpis, getRecentIncorporations, getRecentDissolutions } from "@/lib/live-stats";
+import { getRegisterKpis, getRecentIncorporations, getRecentDissolutions, getQuickInsights } from "@/lib/live-stats";
 import { rangeDays } from "@/lib/ranges";
 import { fmtNumber, fmtDate, fmtDelta, ageLabel } from "@/lib/format";
 import type { EnrichedResult } from "@/lib/data";
@@ -13,6 +13,21 @@ export const revalidate = 300;
 
 function todayLabel(): string {
   return new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
+function Insight({ icon, label, value, sub }: { icon: IconName; label: string; value: string; sub?: string }) {
+  return (
+    <div className="insight-card">
+      <span className="insight-card__icon">
+        <Icon name={icon} size={18} />
+      </span>
+      <div>
+        <div className="insight-card__label">{label}</div>
+        <div className="insight-card__value">{value}</div>
+        {sub ? <div className="insight-card__sub mono">{sub}</div> : null}
+      </div>
+    </div>
+  );
 }
 
 function CompanyRow({ c }: { c: EnrichedResult }) {
@@ -25,15 +40,15 @@ function CompanyRow({ c }: { c: EnrichedResult }) {
             <div className="cell-co__name">{c.name}</div>
             <div className="cell-co__no">
               {c.number}
-              {c.classification ? ` · ${c.classification.code}` : ""}
+              {c.sicCodes[0] ? ` · ${c.sicCodes[0]}` : ""}
             </div>
           </div>
         </Link>
       </td>
       <td className="muted">{c.region ?? "—"}</td>
       <td className="num mono">{c.incorporated ? fmtDate(c.incorporated) : "—"}</td>
-      <td className="num">
-        <ScorePill score={c.score} />
+      <td>
+        <FactualTags incorporated={c.incorporated} sector={c.classification?.sector} sicCodes={c.sicCodes} status={c.status} />
       </td>
     </tr>
   );
@@ -45,12 +60,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const windowLabel = label.replace(/^Last /, "").toLowerCase(); // e.g. "30 days"
 
   let kpis = null as Awaited<ReturnType<typeof getRegisterKpis>> | null;
+  let insights = null as Awaited<ReturnType<typeof getQuickInsights>> | null;
   let recent: EnrichedResult[] = [];
   let dissolved: EnrichedResult[] = [];
   let error: string | null = null;
   try {
-    [kpis, recent, dissolved] = await Promise.all([
+    [kpis, insights, recent, dissolved] = await Promise.all([
       getRegisterKpis(days),
+      getQuickInsights(days),
       getRecentIncorporations(8, days),
       getRecentDissolutions(6, days),
     ]);
@@ -65,7 +82,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <div className="screen-head">
         <div>
           <div className="app-eyebrow">{todayLabel()}</div>
-          <h1 className="screen-title">Today on the UK register</h1>
+          <h1 className="screen-title">UK register overview</h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Suspense fallback={null}>
@@ -110,13 +127,27 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </Card>
           </div>
 
+          {insights ? (
+            <Card style={{ marginBottom: 22 }}>
+              <CardHeader subtitle="Quick insights" title="What's moving" action={<span className="app-eyebrow">Companies House · ONS · Nomis</span>} />
+              <CardBody>
+                <div className="insight-grid">
+                  <Insight icon="trendUp" label="Fastest-growing sector" value={insights.fastestSector.name} sub={`${fmtDelta(insights.fastestSector.growth)} / yr · ONS`} />
+                  <Insight icon="pin" label="Most active region" value={insights.topRegion?.label ?? "—"} sub={insights.topRegion ? `${insights.topRegion.count} recent incs` : ""} />
+                  <Insight icon="building" label="Most-registered SIC" value={insights.topSic?.label ?? "—"} sub={insights.topSic ? `${insights.topSic.key} · ${insights.topSic.count} recent` : ""} />
+                  <Insight icon="globe" label="Fastest-growing region" value={insights.fastestRegion.name} sub={`${insights.fastestRegion.index.toFixed(2)}× index · Nomis`} />
+                </div>
+              </CardBody>
+            </Card>
+          ) : null}
+
           <div className="dash-cols">
             <Card>
               <CardHeader
                 subtitle="Live"
                 title="Recently incorporated"
                 action={
-                  <Link className="link-btn" href="/app/search?incorporated=12m">
+                  <Link className="link-btn" href="/app/companies?incorporated=30d">
                     View all
                   </Link>
                 }
@@ -128,9 +159,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       <th>Company</th>
                       <th>Region</th>
                       <th className="num">Incorporated</th>
-                      <th className="num">
-                        Opportunity <span className="pro-tag">Pro</span>
-                      </th>
+                      <th>Tags</th>
                     </tr>
                   </thead>
                   <tbody>

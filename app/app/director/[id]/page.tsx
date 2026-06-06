@@ -20,7 +20,7 @@ export default async function DirectorPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="screen profile">
-      <Link className="back" href="/app/search">
+      <Link className="back" href="/app/companies">
         <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> Back
       </Link>
 

@@ -1,7 +1,5 @@
 import { Card, CardHeader, CardBody, Stat, Badge, Icon } from "@/components/ds";
 import type { IntelligenceReport as Report } from "@/lib/analytics";
-import type { ScoreBreakdown } from "@/lib/scoring";
-import { ScorePill } from "@/components/app/ScorePill";
 import { fmtNumber, fmtPercent, fmtDelta, fmtDate } from "@/lib/format";
 
 function Source({ children }: { children: React.ReactNode }) {
@@ -21,7 +19,7 @@ function SectionHead({ n, title }: { n: number; title: string }) {
   );
 }
 
-export function IntelligenceReport({ report, score }: { report: Report; score?: ScoreBreakdown }) {
+export function IntelligenceReport({ report }: { report: Report }) {
   const r = report;
   return (
     <div className="report">
@@ -29,41 +27,6 @@ export function IntelligenceReport({ report, score }: { report: Report; score?: 
         A market briefing for {r.overview.name}, assembled from the public register and official economic data. Every
         figure below is sourced and dated — educational, not promotional.
       </p>
-
-      {/* 0 · Opportunity score (Pro lead lens) */}
-      {score ? (
-        <Card>
-          <CardHeader
-            children={<SectionHead n={0} title="Opportunity score" />}
-            action={
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <span className="pro-tag">Pro</span>
-                <ScorePill score={score} />
-              </span>
-            }
-          />
-          <CardBody>
-            <div className="metric-row metric-row--4">
-              <Stat size="sm" label="Industry demand" value={`${score.industryDemand}/30`} />
-              <Stat size="sm" label="Growth" value={`${score.growth}/30`} />
-              <Stat size="sm" label="Location demand" value={`${score.locationDemand}/20`} />
-              <Stat size="sm" label="Keyword signals" value={`${score.keywordSignals}/20`} />
-            </div>
-            {score.keywords.length ? (
-              <div className="insight" style={{ marginTop: 14 }}>
-                <span className="insight__icon">
-                  <Icon name="star" size={18} />
-                </span>
-                <span className="insight__text">
-                  Detected signals: <strong>{score.keywords.join(", ")}</strong>. Score blends sector demand, growth,
-                  regional uplift and keyword strength — a transparent prioritisation aid, not a prediction.
-                </span>
-              </div>
-            ) : null}
-            <Source>Weighted blend · Companies House + ONS + Nomis + keyword engine</Source>
-          </CardBody>
-        </Card>
-      ) : null}
 
       {/* 1 · Business Overview */}
       <Card>

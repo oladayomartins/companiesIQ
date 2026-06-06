@@ -8,8 +8,6 @@
 import "server-only";
 import type { Company, SearchResult, Officer, Filing, Charge, OfficerProfile, PSC } from "./types";
 import * as ch from "./companies-house";
-import { keywordsForResult } from "./keywords";
-import { scoreResult, type ScoreBreakdown } from "./scoring";
 
 export const LIVE = true;
 
@@ -22,34 +20,30 @@ export interface CompanyBundle {
   live: boolean;
 }
 
-export type EnrichedResult = SearchResult & {
-  employees?: number;
-  revenue?: string | null;
-  keywords?: string[];
-  score?: ScoreBreakdown;
-};
-
-/** Attach keyword + opportunity-score intelligence to a result. */
-function enrich(r: SearchResult): EnrichedResult {
-  const keywords = keywordsForResult(r);
-  return { ...r, keywords, score: scoreResult({ ...r, keywords }) };
-}
+// Results are plain Companies House facts — no opportunity score, no
+// keyword guessing. Factual tags are derived in the UI from these fields.
+export type EnrichedResult = SearchResult;
 
 export interface ExploreParams extends ch.AdvancedSearchParams {
   region?: string; // post-filter on resolved region
+  sector?: string; // post-filter on classified sector
 }
 
 export async function search(q: string): Promise<{ total: number; results: EnrichedResult[]; live: boolean }> {
   const r = q.trim() ? await ch.searchCompanies(q, { perPage: 40 }) : await ch.advancedSearch({ size: 40 });
-  return { total: r.total, results: r.results.map(enrich), live: true };
+  return { total: r.total, results: r.results, live: true };
 }
 
 export async function explore(params: ExploreParams): Promise<{ total: number; results: EnrichedResult[]; live: boolean }> {
   const r = await ch.advancedSearch(params);
-  let results = r.results.map(enrich);
+  let results = r.results;
   let total = r.total;
   if (params.region) {
     results = results.filter((x) => x.region === params.region);
+    total = results.length;
+  }
+  if (params.sector) {
+    results = results.filter((x) => x.classification?.sector === params.sector);
     total = results.length;
   }
   return { total, results, live: true };

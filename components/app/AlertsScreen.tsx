@@ -1,16 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Card, CardHeader, CardBody, Button, Input, Select, Badge, Icon, Tag } from "@/components/ds";
-import { KEYWORDS } from "@/lib/keywords";
+import { Card, CardHeader, CardBody, Button, Input, Select, Badge, Icon } from "@/components/ds";
 import { ALL_SECTORS } from "@/lib/sic";
 import { ALL_REGIONS } from "@/lib/geography";
 import { ruleSummary, type AlertRule, type AlertChannel } from "@/lib/alerts";
 
 const LS_KEY = "ciq.alerts.demo";
-const KEYWORD_KEYS = KEYWORDS.map((k) => k.key);
 
 function uid(): string {
-  return "a_" + Math.abs(Date.now() ^ (KEYWORD_KEYS.length * 2654435761)).toString(36) + Math.floor(performance.now()).toString(36);
+  return "a_" + Math.abs(Date.now() ^ 2654435761).toString(36) + Math.floor(performance.now()).toString(36);
 }
 
 export function AlertsScreen() {
@@ -20,11 +18,12 @@ export function AlertsScreen() {
   const [run, setRun] = useState<{ alert: string; matches: number; delivery: { detail: string } }[] | null>(null);
   const [running, setRunning] = useState(false);
 
-  // form
-  const [name, setName] = useState("New AI companies in London");
-  const [kw, setKw] = useState<string[]>(["AI"]);
-  const [sector, setSector] = useState("");
+  // form (factual criteria only)
+  const [name, setName] = useState("New tech companies in London");
+  const [sector, setSector] = useState("Technology");
+  const [sic, setSic] = useState("");
   const [region, setRegion] = useState("London");
+  const [statusKey, setStatusKey] = useState("active");
   const [channel, setChannel] = useState<AlertChannel>("webhook");
   const [destination, setDestination] = useState("");
 
@@ -37,7 +36,7 @@ export function AlertsScreen() {
         if (d.configured && d.authed && Array.isArray(d.alerts)) {
           setAlerts(
             d.alerts.map((a: Record<string, unknown>) => ({
-              id: a.id, name: a.name, keywords: a.keywords ?? [], sector: a.sector ?? undefined,
+              id: a.id, name: a.name, sector: a.sector ?? undefined, sic: a.sic ?? undefined,
               region: a.region ?? undefined, status: a.status ?? [], channel: a.channel, destination: a.destination, active: a.active,
             })) as AlertRule[]
           );
@@ -66,10 +65,10 @@ export function AlertsScreen() {
     const rule: AlertRule = {
       id: uid(),
       name: name.trim() || "Untitled alert",
-      keywords: kw,
       sector: sector || undefined,
+      sic: sic.trim() || undefined,
       region: region || undefined,
-      status: ["active"],
+      status: statusKey ? [statusKey] : [],
       channel,
       destination: destination.trim(),
       active: true,
@@ -105,16 +104,12 @@ export function AlertsScreen() {
     }
   }
 
-  function toggleKw(k: string) {
-    setKw((cur) => (cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]));
-  }
-
   return (
     <div className="screen">
       <div className="screen-head">
         <div>
           <div className="app-eyebrow">Standing intelligence</div>
-          <h1 className="screen-title">Signals &amp; alerts</h1>
+          <h1 className="screen-title">Alerts</h1>
         </div>
         <Button variant="secondary" iconLeft="bell" onClick={testRun} disabled={running || !alerts.length}>
           {running ? "Evaluating…" : "Test run"}
@@ -132,22 +127,24 @@ export function AlertsScreen() {
           <CardHeader subtitle="New rule" title="Create an alert" />
           <CardBody>
             <div className="alert-form">
-              <Input label="Alert name" value={name} onChange={(e) => setName(e.target.value)} placeholder="New AI companies in London" />
-              <div>
-                <div className="ciq-field__label" style={{ marginBottom: 8 }}>
-                  Keyword signals
-                </div>
-                <div className="kw-chips">
-                  {KEYWORD_KEYS.map((k) => (
-                    <Tag key={k} active={kw.includes(k)} onClick={() => toggleKw(k)}>
-                      {k}
-                    </Tag>
-                  ))}
-                </div>
+              <Input label="Alert name" value={name} onChange={(e) => setName(e.target.value)} placeholder="New tech companies in London" />
+              <div className="ciq-field">
+                <span className="ciq-field__label">Industry</span>
+                <Select value={sector} onChange={(e) => setSector(e.target.value)} options={[{ value: "", label: "Any industry" }, ...ALL_SECTORS.map((s) => ({ value: s, label: s }))]} />
               </div>
-              <Select placeholder="Any sector" value={sector} onChange={(e) => setSector(e.target.value)} options={["", ...ALL_SECTORS].map((s) => ({ value: s, label: s || "Any sector" }))} />
-              <Select value={region} onChange={(e) => setRegion(e.target.value)} options={["", ...ALL_REGIONS].map((s) => ({ value: s, label: s || "Any region" }))} />
-              <Select value={channel} onChange={(e) => setChannel(e.target.value as AlertChannel)} options={[{ value: "webhook", label: "Webhook" }, { value: "slack", label: "Slack" }, { value: "email", label: "Email" }]} />
+              <Input label="SIC code (optional)" value={sic} onChange={(e) => setSic(e.target.value)} placeholder="e.g. 62012" />
+              <div className="ciq-field">
+                <span className="ciq-field__label">Region</span>
+                <Select value={region} onChange={(e) => setRegion(e.target.value)} options={[{ value: "", label: "Any region" }, ...ALL_REGIONS.map((s) => ({ value: s, label: s }))]} />
+              </div>
+              <div className="ciq-field">
+                <span className="ciq-field__label">Status</span>
+                <Select value={statusKey} onChange={(e) => setStatusKey(e.target.value)} options={[{ value: "active", label: "Active (new incorporations)" }, { value: "dissolved", label: "Dissolved" }, { value: "", label: "Any status" }]} />
+              </div>
+              <div className="ciq-field">
+                <span className="ciq-field__label">Deliver via</span>
+                <Select value={channel} onChange={(e) => setChannel(e.target.value as AlertChannel)} options={[{ value: "webhook", label: "Webhook" }, { value: "slack", label: "Slack" }, { value: "email", label: "Email" }]} />
+              </div>
               <Input label="Destination" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={channel === "email" ? "you@company.co.uk" : "https://…"} />
               <Button variant="primary" iconLeft="plus" onClick={addAlert}>
                 Create alert

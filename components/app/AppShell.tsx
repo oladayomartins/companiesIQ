@@ -6,17 +6,17 @@ import { Icon, IconButton, CompanyAvatar, type IconName } from "@/components/ds"
 
 const NAV: { id: string; label: string; icon: IconName; href: string; count?: number }[] = [
   { id: "dashboard", label: "Dashboard", icon: "grid", href: "/app" },
-  { id: "search", label: "Search", icon: "search", href: "/app/search" },
-  { id: "discover", label: "Discover", icon: "star", href: "/app/discover" },
-  { id: "watchlist", label: "Watchlists", icon: "bookmark", href: "/app/watchlists" },
-  { id: "signals", label: "Signals", icon: "bell", href: "/app/signals" },
-  { id: "analytics", label: "Analytics", icon: "barChart", href: "/app/analytics" },
+  { id: "companies", label: "Companies", icon: "search", href: "/app/companies" },
+  { id: "insights", label: "Insights", icon: "star", href: "/app/insights" },
   { id: "industries", label: "Industries", icon: "building", href: "/app/industries" },
+  { id: "markets", label: "Markets", icon: "barChart", href: "/app/analytics" },
+  { id: "alerts", label: "Alerts", icon: "bell", href: "/app/alerts" },
+  { id: "watchlist", label: "Watchlists", icon: "bookmark", href: "/app/watchlists" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/app") return pathname === "/app";
-  if (href === "/app/search") return pathname.startsWith("/app/search") || pathname.startsWith("/app/company");
+  if (href === "/app/companies") return pathname.startsWith("/app/companies") || pathname.startsWith("/app/company");
   return pathname.startsWith(href);
 }
 
@@ -32,7 +32,7 @@ function TopSearch() {
       className="topsearch"
       onSubmit={(e) => {
         e.preventDefault();
-        router.push(`/app/search${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
+        router.push(`/app/companies${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
       }}
     >
       <Icon name="search" size={17} />

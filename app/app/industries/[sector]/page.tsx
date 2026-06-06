@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Card, CardHeader, CardBody, Stat, Badge, Icon } from "@/components/ds";
-import { SECTOR_STATS, REGION_STATS } from "@/lib/ons";
+import { Card, CardHeader, CardBody, Stat, Badge, Icon, CompanyAvatar } from "@/components/ds";
+import { FactualTags } from "@/components/app/Tags";
+import { SECTOR_STATS } from "@/lib/ons";
 import { regionBreakdown } from "@/lib/analytics";
-import { fmtNumber, fmtDelta } from "@/lib/format";
+import { explore, type EnrichedResult } from "@/lib/data";
+import { isoDaysAgo } from "@/lib/companies-house";
+import { fmtNumber, fmtDelta, fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
+
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return Object.values(SECTOR_STATS).map((s) => ({ sector: slugify(s.sector) }));
@@ -16,6 +21,15 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
   if (!stat) notFound();
 
   const regions = regionBreakdown().slice(0, 6);
+
+  // Live recent companies classified into this sector (best-effort sample).
+  let recent: EnrichedResult[] = [];
+  try {
+    const r = await explore({ sector: stat.sector, incorporatedFrom: isoDaysAgo(120), incorporatedTo: isoDaysAgo(0), status: ["active"], size: 100 });
+    recent = r.results.slice(0, 8);
+  } catch {
+    recent = [];
+  }
 
   return (
     <div className="screen profile">
@@ -84,6 +98,53 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
             <div className="source">
               <span className="source__dot">●</span> Source · Nomis regional indicators
             </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      <div style={{ marginTop: 18 }}>
+        <Card>
+          <CardHeader subtitle="Live · last 120 days" title="Recent companies in this sector" action={<Badge tone="pos" dot>Companies House</Badge>} />
+          <CardBody flush>
+            <table className="data-table data-table--full">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Region</th>
+                  <th className="num">Incorporated</th>
+                  <th>Tags</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent.length ? (
+                  recent.map((c) => (
+                    <tr key={c.number}>
+                      <td>
+                        <Link href={`/app/company/${c.number}`} className="cell-co" style={{ textDecoration: "none" }}>
+                          <CompanyAvatar name={c.name} size="sm" />
+                          <div>
+                            <div className="cell-co__name">{c.name}</div>
+                            <div className="cell-co__no">
+                              {c.number}
+                              {c.sicCodes[0] ? ` · ${c.sicCodes[0]}` : ""}
+                            </div>
+                          </div>
+                        </Link>
+                      </td>
+                      <td className="muted">{c.region ?? "—"}</td>
+                      <td className="num mono">{c.incorporated ? fmtDate(c.incorporated) : "—"}</td>
+                      <td>
+                        <FactualTags incorporated={c.incorporated} sector={c.classification?.sector} sicCodes={c.sicCodes} status={c.status} />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr className="empty-row">
+                    <td colSpan={4}>No recent companies classified into this sector in the sample window.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </CardBody>
         </Card>
       </div>

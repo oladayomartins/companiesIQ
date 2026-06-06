@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { search, explore } from "@/lib/data";
-import { aggregateKeywords } from "@/lib/keywords";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +8,7 @@ function isoFromWindow(win: string | null): string | undefined {
   const d = new Date();
   if (win === "12m") d.setMonth(d.getMonth() - 12);
   else if (win === "5y") d.setFullYear(d.getFullYear() - 5);
+  else if (win === "30d") d.setDate(d.getDate() - 30);
   else return undefined;
   return d.toISOString().slice(0, 10);
 }
@@ -18,32 +18,34 @@ export async function GET(req: NextRequest) {
   const q = sp.get("q") ?? "";
   const statuses = sp.getAll("status");
   const sics = sp.getAll("sic");
+  const types = sp.getAll("type");
+  const sector = sp.get("sector") || undefined;
   const region = sp.get("region") || undefined;
   const incorporatedFrom = isoFromWindow(sp.get("incorporated"));
   const startIndex = Number(sp.get("start") || 0) || 0;
 
-  const hasFacets = statuses.length > 0 || sics.length > 0 || !!region || !!incorporatedFrom || startIndex > 0;
+  const hasFacets = statuses.length > 0 || sics.length > 0 || types.length > 0 || !!sector || !!region || !!incorporatedFrom || startIndex > 0;
 
   try {
-    let result;
     if (q && !hasFacets) {
-      result = await search(q);
-    } else {
-      result = await explore({
-        q: q || undefined,
-        status: statuses.length ? statuses : undefined,
-        sicCodes: sics.length ? sics : undefined,
-        region,
-        incorporatedFrom,
-        size: 40,
-        startIndex,
-      });
+      const r = await search(q);
+      return NextResponse.json(r);
     }
-    const keywords = aggregateKeywords(result.results).slice(0, 12);
-    return NextResponse.json({ ...result, keywords });
+    const r = await explore({
+      q: q || undefined,
+      status: statuses.length ? statuses : undefined,
+      sicCodes: sics.length ? sics : undefined,
+      companyType: types.length ? types : undefined,
+      sector,
+      region,
+      incorporatedFrom,
+      size: 40,
+      startIndex,
+    });
+    return NextResponse.json(r);
   } catch (e) {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Search failed", total: 0, results: [], live: false, keywords: [] },
+      { error: e instanceof Error ? e.message : "Search failed", total: 0, results: [], live: false },
       { status: 502 }
     );
   }

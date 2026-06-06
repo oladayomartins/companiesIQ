@@ -1,23 +1,46 @@
 import { Card, CardHeader, CardBody, Stat, Tabs, Badge } from "@/components/ds";
 import { sectorBreakdown, fastestGrowingSectors, UK_SURVIVAL_5YR } from "@/lib/analytics";
-import { getRegisterKpis, getIncorporationTrend, getTrendingSignals } from "@/lib/live-stats";
+import { getRegisterKpis, getIncorporationTrend, getActivityBreakdown } from "@/lib/live-stats";
 import { fmtNumber, fmtDelta } from "@/lib/format";
 import { IncorporationTrend, SectorBars } from "@/components/app/Charts";
 
-export const metadata = { title: "Analytics · CompaniesIQ" };
+export const metadata = { title: "Markets · CompaniesIQ" };
 export const revalidate = 3600;
 
-export default async function AnalyticsPage() {
+function RankList({ items, suffix }: { items: { key: string; label: string; count: number }[]; suffix?: string }) {
+  return (
+    <CardBody flush>
+      {items.length ? (
+        items.map((it, i) => (
+          <div className="alert-row" key={it.key}>
+            <span className="hotspot__rank">{i + 1}</span>
+            <div className="alert-row__main">
+              <div className="alert-row__name">{it.label}</div>
+              {suffix === "sic" ? <div className="alert-row__rule">SIC {it.key}</div> : null}
+            </div>
+            <span className="hotspot__val">{fmtNumber(it.count)}</span>
+          </div>
+        ))
+      ) : (
+        <div className="alert-row">
+          <span className="muted">No sample available.</span>
+        </div>
+      )}
+    </CardBody>
+  );
+}
+
+export default async function MarketsPage() {
   const sectors = sectorBreakdown();
   const sectorData = sectors.map((s) => ({ name: s.name, count: s.count }));
   const fastest = fastestGrowingSectors(6);
 
   let kpis = null as Awaited<ReturnType<typeof getRegisterKpis>> | null;
   let trendData: { month: string; value: number }[] = [];
-  let trending: Awaited<ReturnType<typeof getTrendingSignals>> = [];
+  let activity = null as Awaited<ReturnType<typeof getActivityBreakdown>> | null;
   let error: string | null = null;
   try {
-    [kpis, trendData, trending] = await Promise.all([getRegisterKpis(), getIncorporationTrend(), getTrendingSignals()]);
+    [kpis, trendData, activity] = await Promise.all([getRegisterKpis(30), getIncorporationTrend(), getActivityBreakdown(30)]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Companies House unavailable";
   }
@@ -26,8 +49,8 @@ export default async function AnalyticsPage() {
     <div className="screen">
       <div className="screen-head">
         <div>
-          <div className="app-eyebrow">Market analytics · UK register</div>
-          <h1 className="screen-title">Incorporation trends</h1>
+          <div className="app-eyebrow">Markets · UK register</div>
+          <h1 className="screen-title">Market trends</h1>
         </div>
         <Tabs variant="pill" tabs={["12 months"]} />
       </div>
@@ -72,31 +95,20 @@ export default async function AnalyticsPage() {
           <CardBody>
             <SectorBars data={sectorData} />
             <div className="report__disclaimer" style={{ paddingTop: 10 }}>
-              Source · ONS Business Population Estimates (sector totals; Companies House does not expose sector aggregates).
+              Source · ONS Business Population Estimates (reference baseline).
             </div>
           </CardBody>
         </Card>
       </div>
 
-      <div style={{ marginTop: 18 }}>
+      <div className="dash-cols" style={{ marginTop: 18 }}>
         <Card>
-          <CardHeader subtitle="Keyword engine · live" title="Trending signals" action={<Badge tone="accent" dot>Last 14 days</Badge>} />
-          <CardBody>
-            {trending.length ? (
-              <div className="signal-chips">
-                {trending.map((k) => (
-                  <span className="signal-chip" key={k.key}>
-                    {k.key} <span className="signal-chip__count">{k.count}</span>
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span className="muted">No signals from the recent sample.</span>
-            )}
-            <div className="report__disclaimer" style={{ paddingTop: 12 }}>
-              Extracted from names + SIC codes of companies incorporated in the last 14 days.
-            </div>
-          </CardBody>
+          <CardHeader subtitle="Live · last 30 days" title="Most active regions" />
+          <RankList items={activity?.regions ?? []} />
+        </Card>
+        <Card>
+          <CardHeader subtitle="Live · last 30 days" title="Most-registered SIC codes" />
+          <RankList items={activity?.sics ?? []} suffix="sic" />
         </Card>
       </div>
 

@@ -65,7 +65,7 @@ async function deliver(rule: AlertRule, matches: { number: string; name: string 
   if (!matches.length) return { ok: true, detail: "no matches" };
   const payload = {
     alert: rule.name,
-    rule: { keywords: rule.keywords, sector: rule.sector, region: rule.region, status: rule.status },
+    rule: { sector: rule.sector, sic: rule.sic, region: rule.region, status: rule.status },
     matches,
     count: matches.length,
   };

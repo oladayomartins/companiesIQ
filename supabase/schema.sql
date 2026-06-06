@@ -73,8 +73,8 @@ create table if not exists public.alerts (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid references auth.users (id) on delete cascade,
   name        text not null,
-  keywords    text[] default '{}',
-  sector      text,
+  sector      text,                              -- SIC sector (factual)
+  sic         text,                              -- exact SIC code (factual)
   region      text,
   status      text[] default '{}',
   channel     text not null default 'webhook',  -- email | slack | webhook
@@ -82,6 +82,9 @@ create table if not exists public.alerts (
   active      boolean not null default true,
   created_at  timestamptz default now()
 );
+-- If upgrading an existing DB created before factual alerts:
+--   alter table public.alerts add column if not exists sic text;
+--   alter table public.alerts drop column if exists keywords;
 create table if not exists public.alert_hits (
   id             bigint generated always as identity primary key,
   alert_id       uuid references public.alerts (id) on delete cascade,

@@ -1,20 +1,28 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Card, CardBody, Checkbox, Tag, StatusPill, Badge, CompanyAvatar, Icon, Select, IconButton, Button, Tabs } from "@/components/ds";
-import { ScorePill, KeywordChips } from "@/components/app/ScorePill";
+import { Card, CardBody, Checkbox, Tag, StatusPill, Badge, CompanyAvatar, Icon, Select, IconButton, Button, Input, Tabs } from "@/components/ds";
+import { FactualTags } from "@/components/app/Tags";
 import { ExplorerGrid } from "@/components/app/ExplorerGrid";
 import { fmtNumber, ageLabel } from "@/lib/format";
+import { ALL_SECTORS } from "@/lib/sic";
 import type { EnrichedResult } from "@/lib/data";
-import type { KeywordSignal } from "@/lib/keywords";
 import { toCSV, downloadCSV } from "@/lib/csv";
 
 type StatusKey = "active" | "dormant" | "liquidation" | "dissolved";
-const REGIONS = ["London", "South East", "Scotland", "North West"];
-const INC_WINDOWS: { label: string; value: string }[] = [
+const REGIONS = ["London", "South East", "South West", "East of England", "West Midlands", "East Midlands", "Yorkshire & the Humber", "North West", "North East", "Scotland", "Wales", "Northern Ireland"];
+const INC_WINDOWS = [
   { label: "Any time", value: "any" },
+  { label: "Last 30 days", value: "30d" },
   { label: "Last 12 months", value: "12m" },
   { label: "Last 5 years", value: "5y" },
+];
+const TYPES = [
+  { label: "Any type", value: "" },
+  { label: "Private limited (LTD)", value: "ltd" },
+  { label: "Public limited (PLC)", value: "plc" },
+  { label: "LLP", value: "llp" },
+  { label: "Community interest (CIC)", value: "community-interest-company" },
 ];
 
 function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
@@ -34,9 +42,12 @@ export function SearchScreen() {
   const [status, setStatus] = useState<Record<StatusKey, boolean>>({ active: true, dormant: false, dissolved: false, liquidation: false });
   const [regions, setRegions] = useState<Record<string, boolean>>({});
   const [incWindow, setIncWindow] = useState("any");
-  const [sort, setSort] = useState("score");
+  const [sector, setSector] = useState("");
+  const [sic, setSic] = useState("");
+  const [ctype, setCtype] = useState("");
+  const [sort, setSort] = useState("inc");
   const [view, setView] = useState("table");
-  const [data, setData] = useState<{ total: number; results: EnrichedResult[]; live: boolean; keywords: KeywordSignal[] }>({ total: 0, results: [], live: false, keywords: [] });
+  const [data, setData] = useState<{ total: number; results: EnrichedResult[]; live: boolean }>({ total: 0, results: [], live: true });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +56,8 @@ export function SearchScreen() {
   const [chips, setChips] = useState<string[]>(query ? [query] : []);
   useEffect(() => setChips(query ? [query] : []), [query]);
 
+  // server-side filters that re-fetch
+  const sicKey = sic.trim();
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -53,19 +66,22 @@ export function SearchScreen() {
     if (query) sp.set("q", query);
     activeStatuses.forEach((s) => sp.append("status", s));
     if (incWindow !== "any") sp.set("incorporated", incWindow);
+    if (sicKey) sp.append("sic", sicKey);
+    if (ctype) sp.append("type", ctype);
+    if (sector) sp.set("sector", sector);
     fetch(`/api/search?${sp.toString()}`)
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
         if (d.error) setError(d.error);
-        setData({ total: d.total ?? 0, results: d.results ?? [], live: !!d.live, keywords: d.keywords ?? [] });
+        setData({ total: d.total ?? 0, results: d.results ?? [], live: d.live !== false });
       })
       .catch((e) => !cancelled && setError(String(e)))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [query, activeStatuses, incWindow]);
+  }, [query, activeStatuses, incWindow, sicKey, ctype, sector]);
 
   const rows = useMemo(() => {
     let r = data.results;
@@ -73,27 +89,26 @@ export function SearchScreen() {
     r = [...r];
     if (sort === "name") r.sort((a, b) => a.name.localeCompare(b.name));
     else if (sort === "inc") r.sort((a, b) => (b.incorporated || "").localeCompare(a.incorporated || ""));
-    else if (sort === "score") r.sort((a, b) => (b.score?.total ?? 0) - (a.score?.total ?? 0));
     return r;
   }, [data.results, activeRegions, sort]);
 
   function exportCsv() {
     const csv = toCSV(
-      ["Company", "Number", "Incorporated", "Status", "Region", "SIC", "Category", "Keywords", "Opportunity score", "Band"],
-      rows.map((c) => [
-        c.name,
-        c.number,
-        c.incorporated ?? "",
-        c.status,
-        c.region ?? "",
-        c.sicCodes[0] ?? "",
-        c.classification?.category ?? "",
-        (c.keywords ?? []).join(" | "),
-        c.score?.total ?? "",
-        c.score?.band ?? "",
-      ])
+      ["Company", "Number", "Incorporated", "Status", "Region", "SIC", "Industry"],
+      rows.map((c) => [c.name, c.number, c.incorporated ?? "", c.status, c.region ?? "", c.sicCodes[0] ?? "", c.classification?.sector ?? ""])
     );
-    downloadCSV(`companiesiq-prospects-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    downloadCSV(`companiesiq-companies-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+  }
+
+  function reset() {
+    setStatus({ active: true, dormant: false, dissolved: false, liquidation: false });
+    setRegions({});
+    setIncWindow("any");
+    setSector("");
+    setSic("");
+    setCtype("");
+    setChips([]);
+    router.push("/app/companies");
   }
 
   return (
@@ -101,19 +116,19 @@ export function SearchScreen() {
       <aside className="filters">
         <div className="filters__head">
           <span className="app-eyebrow">Refine</span>
-          <button
-            className="link-btn"
-            onClick={() => {
-              setStatus({ active: true, dormant: false, dissolved: false, liquidation: false });
-              setRegions({});
-              setIncWindow("any");
-              setChips([]);
-              router.push("/app/search");
-            }}
-          >
+          <button className="link-btn" onClick={reset}>
             Reset
           </button>
         </div>
+        <FilterGroup title="Industry">
+          <Select size="sm" value={sector} onChange={(e) => setSector(e.target.value)} options={[{ value: "", label: "All industries" }, ...ALL_SECTORS.map((s) => ({ value: s, label: s }))]} />
+        </FilterGroup>
+        <FilterGroup title="SIC code">
+          <Input size="sm" placeholder="e.g. 62012" value={sic} onChange={(e) => setSic(e.target.value)} iconLeft="filter" />
+        </FilterGroup>
+        <FilterGroup title="Company type">
+          <Select size="sm" value={ctype} onChange={(e) => setCtype(e.target.value)} options={TYPES} />
+        </FilterGroup>
         <FilterGroup title="Company status">
           <Checkbox label="Active" checked={status.active} onChange={(e) => setStatus((s) => ({ ...s, active: e.target.checked }))} />
           <Checkbox label="Dormant" checked={status.dormant} onChange={(e) => setStatus((s) => ({ ...s, dormant: e.target.checked }))} />
@@ -121,7 +136,7 @@ export function SearchScreen() {
           <Checkbox label="Dissolved" checked={status.dissolved} onChange={(e) => setStatus((s) => ({ ...s, dissolved: e.target.checked }))} />
         </FilterGroup>
         <FilterGroup title="Region">
-          {REGIONS.map((r) => (
+          {REGIONS.slice(0, 6).map((r) => (
             <Checkbox key={r} label={r} checked={!!regions[r]} onChange={(e) => setRegions((s) => ({ ...s, [r]: e.target.checked }))} />
           ))}
         </FilterGroup>
@@ -144,12 +159,11 @@ export function SearchScreen() {
               value={sort}
               onChange={(e) => setSort(e.target.value)}
               options={[
-                { value: "score", label: "Opportunity" },
                 { value: "inc", label: "Newest" },
                 { value: "name", label: "Name A–Z" },
               ]}
             />
-            <IconButton icon="download" variant="solid" label="Export prospect list (CSV)" onClick={exportCsv} />
+            <IconButton icon="download" variant="solid" label="Export to CSV" onClick={exportCsv} />
           </div>
         </div>
 
@@ -159,30 +173,12 @@ export function SearchScreen() {
               {c}
             </Tag>
           ))}
-          {!data.live ? (
-            <Badge tone="warn">Sample data — add a Companies House key for the live register</Badge>
-          ) : (
-            <Badge tone="pos" dot>
-              Live register
-            </Badge>
-          )}
-          {chips.length ? (
-            <button className="link-btn" onClick={() => router.push("/app/search")}>
-              Clear
-            </button>
-          ) : null}
+          {sector ? <Tag onRemove={() => setSector("")}>{sector}</Tag> : null}
+          {sicKey ? <Tag onRemove={() => setSic("")}>SIC {sicKey}</Tag> : null}
+          <Badge tone="pos" dot>
+            Live register
+          </Badge>
         </div>
-
-        {data.keywords.length ? (
-          <div className="signal-chips" style={{ marginBottom: 16 }}>
-            <span className="sort-label">Keyword signals</span>
-            {data.keywords.slice(0, 8).map((k) => (
-              <span className="signal-chip" key={k.key}>
-                {k.key} <span className="signal-chip__count">{k.count}</span>
-              </span>
-            ))}
-          </div>
-        ) : null}
 
         {view === "grid" ? (
           loading ? (
@@ -199,78 +195,73 @@ export function SearchScreen() {
             <ExplorerGrid rows={rows} />
           )
         ) : (
-        <Card variant="flat">
-          <CardBody flush>
-            <table className="data-table data-table--full">
-              <thead>
-                <tr>
-                  <th>Company</th>
-                  <th>Status</th>
-                  <th>Signals</th>
-                  <th>Region</th>
-                  <th className="num">Age</th>
-                  <th className="num">
-                    Opportunity <span className="pro-tag">Pro</span>
-                  </th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr className="empty-row">
-                    <td colSpan={7}>Searching the register…</td>
+          <Card variant="flat">
+            <CardBody flush>
+              <table className="data-table data-table--full">
+                <thead>
+                  <tr>
+                    <th>Company</th>
+                    <th>Status</th>
+                    <th>Tags</th>
+                    <th>SIC</th>
+                    <th>Region</th>
+                    <th className="num">Age</th>
+                    <th></th>
                   </tr>
-                ) : error ? (
-                  <tr className="empty-row">
-                    <td colSpan={7}>{error}</td>
-                  </tr>
-                ) : rows.length === 0 ? (
-                  <tr className="empty-row">
-                    <td colSpan={7}>No companies match these filters.</td>
-                  </tr>
-                ) : (
-                  rows.map((c) => (
-                    <tr key={c.number} onClick={() => router.push(`/app/company/${c.number}`)}>
-                      <td>
-                        <div className="cell-co">
-                          <CompanyAvatar name={c.name} size="md" />
-                          <div>
-                            <div className="cell-co__name">{c.name}</div>
-                            <div className="cell-co__no">
-                              {c.number}
-                              {c.incorporated ? ` · inc. ${c.incorporated.slice(0, 4)}` : ""}
-                              {c.classification ? ` · ${c.classification.code}` : ""}
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr className="empty-row">
+                      <td colSpan={7}>Searching the register…</td>
+                    </tr>
+                  ) : error ? (
+                    <tr className="empty-row">
+                      <td colSpan={7}>{error}</td>
+                    </tr>
+                  ) : rows.length === 0 ? (
+                    <tr className="empty-row">
+                      <td colSpan={7}>No companies match these filters.</td>
+                    </tr>
+                  ) : (
+                    rows.map((c) => (
+                      <tr key={c.number} onClick={() => router.push(`/app/company/${c.number}`)}>
+                        <td>
+                          <div className="cell-co">
+                            <CompanyAvatar name={c.name} size="md" />
+                            <div>
+                              <div className="cell-co__name">{c.name}</div>
+                              <div className="cell-co__no">
+                                {c.number}
+                                {c.incorporated ? ` · inc. ${c.incorporated.slice(0, 4)}` : ""}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td>
-                        <StatusPill status={c.status} />
-                      </td>
-                      <td>
-                        <KeywordChips keywords={c.keywords} strong={c.score?.keywords ?? []} />
-                      </td>
-                      <td className="muted">{c.region ?? "—"}</td>
-                      <td className="num mono">{ageLabel(c.incorporated)}</td>
-                      <td className="num">
-                        <ScorePill score={c.score} />
-                      </td>
-                      <td className="num">
-                        <Icon name="chevronRight" size={16} color="var(--text-faint)" />
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </CardBody>
-        </Card>
+                        </td>
+                        <td>
+                          <StatusPill status={c.status} />
+                        </td>
+                        <td>
+                          <FactualTags incorporated={c.incorporated} sector={c.classification?.sector} sicCodes={c.sicCodes} status={c.status} />
+                        </td>
+                        <td>{c.sicCodes[0] ? <Badge tone="neutral">{c.sicCodes[0]}</Badge> : <span className="muted">—</span>}</td>
+                        <td className="muted">{c.region ?? "—"}</td>
+                        <td className="num mono">{ageLabel(c.incorporated)}</td>
+                        <td className="num">
+                          <Icon name="chevronRight" size={16} color="var(--text-faint)" />
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </CardBody>
+          </Card>
         )}
 
         {!loading && rows.length > 0 ? (
           <div className="load-more">
             <Button variant="secondary" onClick={exportCsv} iconLeft="download">
-              Export {fmtNumber(rows.length)} as prospect list
+              Export {fmtNumber(rows.length)} companies to CSV
             </Button>
           </div>
         ) : null}

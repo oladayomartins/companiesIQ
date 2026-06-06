@@ -25,6 +25,13 @@ export function fmtDate(iso?: string): string {
   return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+export function daysSince(iso?: string, now = new Date()): number | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return Math.max(0, Math.floor((now.getTime() - d.getTime()) / (24 * 3600 * 1000)));
+}
+
 export function yearsSince(iso?: string, now = new Date()): number | null {
   if (!iso) return null;
   const d = new Date(iso);

@@ -9,7 +9,8 @@
 import "server-only";
 import { countCompanies, advancedSearch, isoDaysAgo } from "./companies-house";
 import { explore, type EnrichedResult } from "./data";
-import { aggregateKeywords, keywordsForResult, type KeywordSignal } from "./keywords";
+import { fastestGrowingSectors, regionBreakdown } from "./analytics";
+import { classifySic } from "./sic";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -62,9 +63,68 @@ export async function getIncorporationTrend(): Promise<{ month: string; value: n
   return windows.map((w, i) => ({ month: w.month, value: counts[i] }));
 }
 
-/** Trending keyword signals across a live sample of recent incorporations. */
-export async function getTrendingSignals(): Promise<KeywordSignal[]> {
-  const r = await advancedSearch({ incorporatedFrom: isoDaysAgo(14), incorporatedTo: isoDaysAgo(0), status: ["active"], size: 100 });
-  const items = r.results.map((c) => ({ keywords: keywordsForResult(c) }));
-  return aggregateKeywords(items).slice(0, 8);
+// ---------------------------------------------------------------
+// Activity breakdowns from a live sample of recent incorporations.
+// Factual counts (region / SIC), not keyword guesses.
+// ---------------------------------------------------------------
+export interface CountItem {
+  key: string;
+  label: string;
+  count: number;
+  share: number;
+}
+
+function topCounts(pairs: [string, number][], labels?: Record<string, string>, n = 6): CountItem[] {
+  const sorted = pairs.sort((a, b) => b[1] - a[1]).slice(0, n);
+  const max = sorted[0]?.[1] ?? 1;
+  return sorted.map(([key, count]) => ({ key, label: labels?.[key] ?? key, count, share: count / max }));
+}
+
+export interface ActivityBreakdown {
+  regions: CountItem[];
+  sics: CountItem[];
+  sampleSize: number;
+  days: number;
+}
+
+/** Most active regions + most-registered SIC codes among recent incorporations. */
+export async function getActivityBreakdown(days = 30): Promise<ActivityBreakdown> {
+  const r = await advancedSearch({ incorporatedFrom: isoDaysAgo(Math.min(days, 30)), incorporatedTo: isoDaysAgo(0), status: ["active"], size: 100 });
+  const regionCounts = new Map<string, number>();
+  const sicCounts = new Map<string, number>();
+  const sicLabels: Record<string, string> = {};
+  for (const c of r.results) {
+    if (c.region && c.region !== "Unknown") regionCounts.set(c.region, (regionCounts.get(c.region) || 0) + 1);
+    const s = c.sicCodes[0];
+    if (s) {
+      sicCounts.set(s, (sicCounts.get(s) || 0) + 1);
+      if (!sicLabels[s]) sicLabels[s] = classifySic(s).category;
+    }
+  }
+  return {
+    regions: topCounts([...regionCounts.entries()]),
+    sics: topCounts([...sicCounts.entries()], sicLabels),
+    sampleSize: r.results.length,
+    days,
+  };
+}
+
+export interface QuickInsights {
+  fastestSector: { name: string; growth: number };
+  fastestRegion: { name: string; index: number };
+  topRegion: CountItem | null;
+  topSic: CountItem | null;
+}
+
+/** Headline insight cards for the dashboard. */
+export async function getQuickInsights(days = 30): Promise<QuickInsights> {
+  const sec = fastestGrowingSectors(1)[0];
+  const reg = regionBreakdown()[0];
+  const breakdown = await getActivityBreakdown(days);
+  return {
+    fastestSector: { name: sec.sector, growth: sec.growth },
+    fastestRegion: { name: reg.region, index: reg.growthIndex },
+    topRegion: breakdown.regions[0] ?? null,
+    topSic: breakdown.sics[0] ?? null,
+  };
 }

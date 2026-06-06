@@ -10,10 +10,10 @@ const COLS: [string, string[]][] = [
 
 // Footer items that resolve to a real route; everything else is a placeholder.
 const ROUTES: Record<string, string> = {
-  Search: "/app/search",
-  "Company profiles": "/app/search",
+  Search: "/app/companies",
+  "Company profiles": "/app/companies",
   Watchlists: "/app/watchlists",
-  Signals: "/app/signals",
+  Signals: "/app/alerts",
   Analytics: "/app/analytics",
   Sources: "/sources",
   Methodology: "/sources",

@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     .insert({
       user_id: user.id,
       name: body.name,
-      keywords: body.keywords ?? [],
       sector: body.sector ?? null,
+      sic: body.sic ?? null,
       region: body.region ?? null,
       status: body.status ?? [],
       channel: body.channel ?? "webhook",

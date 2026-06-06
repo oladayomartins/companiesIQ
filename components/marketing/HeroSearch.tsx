@@ -6,7 +6,7 @@ import { Button, Icon } from "@/components/ds";
 export function HeroSearch() {
   const router = useRouter();
   const [q, setQ] = useState("");
-  const go = () => router.push(`/app/search${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
+  const go = () => router.push(`/app/companies${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
   return (
     <form
       className="hero__search"

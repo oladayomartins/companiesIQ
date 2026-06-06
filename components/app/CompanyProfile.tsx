@@ -6,8 +6,7 @@ import { Card, CardHeader, CardBody, Tabs, Stat, StatusPill, Badge, Tag, Company
 import { IntelligenceReport } from "@/components/app/IntelligenceReport";
 import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
 import type { IntelligenceReport as Report } from "@/lib/analytics";
-import type { ScoreBreakdown } from "@/lib/scoring";
-import { fmtDate, ageLabel, fmtNumber } from "@/lib/format";
+import { fmtDate, ageLabel } from "@/lib/format";
 
 function OfficerRow({ p }: { p: Officer }) {
   const inner = (
@@ -39,7 +38,6 @@ export function CompanyProfile({
   charges,
   pscs,
   report,
-  score,
   live,
 }: {
   company: Company;
@@ -48,7 +46,6 @@ export function CompanyProfile({
   charges: Charge[];
   pscs: PSC[];
   report: Report;
-  score: ScoreBreakdown;
   live: boolean;
 }) {
   const c = company;
@@ -62,7 +59,7 @@ export function CompanyProfile({
 
   return (
     <div className="screen profile">
-      <button className="back" onClick={() => router.push("/app/search")}>
+      <button className="back" onClick={() => router.push("/app/companies")}>
         <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> Back to results
       </button>
 
@@ -108,7 +105,7 @@ export function CompanyProfile({
       <div className="profile-kpis">
         <Stat label="SIC code" value={c.sicCodes[0] ?? "—"} sub={c.primaryClassification?.category} />
         <Stat label="Sector" value={c.primaryClassification?.sector ?? "—"} />
-        <Stat label="Employees" value={c.employees ? fmtNumber(c.employees) : "—"} />
+        <Stat label="Nation" value={c.geo?.nation ?? "—"} sub={c.geo?.region} />
         <Stat label="Age" value={ageLabel(c.incorporated)} />
       </div>
 
@@ -126,7 +123,7 @@ export function CompanyProfile({
         />
       </div>
 
-      {tab === "intelligence" ? <IntelligenceReport report={report} score={score} /> : null}
+      {tab === "intelligence" ? <IntelligenceReport report={report} /> : null}
 
       {tab === "overview" ? (
         <div className="profile-grid">

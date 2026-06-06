@@ -1,11 +1,11 @@
 // ============================================================
 // Alerts engine
 // ------------------------------------------------------------
-// Users define standing rules ("New AI companies in London") and
+// Users define standing rules from FACTUAL Companies House fields —
+// industry (SIC sector), SIC code, region, and status — and
 // CompaniesIQ evaluates them against newly incorporated companies,
-// delivering matches by email / Slack / webhook. This module holds
-// the rule shape + the pure matching predicate; delivery lives in
-// the /api/alerts/run route.
+// delivering matches by email / Slack / webhook. No keyword guessing:
+// every criterion is verifiable on the register.
 // ============================================================
 import type { EnrichedResult } from "./data";
 
@@ -14,8 +14,8 @@ export type AlertChannel = "email" | "slack" | "webhook";
 export interface AlertRule {
   id: string;
   name: string;
-  keywords?: string[]; // any-of, matched against result keyword signals
-  sector?: string; // result classification sector
+  sector?: string; // SIC sector (classified)
+  sic?: string; // exact SIC code
   region?: string; // resolved region
   status?: string[]; // company status any-of
   channel: AlertChannel;
@@ -26,22 +26,19 @@ export interface AlertRule {
 
 export function ruleSummary(a: AlertRule): string {
   const parts: string[] = [];
-  if (a.keywords?.length) parts.push(a.keywords.join("/"));
   if (a.sector) parts.push(a.sector);
+  if (a.sic) parts.push(`SIC ${a.sic}`);
   if (a.region) parts.push(a.region);
   if (a.status?.length) parts.push(a.status.join("/"));
   return parts.length ? parts.join(" · ") : "All new companies";
 }
 
-/** Does a company result satisfy this alert rule? */
+/** Does a company result satisfy this alert rule? (all factual) */
 export function matchesRule(rule: AlertRule, r: EnrichedResult): boolean {
   if (rule.status?.length && !rule.status.includes(String(r.status))) return false;
   if (rule.region && r.region !== rule.region) return false;
   if (rule.sector && r.classification?.sector !== rule.sector) return false;
-  if (rule.keywords?.length) {
-    const kw = r.keywords ?? [];
-    if (!rule.keywords.some((k) => kw.includes(k))) return false;
-  }
+  if (rule.sic && !(r.sicCodes || []).includes(rule.sic)) return false;
   return true;
 }
 
