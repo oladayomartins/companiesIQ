@@ -35,6 +35,26 @@
 .source { display: flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--text-faint); margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-hair); }
 .source__dot { color: var(--accent); }
 
+/* Readiness checklists (educational placeholders) */
+.rsec__note { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0 0 12px; }
+.readiness { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 24px; }
+.readiness__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border-hair); }
+.readiness__label { font-size: 14px; color: var(--text-body); }
+
+/* Similar companies list */
+.sim-list { display: flex; flex-direction: column; }
+.sim-row { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--border-hair); text-decoration: none; transition: background var(--dur-fast) var(--ease-out); }
+.sim-row:last-child { border-bottom: 0; }
+.sim-row:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.sim-row__main { flex: 1; min-width: 0; }
+.sim-row__name { font-weight: 600; font-size: 14px; color: var(--text-strong); }
+.sim-row__meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.sim-row__chev { color: var(--text-faint); flex-shrink: 0; }
+
+@media (max-width: 1080px) {
+  .readiness { grid-template-columns: 1fr; }
+}
+
 .report__disclaimer { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); line-height: 1.6; padding: 14px 0 0; }
 
 @media (max-width: 1080px) {

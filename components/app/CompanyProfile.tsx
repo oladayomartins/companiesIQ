@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardBody, Tabs, Stat, StatusPill, Badge, Tag, CompanyAvatar, Icon, Button, IconButton } from "@/components/ds";
 import { IntelligenceReport } from "@/components/app/IntelligenceReport";
 import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
-import type { IntelligenceReport as Report } from "@/lib/analytics";
+import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import { fmtDate, ageLabel } from "@/lib/format";
 
 function OfficerRow({ p }: { p: Officer }) {
@@ -38,6 +38,7 @@ export function CompanyProfile({
   charges,
   pscs,
   report,
+  similar = [],
   live,
 }: {
   company: Company;
@@ -46,6 +47,7 @@ export function CompanyProfile({
   charges: Charge[];
   pscs: PSC[];
   report: Report;
+  similar?: SimilarCompany[];
   live: boolean;
 }) {
   const c = company;
@@ -123,7 +125,7 @@ export function CompanyProfile({
         />
       </div>
 
-      {tab === "intelligence" ? <IntelligenceReport report={report} /> : null}
+      {tab === "intelligence" ? <IntelligenceReport report={report} similar={similar} /> : null}
 
       {tab === "overview" ? (
         <div className="profile-grid">

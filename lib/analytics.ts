@@ -89,6 +89,16 @@ export interface EconomicLive {
   medianWeeklyPay: number;
 }
 
+/** A company sharing the subject's SIC + region, for the Similar Companies section. */
+export interface SimilarCompany {
+  number: string;
+  name: string;
+  sicCode?: string;
+  region?: string;
+  incorporated?: string;
+  status: string;
+}
+
 export function buildIntelligenceReport(company: Company, economicLive?: EconomicLive | null): IntelligenceReport {
   const sector = company.primaryClassification?.sector || "All sectors";
   const category = company.primaryClassification?.category || "Unclassified";
