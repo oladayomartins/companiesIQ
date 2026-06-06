@@ -101,7 +101,7 @@ export function TrendLine({ data }: { data: { month: string; value: number }[] }
       <ResponsiveContainer>
         <LineChart data={data} margin={{ top: 8, right: 10, left: -18, bottom: 0 }}>
           <CartesianGrid stroke="var(--border-hair)" vertical={false} />
-          <XAxis dataKey="month" tickLine={false} axisLine={false} tick={AXIS} interval={1} />
+          <XAxis dataKey="month" tickLine={false} axisLine={false} tick={AXIS} interval="preserveStartEnd" minTickGap={24} />
           <YAxis tickLine={false} axisLine={false} tick={AXIS} width={42} />
           <Tooltip
             cursor={{ stroke: "var(--accent)", strokeWidth: 1, strokeDasharray: "3 3" }}

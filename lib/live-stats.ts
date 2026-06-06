@@ -15,24 +15,38 @@ import { keywordsForResult, aggregateKeywords } from "./keywords";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+/** ISO date `days` before the given ISO anchor (UTC). */
+function isoBefore(anchorIso: string, days: number): string {
+  const d = new Date(anchorIso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 export interface RegisterKpis {
   active: number;
   incorporations: number;
   dissolutions: number;
   netNew: number;
   days: number;
+  // Same-length window immediately before this one, for period-over-period deltas.
+  prevIncorporations: number;
+  prevDissolutions: number;
 }
 
-/** Register KPIs over a window (days). Active total is window-independent. */
-export async function getRegisterKpis(days = 30): Promise<RegisterKpis> {
-  const from = isoDaysAgo(days);
-  const to = isoDaysAgo(0);
-  const [active, incorporations, dissolutions] = await Promise.all([
+/** Register KPIs over a window (days), plus the preceding window for comparison. */
+export async function getRegisterKpis(days = 30, toAnchor?: string): Promise<RegisterKpis> {
+  const to = toAnchor ?? isoDaysAgo(0);
+  const from = isoBefore(to, days);
+  const prevTo = from;
+  const prevFrom = isoBefore(from, days);
+  const [active, incorporations, dissolutions, prevIncorporations, prevDissolutions] = await Promise.all([
     countCompanies({ status: ["active"] }),
     countCompanies({ incorporatedFrom: from, incorporatedTo: to }),
     countCompanies({ dissolvedFrom: from, dissolvedTo: to }),
+    countCompanies({ incorporatedFrom: prevFrom, incorporatedTo: prevTo }),
+    countCompanies({ dissolvedFrom: prevFrom, dissolvedTo: prevTo }),
   ]);
-  return { active, incorporations, dissolutions, netNew: incorporations - dissolutions, days };
+  return { active, incorporations, dissolutions, netNew: incorporations - dissolutions, days, prevIncorporations, prevDissolutions };
 }
 
 /** Recently incorporated companies (live), enriched + scored, within the window. */
@@ -62,6 +76,49 @@ export async function getIncorporationTrend(): Promise<{ month: string; value: n
   }
   const counts = await Promise.all(windows.map((w) => countCompanies({ incorporatedFrom: w.from, incorporatedTo: w.to })));
   return windows.map((w, i) => ({ month: w.month, value: counts[i] }));
+}
+
+const DAY_MS = 86400000;
+
+/**
+ * Incorporation trend that adapts its granularity to the selected window:
+ * daily for short ranges, weekly for medium, monthly for long. `toAnchor`
+ * lets a custom range end on a historical date. Bucket labels reuse the
+ * `month` key so the existing TrendLine chart renders them unchanged.
+ */
+export async function getFormationTrend(days = 30, toAnchor?: string): Promise<{ month: string; value: number }[]> {
+  const endIso = toAnchor ?? isoDaysAgo(0);
+  const end = new Date(endIso + "T00:00:00Z");
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const buckets: { label: string; from: string; to: string }[] = [];
+
+  if (days <= 31) {
+    // Daily — show at least a week so the line has shape.
+    const n = Math.max(days, 7);
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(end.getTime() - i * DAY_MS);
+      buckets.push({ label: `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`, from: iso(d), to: iso(d) });
+    }
+  } else if (days <= 183) {
+    // Weekly.
+    const weeks = Math.ceil(days / 7);
+    for (let i = weeks - 1; i >= 0; i--) {
+      const wEnd = new Date(end.getTime() - i * 7 * DAY_MS);
+      const wStart = new Date(wEnd.getTime() - 6 * DAY_MS);
+      buckets.push({ label: `${wStart.getUTCDate()} ${MONTHS[wStart.getUTCMonth()]}`, from: iso(wStart), to: iso(wEnd) });
+    }
+  } else {
+    // Monthly, up to 12.
+    const months = Math.min(12, Math.max(3, Math.round(days / 30)));
+    for (let i = months - 1; i >= 0; i--) {
+      const start = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - i, 1));
+      const mEnd = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - i + 1, 0));
+      buckets.push({ label: MONTHS[start.getUTCMonth()], from: iso(start), to: iso(mEnd) });
+    }
+  }
+
+  const counts = await Promise.all(buckets.map((b) => countCompanies({ incorporatedFrom: b.from, incorporatedTo: b.to })));
+  return buckets.map((b, i) => ({ month: b.label, value: counts[i] }));
 }
 
 // ---------------------------------------------------------------
@@ -224,9 +281,9 @@ function toBuckets(counts: Map<string, number>, label: (k: string) => string, su
  * Full opportunity-radar payload for the dashboard, from a single live
  * sample of recent incorporations plus the register-wide active count.
  */
-export async function getRadarData(days = 30): Promise<RadarData> {
-  const from = isoDaysAgo(Math.min(days, 365));
-  const to = isoDaysAgo(0);
+export async function getRadarData(days = 30, toAnchor?: string): Promise<RadarData> {
+  const to = toAnchor ?? isoDaysAgo(0);
+  const from = isoBefore(to, Math.min(days, 365));
   const [totalActive, sample] = await Promise.all([
     countCompanies({ status: ["active"] }),
     advancedSearch({ incorporatedFrom: from, incorporatedTo: to, status: ["active"], size: RADAR_SAMPLE }),

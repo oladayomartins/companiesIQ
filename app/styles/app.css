@@ -3,10 +3,10 @@
    Ported from ui_kits/webapp/index.html. The shell carries
    class="ciq-dark" so semantic tokens re-point to ink.
    ============================================================ */
-.app-root { height: 100vh; display: grid; grid-template-columns: 248px 1fr; background: var(--bg-page); color: var(--text-body); overflow: hidden; }
+.app-root { height: 100vh; display: grid; grid-template-columns: 248px 1fr; grid-template-rows: 100vh; background: var(--bg-page); color: var(--text-body); overflow: hidden; }
 
-/* ---------- Sidebar ---------- */
-.sidebar { background: var(--surface-sunken); border-right: 1px solid var(--border-hair); display: flex; flex-direction: column; padding: 18px 14px; gap: 22px; }
+/* ---------- Sidebar (sticky; scrolls its own nav if tall) ---------- */
+.sidebar { background: var(--surface-sunken); border-right: 1px solid var(--border-hair); display: flex; flex-direction: column; padding: 18px 14px; gap: 22px; height: 100vh; min-height: 0; overflow-y: auto; position: sticky; top: 0; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px; text-decoration: none; }
 .brand__word { font-family: var(--font-grotesk); font-weight: 800; font-size: 18px; letter-spacing: -0.02em; color: var(--text-strong); }
 .brand__iq { color: var(--accent); }
@@ -23,7 +23,7 @@
 .side-user__plan { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); letter-spacing: 0.03em; }
 
 /* ---------- Main ---------- */
-.app-main { display: flex; flex-direction: column; min-width: 0; }
+.app-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .topbar { height: 60px; border-bottom: 1px solid var(--border-hair); display: flex; align-items: center; gap: 16px; padding: 0 22px; background: color-mix(in srgb, var(--surface-card) 70%, transparent); backdrop-filter: blur(8px); flex-shrink: 0; }
 .topsearch { flex: 1; max-width: 560px; display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 12px; background: var(--surface-sunken); border: 1px solid var(--border-hair); border-radius: var(--radius-md); color: var(--text-muted); }
 .topsearch:focus-within { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--focus-ring); }
@@ -33,7 +33,7 @@
 .topbar__right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .live-pill { display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); padding: 5px 10px; border: 1px solid var(--border-hair); border-radius: var(--radius-pill); }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pos); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pos) 25%, transparent); }
-.app-scroll { flex: 1; overflow-y: auto; }
+.app-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 
 /* ---------- Screens ---------- */
 .screen { padding: 28px 32px 48px; max-width: 1180px; }
@@ -229,7 +229,36 @@
 /* ============================================================
    Dashboard — three-up ranked lists
    ============================================================ */
-.tri-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: start; }
+.tri-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: stretch; }
+.tri-cols > * { height: 100%; }
+
+/* ---- Date-range selector (presets + custom range calendar) ---- */
+.range-select { position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.cal-backdrop { position: fixed; inset: 0; z-index: 40; }
+.range-cal {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 41; width: 290px; padding: 14px;
+  background: var(--surface-raised); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); box-shadow: var(--shadow-ink-lg);
+}
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cal-title { font-family: var(--font-grotesk); font-weight: 700; font-size: 14px; color: var(--text-strong); }
+.cal-navbtn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid var(--border-hair); border-radius: var(--radius-md); background: var(--surface-card); color: var(--text-body); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out); }
+.cal-navbtn:hover { border-color: var(--accent); color: var(--accent); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cal-dow { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-align: center; padding: 2px 0 6px; }
+.cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 7px; color: var(--text-body); font-family: var(--font-sans); font-size: 12.5px; cursor: pointer; transition: background var(--dur-fast) var(--ease-out); }
+.cal-day:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.cal-day--in { background: var(--accent-tint); border-radius: 0; color: var(--accent); }
+.cal-day--edge { background: var(--accent); color: var(--accent-contrast); font-weight: 700; border-radius: 7px; }
+.cal-day:disabled { color: var(--text-faint); opacity: 0.35; cursor: default; }
+.cal-day--blank { visibility: hidden; }
+.cal-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-hair); }
+.cal-range { font-size: 10.5px; color: var(--text-muted); }
+.cal-actions { display: flex; gap: 6px; }
+.cal-btn { font-family: var(--font-sans); font-size: 12px; font-weight: 600; color: var(--text-body); background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-md); padding: 5px 11px; cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out); }
+.cal-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.cal-btn--primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+.cal-btn--primary:hover:not(:disabled) { background: var(--accent-hover); color: var(--accent-contrast); }
+.cal-btn:disabled { opacity: 0.4; cursor: default; }
 
 @media (max-width: 1080px) {
   .tri-cols { grid-template-columns: 1fr; }

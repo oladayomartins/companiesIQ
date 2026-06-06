@@ -2,8 +2,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Card, CardHeader, CardBody, Stat, StatusPill, Badge } from "@/components/ds";
 import { DateRangeSelector } from "@/components/app/DateRangeSelector";
-import { getRegisterKpis, getRadarData, type RadarData, type RadarBucket } from "@/lib/live-stats";
-import { rangeDays } from "@/lib/ranges";
+import { TrendLine } from "@/components/app/Charts";
+import { getRegisterKpis, getRadarData, getFormationTrend, type RadarData, type RadarBucket } from "@/lib/live-stats";
+import { resolveRange } from "@/lib/ranges";
 import { fmtNumber, fmtDate, fmtDelta } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 
@@ -52,21 +53,36 @@ function RankList({ items, href }: { items: RadarBucket[]; href?: (b: RadarBucke
   );
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
-  const { range } = await searchParams;
-  const { label, days } = rangeDays(range);
-  const windowLabel = label.replace(/^Last /, "").toLowerCase(); // e.g. "30 days"
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ range?: string; from?: string; to?: string }> }) {
+  const { range, from, to } = await searchParams;
+  const win = resolveRange({ range, from, to });
+  const { days, label } = win;
+  const windowLabel = win.custom ? win.label : label.replace(/^Last /, "").toLowerCase(); // e.g. "30 days"
 
   let kpis = null as Awaited<ReturnType<typeof getRegisterKpis>> | null;
   let radar: RadarData | null = null;
+  let trend: { month: string; value: number }[] = [];
   let error: string | null = null;
   try {
-    [kpis, radar] = await Promise.all([getRegisterKpis(days), getRadarData(days)]);
+    [kpis, radar, trend] = await Promise.all([
+      getRegisterKpis(days, win.to),
+      getRadarData(days, win.to),
+      getFormationTrend(days, win.to).catch(() => []),
+    ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Companies House unavailable";
   }
 
   const netTone = kpis && kpis.netNew >= 0 ? "up" : "down";
+  // Period-over-period comparison vs the preceding equal-length window.
+  const pctDelta = (cur: number, prev: number): { delta?: string; deltaDir?: "up" | "down" | "flat" } => {
+    if (!prev) return {};
+    const p = ((cur - prev) / prev) * 100;
+    return { delta: fmtDelta(p, 0), deltaDir: p > 0 ? "up" : p < 0 ? "down" : "flat" };
+  };
+  const newCmp = pctDelta(kpis?.incorporations ?? 0, kpis?.prevIncorporations ?? 0);
+  const disCmp = pctDelta(kpis?.dissolutions ?? 0, kpis?.prevDissolutions ?? 0);
+  const activeGrowth = kpis && kpis.active ? (kpis.netNew / kpis.active) * 100 : 0;
   const recent = (radar?.companies ?? [])
     .slice()
     .sort((a, b) => (b.incorporated || "").localeCompare(a.incorporated || ""))
@@ -97,17 +113,23 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <div className="kpi-grid">
             <Card>
               <CardBody>
-                <Stat label="New companies" value={fmtNumber(kpis!.incorporations)} sub={windowLabel} />
+                <Stat label="New companies" value={fmtNumber(kpis!.incorporations)} delta={newCmp.delta} deltaDir={newCmp.deltaDir} sub={windowLabel} />
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <Stat label="Dissolved" value={fmtNumber(kpis!.dissolutions)} sub={windowLabel} />
+                <Stat label="Dissolved" value={fmtNumber(kpis!.dissolutions)} delta={disCmp.delta} deltaDir={disCmp.deltaDir} sub={windowLabel} />
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <Stat label="Active companies" value={fmtNumber(kpis!.active)} sub="on the register" />
+                <Stat
+                  label="Active companies"
+                  value={fmtNumber(kpis!.active)}
+                  delta={fmtDelta(activeGrowth, 2)}
+                  deltaDir={kpis!.netNew >= 0 ? "up" : "down"}
+                  sub="on the register"
+                />
               </CardBody>
             </Card>
             <Card>
@@ -123,6 +145,18 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </Card>
           </div>
 
+          {/* ---- Formation trajectory ---- */}
+          <Card style={{ marginBottom: 18 }}>
+            <CardHeader
+              subtitle={`New incorporations · ${windowLabel}`}
+              title="Formation trend"
+              action={<Badge tone="pos" dot>Companies House</Badge>}
+            />
+            <CardBody>
+              {trend.length ? <TrendLine data={trend} /> : <div className="app-loading">Loading trend…</div>}
+            </CardBody>
+          </Card>
+
           {/* ---- What's growing / where / what activity ---- */}
           <div className="tri-cols">
             <Card>
@@ -135,7 +169,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </Card>
             <Card>
               <CardHeader subtitle="Most-registered SIC activities" title="Business activities" />
-              <RankList items={radar?.activities ?? []} />
+              <RankList items={(radar?.activities ?? []).slice(0, 6)} />
             </Card>
           </div>
 
