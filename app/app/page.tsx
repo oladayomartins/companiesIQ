@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Card, CardHeader, CardBody, Stat, StatusPill, Badge, CompanyAvatar, Icon } from "@/components/ds";
 import { ScorePill } from "@/components/app/ScorePill";
+import { DateRangeSelector } from "@/components/app/DateRangeSelector";
 import { getRegisterKpis, getRecentIncorporations, getRecentDissolutions } from "@/lib/live-stats";
-import { fmtNumber, fmtDate, ageLabel } from "@/lib/format";
+import { rangeDays } from "@/lib/ranges";
+import { fmtNumber, fmtDate, fmtDelta, ageLabel } from "@/lib/format";
 import type { EnrichedResult } from "@/lib/data";
 
 export const metadata = { title: "Dashboard · CompaniesIQ" };
@@ -36,16 +39,26 @@ function CompanyRow({ c }: { c: EnrichedResult }) {
   );
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
+  const { range } = await searchParams;
+  const { label, days } = rangeDays(range);
+  const windowLabel = label.replace(/^Last /, "").toLowerCase(); // e.g. "30 days"
+
   let kpis = null as Awaited<ReturnType<typeof getRegisterKpis>> | null;
   let recent: EnrichedResult[] = [];
   let dissolved: EnrichedResult[] = [];
   let error: string | null = null;
   try {
-    [kpis, recent, dissolved] = await Promise.all([getRegisterKpis(), getRecentIncorporations(8), getRecentDissolutions(6)]);
+    [kpis, recent, dissolved] = await Promise.all([
+      getRegisterKpis(days),
+      getRecentIncorporations(8, days),
+      getRecentDissolutions(6, days),
+    ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Companies House unavailable";
   }
+
+  const netTone = kpis && kpis.netNew >= 0 ? "up" : "down";
 
   return (
     <div className="screen">
@@ -54,9 +67,14 @@ export default async function DashboardPage() {
           <div className="app-eyebrow">{todayLabel()}</div>
           <h1 className="screen-title">Today on the UK register</h1>
         </div>
-        <Badge tone="pos" dot>
-          Live · Companies House
-        </Badge>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Suspense fallback={null}>
+            <DateRangeSelector />
+          </Suspense>
+          <Badge tone="pos" dot>
+            Live · Companies House
+          </Badge>
+        </div>
       </div>
 
       {error ? (
@@ -71,17 +89,23 @@ export default async function DashboardPage() {
             </Card>
             <Card>
               <CardBody>
-                <Stat label="New incorporations" value={fmtNumber(kpis!.new30d)} sub="last 30 days" />
+                <Stat label="New incorporations" value={fmtNumber(kpis!.incorporations)} sub={windowLabel} />
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <Stat label="Dissolutions" value={fmtNumber(kpis!.dissolved30d)} sub="last 30 days" />
+                <Stat label="Dissolutions" value={fmtNumber(kpis!.dissolutions)} sub={windowLabel} />
               </CardBody>
             </Card>
             <Card>
               <CardBody>
-                <Stat label="Incorporated today" value={fmtNumber(kpis!.newToday)} sub="last 24 hours" />
+                <Stat
+                  label="Net change"
+                  value={`${kpis!.netNew >= 0 ? "+" : ""}${fmtNumber(kpis!.netNew)}`}
+                  deltaDir={netTone}
+                  delta={kpis!.incorporations ? fmtDelta((kpis!.netNew / kpis!.incorporations) * 100, 0) : undefined}
+                  sub={windowLabel}
+                />
               </CardBody>
             </Card>
           </div>
@@ -148,7 +172,7 @@ export default async function DashboardPage() {
                   ) : (
                     <div className="mini-feed__row">
                       <span className="mini-feed__label muted" style={{ padding: 12 }}>
-                        No recent dissolutions returned.
+                        No dissolutions in this window.
                       </span>
                     </div>
                   )}

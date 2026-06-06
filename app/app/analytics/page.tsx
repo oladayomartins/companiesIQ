@@ -42,12 +42,12 @@ export default async function AnalyticsPage() {
         </Card>
         <Card>
           <CardBody>
-            <Stat label="New (30 days)" value={kpis ? fmtNumber(kpis.new30d) : "—"} sub="incorporations" />
+            <Stat label="New (30 days)" value={kpis ? fmtNumber(kpis.incorporations) : "—"} sub="incorporations" />
           </CardBody>
         </Card>
         <Card>
           <CardBody>
-            <Stat label="Dissolved (30 days)" value={kpis ? fmtNumber(kpis.dissolved30d) : "—"} />
+            <Stat label="Dissolved (30 days)" value={kpis ? fmtNumber(kpis.dissolutions) : "—"} />
           </CardBody>
         </Card>
         <Card>

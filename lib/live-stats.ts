@@ -15,30 +15,33 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 
 export interface RegisterKpis {
   active: number;
-  new30d: number;
-  dissolved30d: number;
-  newToday: number;
+  incorporations: number;
+  dissolutions: number;
+  netNew: number;
+  days: number;
 }
 
-export async function getRegisterKpis(): Promise<RegisterKpis> {
-  const [active, new30d, dissolved30d, newToday] = await Promise.all([
+/** Register KPIs over a window (days). Active total is window-independent. */
+export async function getRegisterKpis(days = 30): Promise<RegisterKpis> {
+  const from = isoDaysAgo(days);
+  const to = isoDaysAgo(0);
+  const [active, incorporations, dissolutions] = await Promise.all([
     countCompanies({ status: ["active"] }),
-    countCompanies({ incorporatedFrom: isoDaysAgo(30), incorporatedTo: isoDaysAgo(0) }),
-    countCompanies({ dissolvedFrom: isoDaysAgo(30), dissolvedTo: isoDaysAgo(0) }),
-    countCompanies({ incorporatedFrom: isoDaysAgo(1), incorporatedTo: isoDaysAgo(0) }),
+    countCompanies({ incorporatedFrom: from, incorporatedTo: to }),
+    countCompanies({ dissolvedFrom: from, dissolvedTo: to }),
   ]);
-  return { active, new30d, dissolved30d, newToday };
+  return { active, incorporations, dissolutions, netNew: incorporations - dissolutions, days };
 }
 
-/** Recently incorporated companies (live), enriched + scored. */
-export async function getRecentIncorporations(size = 8): Promise<EnrichedResult[]> {
-  const r = await explore({ incorporatedFrom: isoDaysAgo(10), incorporatedTo: isoDaysAgo(0), status: ["active"], size });
+/** Recently incorporated companies (live), enriched + scored, within the window. */
+export async function getRecentIncorporations(size = 8, days = 30): Promise<EnrichedResult[]> {
+  const r = await explore({ incorporatedFrom: isoDaysAgo(Math.min(days, 30)), incorporatedTo: isoDaysAgo(0), status: ["active"], size });
   return r.results.slice(0, size);
 }
 
-/** Recently dissolved companies (live). */
-export async function getRecentDissolutions(size = 6): Promise<EnrichedResult[]> {
-  const r = await explore({ dissolvedFrom: isoDaysAgo(14), dissolvedTo: isoDaysAgo(0), status: ["dissolved"], size });
+/** Recently dissolved companies (live), within the window. */
+export async function getRecentDissolutions(size = 6, days = 30): Promise<EnrichedResult[]> {
+  const r = await explore({ dissolvedFrom: isoDaysAgo(Math.min(days, 30)), dissolvedTo: isoDaysAgo(0), status: ["dissolved"], size });
   return r.results.slice(0, size);
 }
 
