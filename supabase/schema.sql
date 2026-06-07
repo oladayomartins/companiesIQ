@@ -180,6 +180,8 @@ create table if not exists public.leads (
   partner        text,
   verified       boolean default false,
   verify_token   text,
+  purchased      boolean default false,
+  purchased_at   timestamptz,
   created_at     timestamptz default now()
 );
 create index if not exists leads_company_idx on public.leads (company_number);

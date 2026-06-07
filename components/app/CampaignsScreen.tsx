@@ -6,7 +6,7 @@ import { fmtNumber } from "@/lib/format";
 export interface CampaignStats {
   totalLeads: number;
   byEvent: Record<string, number>;
-  bySource: Record<string, { scan: number; view: number; lead: number }>;
+  bySource: Record<string, { scan: number; view: number; lead: number; purchase: number }>;
 }
 
 export function CampaignsScreen({ stats }: { stats: CampaignStats | null }) {
@@ -55,11 +55,7 @@ export function CampaignsScreen({ stats }: { stats: CampaignStats | null }) {
         </Card>
         <Card>
           <CardBody>
-            <Stat
-              label="Scan → lead"
-              value={stats && (stats.byEvent.scan ?? 0) > 0 ? `${Math.round((stats.byEvent.lead / Math.max(stats.byEvent.scan, 1)) * 100)}%` : "—"}
-              sub="conversion"
-            />
+            <Stat label="Purchases" value={stats ? fmtNumber(stats.byEvent.purchase ?? 0) : "—"} sub="completed checkouts" />
           </CardBody>
         </Card>
       </div>
@@ -76,6 +72,7 @@ export function CampaignsScreen({ stats }: { stats: CampaignStats | null }) {
                   <th className="num">Scans</th>
                   <th className="num">Views</th>
                   <th className="num">Leads</th>
+                  <th className="num">Sales</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,11 +83,12 @@ export function CampaignsScreen({ stats }: { stats: CampaignStats | null }) {
                       <td className="num mono">{s.scan}</td>
                       <td className="num mono">{s.view}</td>
                       <td className="num mono">{s.lead}</td>
+                      <td className="num mono">{s.purchase}</td>
                     </tr>
                   ))
                 ) : (
                   <tr className="empty-row">
-                    <td colSpan={4}>{stats ? "No campaign activity yet." : "Supabase not configured."}</td>
+                    <td colSpan={5}>{stats ? "No campaign activity yet." : "Supabase not configured."}</td>
                   </tr>
                 )}
               </tbody>

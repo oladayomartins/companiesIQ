@@ -72,11 +72,13 @@ export function GrowthReport({
   partner,
   source,
   verified,
+  purchased = false,
 }: {
   data: GrowthData;
   partner: Partner;
   source: string | null;
   verified: boolean;
+  purchased?: boolean;
 }) {
   const c = data;
   const comp = c.competitors;
@@ -92,8 +94,8 @@ export function GrowthReport({
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
-  // Competitor examples unlock once the founder submits the form or has verified.
-  const unlocked = verified || status === "done";
+  // Competitor examples unlock once the founder submits the form, verifies, or buys.
+  const unlocked = verified || purchased || status === "done";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -120,7 +122,11 @@ export function GrowthReport({
 
   return (
     <main className="gr">
-      {verified ? <div className="gr-verified">✓ Email confirmed — your full report is unlocked.</div> : null}
+      {purchased ? (
+        <div className="gr-verified">✓ Payment received — thank you! {partner.name} will be in touch to get started.</div>
+      ) : verified ? (
+        <div className="gr-verified">✓ Email confirmed — your full report is unlocked.</div>
+      ) : null}
 
       {/* Hero */}
       <header className="gr-hero">

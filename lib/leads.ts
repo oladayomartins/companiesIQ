@@ -101,6 +101,19 @@ export async function createLead(input: LeadInput, baseUrl: string): Promise<Lea
   return { ok: true, stored, emailed };
 }
 
+/** Mark matching lead(s) as purchased after a successful Stripe checkout. Best-effort. */
+export async function markPurchased(companyNumber: string, email?: string | null): Promise<void> {
+  const admin = getSupabaseAdmin();
+  if (!admin || !companyNumber) return;
+  try {
+    let q = admin.from("leads").update({ purchased: true, purchased_at: new Date().toISOString() }).eq("company_number", companyNumber);
+    if (email) q = q.eq("email", email);
+    await q;
+  } catch {
+    /* best-effort */
+  }
+}
+
 /** Mark a lead verified by its token. Returns the lead's company number for redirect. */
 export async function verifyLead(token: string): Promise<{ ok: boolean; companyNumber?: string; source?: string }> {
   const admin = getSupabaseAdmin();

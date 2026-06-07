@@ -31,10 +31,10 @@ export default async function GrowthReportPage({
   searchParams,
 }: {
   params: Promise<{ number: string }>;
-  searchParams: Promise<{ source?: string; verified?: string }>;
+  searchParams: Promise<{ source?: string; verified?: string; purchase?: string }>;
 }) {
   const { number } = await params;
-  const { source, verified } = await searchParams;
+  const { source, verified, purchase } = await searchParams;
   const bundle = await getCompanyBundle(number);
   if (!bundle) notFound();
 
@@ -89,6 +89,7 @@ export default async function GrowthReportPage({
       partner={partner}
       source={source ?? null}
       verified={verified === "1"}
+      purchased={purchase === "success"}
     />
   );
 }
