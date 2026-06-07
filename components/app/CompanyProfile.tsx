@@ -101,6 +101,9 @@ export function CompanyProfile({
           <Button variant="secondary" iconLeft="bookmark">
             Watch
           </Button>
+          <Button variant="secondary" iconLeft="trendUp" onClick={() => router.push(`/company/${c.number}/growth-report`)}>
+            Founder view
+          </Button>
           <Button variant="primary" iconLeft="download">
             Export report
           </Button>

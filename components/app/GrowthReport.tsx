@@ -99,7 +99,7 @@ export function GrowthReport({
         <p className="gr-sub">
           {c.sector} · {c.region}
         </p>
-        <p className="gr-lead">{partner.ctaHeadline}</p>
+        <p className="gr-lead">A snapshot of how your business shows up online — and how you compare in {c.region}.</p>
       </header>
 
       {/* 2 · Local Competition Snapshot (the hook) */}
@@ -212,9 +212,12 @@ export function GrowthReport({
         </ol>
       </section>
 
-      {/* 7 · Packages */}
+      {/* 7 · Exclusive offer */}
       <section className="gr-section">
-        <h2 className="gr-h2">How {partner.name} can help</h2>
+        <h2 className="gr-h2">Get this exclusive offer to level up</h2>
+        <p className="gr-body" style={{ marginBottom: 18 }}>
+          {partner.name} can close the gaps above — pick a package, or book a free review to talk it through.
+        </p>
         <div className="gr-packages">
           {partner.packages.map((p) => (
             <div key={p.name} className={"gr-pkg" + (p.recommended ? " gr-pkg--rec" : "")}>
@@ -228,6 +231,11 @@ export function GrowthReport({
               </ul>
             </div>
           ))}
+        </div>
+        <div className="gr-offer-cta">
+          <a className="gr-btn gr-btn--lg" href={partner.bookingUrl} target="_blank" rel="noopener noreferrer">
+            {partner.bookingLabel}
+          </a>
         </div>
       </section>
 
@@ -259,14 +267,6 @@ export function GrowthReport({
             <p className="gr-fineprint">We&apos;ll email you a confirmation link. No spam.</p>
           </form>
         )}
-      </section>
-
-      {/* 9 · Book consultation */}
-      <section className="gr-section gr-section--book">
-        <h2 className="gr-h2">{partner.ctaHeadline}</h2>
-        <a className="gr-btn gr-btn--lg" href={partner.bookingUrl} target="_blank" rel="noopener noreferrer">
-          {partner.bookingLabel}
-        </a>
       </section>
 
       <footer className="gr-foot">
