@@ -155,7 +155,7 @@ export default async function MarketsPage() {
         <Card>
           <CardHeader subtitle="Trailing 12 months" title="Fastest-growing sectors" action={<span className="app-eyebrow">Source · ONS</span>} />
           <CardBody flush>
-            <table className="data-table data-table--full">
+            <div className="table-scroll"><table className="data-table data-table--full">
               <thead>
                 <tr>
                   <th>Sector</th>
@@ -172,7 +172,7 @@ export default async function MarketsPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </CardBody>
         </Card>
       </div>

@@ -35,6 +35,10 @@
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pos); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pos) 25%, transparent); }
 .app-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 
+/* Mobile menu trigger + drawer scrim — hidden on desktop, shown ≤1080px. */
+.topbar__menu { display: none; flex-shrink: 0; }
+.nav-scrim { display: none; }
+
 /* ---------- Screens ---------- */
 .screen { padding: 28px 32px 48px; max-width: 1180px; }
 .screen-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
@@ -43,8 +47,15 @@
 
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
 .dash-cols { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
+/* Let grid children shrink below their intrinsic content width so inner
+   scroll containers (e.g. .table-scroll) can scroll instead of overflowing. */
+.dash-cols > *, .tri-cols > *, .kpi-grid > *, .profile-grid > * { min-width: 0; }
 
 /* ---------- Tables ---------- */
+/* Horizontal-scroll wrapper so wide tables don't clip or break layout on
+   narrow screens. -webkit-overflow-scrolling for momentum on iOS. */
+.table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll .data-table { min-width: 640px; }
 .data-table { width: 100%; border-collapse: collapse; font-family: var(--font-sans); }
 .data-table th { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); text-align: left; font-weight: 500; padding: 11px 16px; border-bottom: 1px solid var(--border-hair); }
 .data-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-hair); font-size: 14px; color: var(--text-body); vertical-align: middle; }
@@ -275,8 +286,54 @@
 /* ---------- Responsive ---------- */
 @media (max-width: 1080px) {
   .app-root { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
+  /* Sidebar becomes an off-canvas drawer toggled by the topbar hamburger. */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 60;
+    width: 270px;
+    max-width: 84vw;
+    height: 100dvh;
+    transform: translateX(-100%);
+    transition: transform var(--dur-base, 0.22s) var(--ease-out, ease);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+  }
+  .sidebar--open { transform: translateX(0); }
+  .topbar__menu { display: inline-flex; }
+  .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    border: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-base, 0.22s) var(--ease-out, ease);
+  }
+  .app-root--menu-open .nav-scrim { opacity: 1; pointer-events: auto; }
   .kpi-grid, .profile-kpis { grid-template-columns: repeat(2, 1fr); }
   .dash-cols, .profile-grid { grid-template-columns: 1fr; }
   .search-screen { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  /* Company report header: stack the title block above the action buttons,
+     let the buttons wrap instead of overflowing the viewport. */
+  .profile-head { flex-direction: column; gap: 16px; }
+  .profile-actions { flex-wrap: wrap; width: 100%; }
+  .profile-actions > * { flex: 1 1 auto; }
+  .profile-kpis { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+}
+
+@media (max-width: 560px) {
+  .screen { padding: 20px 16px 40px; }
+  .screen-head { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .screen-title { font-size: 24px; }
+  .kpi-grid, .profile-kpis { grid-template-columns: 1fr; gap: 12px; }
+  .topbar { padding: 0 14px; gap: 10px; }
+  .topbar__right .live-pill { display: none; }
+  .profile-head__title-row { flex-wrap: wrap; gap: 8px; }
 }

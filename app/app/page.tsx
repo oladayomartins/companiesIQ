@@ -185,7 +185,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               }
             />
             <CardBody flush>
-              <table className="data-table data-table--full">
+              <div className="table-scroll"><table className="data-table data-table--full">
                 <thead>
                   <tr>
                     <th>Company</th>
@@ -222,7 +222,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     </tr>
                   )}
                 </tbody>
-              </table>
+              </table></div>
             </CardBody>
           </Card>
         </>

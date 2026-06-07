@@ -14,6 +14,7 @@ const PATHS: Record<string, string[]> = {
   trendDown: ['<polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/>', '<polyline points="16 17 22 17 22 11"/>'],
   bell: ['<path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>', '<path d="M21 16.5c-1.4-1.2-2-2.5-2-4.5V9a7 7 0 1 0-14 0v3c0 2-.6 3.3-2 4.5Z"/>'],
   list: ['<path d="M8 6h13M8 12h13M8 18h13"/>', '<path d="M3 6h.01M3 12h.01M3 18h.01"/>'],
+  menu: ['<path d="M3 6h18M3 12h18M3 18h18"/>'],
   filter: ['<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>'],
   download: ['<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>', '<polyline points="7 10 12 15 17 10"/>', '<line x1="12" x2="12" y1="15" y2="3"/>'],
   external: ['<path d="M15 3h6v6"/>', '<path d="M10 14 21 3"/>', '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>'],

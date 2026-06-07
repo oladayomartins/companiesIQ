@@ -106,7 +106,7 @@ export function InsightsScreen() {
           </div>
           <Card variant="flat" style={{ marginTop: 8 }}>
             <CardBody flush>
-              <table className="data-table data-table--full">
+              <div className="table-scroll"><table className="data-table data-table--full">
                 <thead>
                   <tr>
                     <th>Company</th>
@@ -143,7 +143,7 @@ export function InsightsScreen() {
                     </tr>
                   )}
                 </tbody>
-              </table>
+              </table></div>
             </CardBody>
           </Card>
         </>

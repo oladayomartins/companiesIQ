@@ -278,7 +278,7 @@ export function SearchScreen() {
         ) : (
           <Card variant="flat">
             <CardBody flush>
-              <table className="data-table data-table--full">
+              <div className="table-scroll"><table className="data-table data-table--full">
                 <thead>
                   <tr>
                     <th>Company</th>
@@ -334,7 +334,7 @@ export function SearchScreen() {
                     ))
                   )}
                 </tbody>
-              </table>
+              </table></div>
             </CardBody>
           </Card>
         )}

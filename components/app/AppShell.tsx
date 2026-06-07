@@ -44,9 +44,27 @@ function TopSearch() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+  // Lock body scroll while the drawer is open.
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
   return (
-    <div className="app-root ciq-dark">
-      <aside className="sidebar">
+    <div className={"app-root ciq-dark" + (menuOpen ? " app-root--menu-open" : "")}>
+      <button
+        type="button"
+        className="nav-scrim"
+        aria-label="Close menu"
+        onClick={() => setMenuOpen(false)}
+      />
+      <aside className={"sidebar" + (menuOpen ? " sidebar--open" : "")}>
         <Link className="brand" href="/app">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo/ciq-mark-ink.svg" width={26} height={26} alt="" />
@@ -80,6 +98,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="app-main">
         <header className="topbar">
+          <IconButton
+            icon="menu"
+            label="Open menu"
+            className="topbar__menu"
+            onClick={() => setMenuOpen(true)}
+          />
           <Suspense fallback={<div className="topsearch" />}>
             <TopSearch />
           </Suspense>

@@ -156,3 +156,12 @@
   .site-foot__cols { grid-template-columns: repeat(2, 1fr); }
   .site-nav { display: none; }
 }
+
+@media (max-width: 560px) {
+  .site-head__inner { padding: 0 16px; gap: 12px; }
+  .site-head__cta { gap: 8px; }
+  /* Drop the secondary "Sign in" text link on phones so the primary CTA fits;
+     the app (and its sign-in) is still reachable via the CTA. */
+  .site-head__cta .site-nav__link { display: none; }
+  .hero__title { font-size: 36px; }
+}

@@ -65,7 +65,7 @@ export function CampaignsScreen({ stats }: { stats: CampaignStats | null }) {
         <Card>
           <CardHeader subtitle="Performance" title="By campaign source" />
           <CardBody flush>
-            <table className="data-table data-table--full">
+            <div className="table-scroll"><table className="data-table data-table--full">
               <thead>
                 <tr>
                   <th>Source</th>
@@ -92,7 +92,7 @@ export function CampaignsScreen({ stats }: { stats: CampaignStats | null }) {
                   </tr>
                 )}
               </tbody>
-            </table>
+            </table></div>
           </CardBody>
         </Card>
 

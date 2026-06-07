@@ -19,7 +19,7 @@ export default function IndustriesPage() {
 
       <Card variant="flat">
         <CardBody flush>
-          <table className="data-table data-table--full">
+          <div className="table-scroll"><table className="data-table data-table--full">
             <thead>
               <tr>
                 <th>Sector</th>
@@ -55,7 +55,7 @@ export default function IndustriesPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </CardBody>
       </Card>
       <div className="report__disclaimer">

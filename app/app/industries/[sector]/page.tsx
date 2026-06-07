@@ -106,7 +106,7 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
         <Card>
           <CardHeader subtitle="Live · last 120 days" title="Recent companies in this sector" action={<Badge tone="pos" dot>Companies House</Badge>} />
           <CardBody flush>
-            <table className="data-table data-table--full">
+            <div className="table-scroll"><table className="data-table data-table--full">
               <thead>
                 <tr>
                   <th>Company</th>
@@ -144,7 +144,7 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
                   </tr>
                 )}
               </tbody>
-            </table>
+            </table></div>
           </CardBody>
         </Card>
       </div>

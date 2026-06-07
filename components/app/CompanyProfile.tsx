@@ -240,7 +240,7 @@ export function CompanyProfile({
         <Card>
           <CardHeader subtitle="Companies House" title="Filing history" action={<IconButton icon="download" variant="solid" label="Export" />} />
           <CardBody flush>
-            <table className="data-table data-table--full">
+            <div className="table-scroll"><table className="data-table data-table--full">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -264,7 +264,7 @@ export function CompanyProfile({
                   </tr>
                 ) : null}
               </tbody>
-            </table>
+            </table></div>
           </CardBody>
         </Card>
       ) : null}

@@ -74,7 +74,7 @@ export default async function DirectorPage({ params }: { params: Promise<{ id: s
         <Card>
           <CardHeader subtitle="Companies House" title="Appointments across the register" action={<Badge tone="accent">{insight.total}</Badge>} />
           <CardBody flush>
-            <table className="data-table data-table--full">
+            <div className="table-scroll"><table className="data-table data-table--full">
               <thead>
                 <tr>
                   <th>Company</th>
@@ -107,7 +107,7 @@ export default async function DirectorPage({ params }: { params: Promise<{ id: s
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </CardBody>
         </Card>
       </div>
