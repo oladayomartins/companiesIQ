@@ -164,3 +164,35 @@ create index if not exists company_enrichment_checked_idx on public.company_enri
 -- World-readable like the register; written only by the service role (enrichment job).
 alter table public.company_enrichment enable row level security;
 create policy "read enrichment" on public.company_enrichment for select using (true);
+
+-- --- Founder funnel: lead capture + campaign events (Phase 2) ------
+-- Leads contain PII — RLS is ON with NO policies, so only the service role
+-- (the /api/leads handler) can read/write. Never client-readable.
+create table if not exists public.leads (
+  id             bigint generated always as identity primary key,
+  company_number text,
+  company_name   text,
+  first_name     text,
+  last_name      text,
+  email          text not null,
+  phone          text,
+  source         text,            -- QR campaign tag, e.g. digitwarehouse
+  partner        text,
+  verified       boolean default false,
+  verify_token   text,
+  created_at     timestamptz default now()
+);
+create index if not exists leads_company_idx on public.leads (company_number);
+create index if not exists leads_token_idx on public.leads (verify_token);
+alter table public.leads enable row level security;
+
+-- Funnel/QR analytics — scans, views, lead submits, consultation clicks.
+create table if not exists public.funnel_events (
+  id             bigint generated always as identity primary key,
+  company_number text,
+  event          text,            -- scan | view | lead | consult
+  source         text,
+  created_at     timestamptz default now()
+);
+create index if not exists funnel_events_event_idx on public.funnel_events (event);
+alter table public.funnel_events enable row level security;
