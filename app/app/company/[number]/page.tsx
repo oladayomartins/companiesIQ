@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getCompanyBundle, explore } from "@/lib/data";
 import { buildIntelligenceReport, type SimilarCompany } from "@/lib/analytics";
 import { getRegionLive } from "@/lib/nomis";
+import { enrichCompany, type CompanyEnrichment } from "@/lib/enrichment";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
 
 export const revalidate = 300;
@@ -38,21 +39,31 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   const bundle = await getCompanyBundle(number);
   if (!bundle) notFound();
 
-  const [economicLive, similar] = await Promise.all([
-    getRegionLive(bundle.company.geo?.region),
-    getSimilarCompanies(bundle.company.number, bundle.company.sicCodes[0], bundle.company.geo?.region),
+  const c = bundle.company;
+  const [economicLive, similar, enrichment] = await Promise.all([
+    getRegionLive(c.geo?.region),
+    getSimilarCompanies(c.number, c.sicCodes[0], c.geo?.region),
+    // Cache-first digital-presence enrichment for the subject company; defensive
+    // so a missing key / Places error never breaks the report (→ "Not Assessed").
+    enrichCompany({
+      number: c.number,
+      name: c.name,
+      locality: c.geo?.locality ?? c.address?.locality,
+      postcode: c.address?.postcode ?? c.geo?.postcode,
+    }).catch(() => null as CompanyEnrichment | null),
   ]);
-  const report = buildIntelligenceReport(bundle.company, economicLive);
+  const report = buildIntelligenceReport(c, economicLive);
 
   return (
     <CompanyProfile
-      company={bundle.company}
+      company={c}
       officers={bundle.officers}
       filings={bundle.filings}
       charges={bundle.charges}
       pscs={bundle.pscs}
       report={report}
       similar={similar}
+      enrichment={enrichment}
       live={bundle.live}
     />
   );

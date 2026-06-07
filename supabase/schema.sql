@@ -137,3 +137,30 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- --- Digital-presence enrichment cache (Phase 2) ------------------
+-- Measured signals per company (Google Places now; Claude website/AI-visibility
+-- later). Every value is sourced + dated; null = Not Assessed. Cached and reused
+-- across reports; re-enriched when older than ttl_days. Fenced from the
+-- intelligence layer (CH/ONS/Nomis) — see docs/enrichment.md.
+create table if not exists public.company_enrichment (
+  company_number    text primary key,
+  company_name      text,
+  gbp_present       boolean,          -- null = not assessed
+  review_count      integer,
+  review_rating     numeric,
+  website_url       text,
+  match_confidence  text,             -- high | low | none
+  match_score       numeric,
+  places_source     text,             -- Google Maps URL (citation)
+  ai_visible        boolean,          -- null until the AI-visibility probe runs
+  ai_probe          jsonb,
+  raw               jsonb,            -- full evidence blob for audit
+  checked_at        timestamptz default now(),
+  ttl_days          integer default 30
+);
+create index if not exists company_enrichment_checked_idx on public.company_enrichment (checked_at);
+
+-- World-readable like the register; written only by the service role (enrichment job).
+alter table public.company_enrichment enable row level security;
+create policy "read enrichment" on public.company_enrichment for select using (true);

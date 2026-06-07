@@ -6,6 +6,7 @@ import { Card, CardHeader, CardBody, Tabs, Stat, StatusPill, Badge, Tag, Company
 import { IntelligenceReport } from "@/components/app/IntelligenceReport";
 import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
+import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import { fmtDate, ageLabel } from "@/lib/format";
 
 function OfficerRow({ p }: { p: Officer }) {
@@ -39,6 +40,7 @@ export function CompanyProfile({
   pscs,
   report,
   similar = [],
+  enrichment = null,
   live,
 }: {
   company: Company;
@@ -48,6 +50,7 @@ export function CompanyProfile({
   pscs: PSC[];
   report: Report;
   similar?: SimilarCompany[];
+  enrichment?: CompanyEnrichment | null;
   live: boolean;
 }) {
   const c = company;
@@ -125,7 +128,7 @@ export function CompanyProfile({
         />
       </div>
 
-      {tab === "intelligence" ? <IntelligenceReport report={report} similar={similar} /> : null}
+      {tab === "intelligence" ? <IntelligenceReport report={report} similar={similar} enrichment={enrichment} /> : null}
 
       {tab === "overview" ? (
         <div className="profile-grid">

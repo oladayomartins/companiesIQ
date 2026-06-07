@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardHeader, CardBody, Stat, Badge, Icon } from "@/components/ds";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
+import { aiReadiness, type CompanyEnrichment } from "@/lib/enrichment/types";
 import { fmtNumber, fmtPercent, fmtDelta, fmtDate } from "@/lib/format";
 
 function Source({ children }: { children: React.ReactNode }) {
@@ -21,7 +22,6 @@ function SectionHead({ n, title }: { n: number; title: string }) {
 }
 
 const STARTUP_FOUNDATIONS = ["Business bank account", "Accounting system", "Professional email", "Website", "Insurance", "Record keeping"];
-const DIGITAL_PRESENCE = ["Website", "Google Business Profile", "Professional email", "Social presence", "Reviews"];
 
 function ReadinessList({ items, status }: { items: string[]; status: string }) {
   return (
@@ -36,7 +36,25 @@ function ReadinessList({ items, status }: { items: string[]; status: string }) {
   );
 }
 
-export function IntelligenceReport({ report, similar = [] }: { report: Report; similar?: SimilarCompany[] }) {
+// One digital-presence signal row — a link when present, else a status badge.
+function PresenceRow({ label, value, href, tone = "neutral" }: { label: string; value: string; href?: string; tone?: "pos" | "neutral" | "warn" }) {
+  return (
+    <div className="readiness__row">
+      <span className="readiness__label">{label}</span>
+      {href ? (
+        <a className="link-btn" href={href} target="_blank" rel="noopener noreferrer">
+          {value}
+        </a>
+      ) : (
+        <Badge tone={tone}>{value}</Badge>
+      )}
+    </div>
+  );
+}
+
+const READINESS_LABEL: Record<string, string> = { high: "High readiness", moderate: "Moderate readiness", low: "Low readiness", unknown: "Not Assessed" };
+
+export function IntelligenceReport({ report, similar = [], enrichment = null }: { report: Report; similar?: SimilarCompany[]; enrichment?: CompanyEnrichment | null }) {
   const r = report;
   return (
     <div className="report">
@@ -220,14 +238,57 @@ export function IntelligenceReport({ report, similar = [] }: { report: Report; s
         </CardBody>
       </Card>
 
-      {/* 10 · Digital presence readiness (educational) */}
-      <Card>
-        <CardHeader children={<SectionHead n={10} title="Digital presence readiness" />} action={<Badge tone="neutral">Educational</Badge>} />
-        <CardBody>
-          <p className="rsec__note">Online-visibility signals. Not assessed yet — these are measured only when enrichment is enabled.</p>
-          <ReadinessList items={DIGITAL_PRESENCE} status="Unknown" />
-        </CardBody>
-      </Card>
+      {/* 10 · Digital presence readiness (measured where available) */}
+      {(() => {
+        const e = enrichment;
+        const measured = !!(e && e.matchConfidence === "high");
+        const website = e?.websiteUrl ?? null;
+        const gbp = e?.gbpPresent;
+        const reviews = e?.reviewCount;
+        const ai = aiReadiness(e);
+        return (
+          <Card>
+            <CardHeader
+              children={<SectionHead n={10} title="Digital presence readiness" />}
+              action={<Badge tone={measured ? "pos" : "neutral"}>{measured ? "Measured" : "Not Assessed"}</Badge>}
+            />
+            <CardBody>
+              <p className="rsec__note">
+                Public online-visibility signals. Measured from Google Places when a confident match exists; otherwise
+                shown as Not Assessed (never assumed).
+              </p>
+              <div className="readiness">
+                <PresenceRow
+                  label="Website"
+                  value={website ? "Present" : "Not Assessed"}
+                  href={website ?? undefined}
+                  tone={website ? "pos" : "neutral"}
+                />
+                <PresenceRow
+                  label="Google Business Profile"
+                  value={gbp === true ? "Present" : gbp === false ? "Not found" : "Not Assessed"}
+                  tone={gbp === true ? "pos" : "neutral"}
+                />
+                <PresenceRow
+                  label="Reviews"
+                  value={reviews != null ? `${fmtNumber(reviews)}${e?.reviewRating ? ` · ${e.reviewRating}★` : ""}` : "Not Assessed"}
+                  tone={reviews ? "pos" : "neutral"}
+                />
+                <PresenceRow label="Professional email" value="Not Assessed" />
+                <PresenceRow label="Social presence" value="Not Assessed" />
+                <PresenceRow
+                  label="AI-visibility readiness"
+                  value={READINESS_LABEL[ai.level]}
+                  tone={ai.level === "high" ? "pos" : ai.level === "moderate" ? "warn" : "neutral"}
+                />
+              </div>
+              {e?.placesSource ? (
+                <Source>Google Places · measured {fmtDate(e.checkedAt)}</Source>
+              ) : null}
+            </CardBody>
+          </Card>
+        );
+      })()}
 
       {/* 11 · Similar companies */}
       <Card>
