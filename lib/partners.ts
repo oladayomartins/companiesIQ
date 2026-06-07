@@ -14,6 +14,7 @@ export interface PartnerPackage {
   tagline?: string;
   recommended?: boolean;
   features: string[];
+  stripePriceId?: string; // Stripe price (live) — drives Checkout
 }
 
 export interface Partner {
@@ -39,6 +40,7 @@ export const PARTNERS: Record<string, Partner> = {
         name: "Business Launch",
         price: "£500",
         tagline: "Get your business online.",
+        stripePriceId: "price_1TfaeYGSnw83HV1mzlaSxFqT",
         features: ["5-page website", "Mobile responsive", "Contact form", "Analytics", "SSL", "Basic SEO"],
       },
       {
@@ -46,6 +48,7 @@ export const PARTNERS: Record<string, Partner> = {
         price: "£1,000",
         tagline: "Become visible in local search.",
         recommended: true,
+        stripePriceId: "price_1TfafYGSnw83HV1mfRwdcg9o",
         features: [
           "Everything in Business Launch",
           "Google Business Profile setup",
@@ -60,6 +63,7 @@ export const PARTNERS: Record<string, Partner> = {
         name: "AI Visibility",
         price: "£1,500",
         tagline: "Appear across Google and AI search.",
+        stripePriceId: "price_1TfafqGSnw83HV1mjH8LZ16L",
         features: [
           "Everything in Local Growth",
           "AI visibility optimisation",
@@ -78,4 +82,9 @@ export const DEFAULT_PARTNER = "digitwarehouse";
 /** Resolve a partner from the `source` query param (the QR campaign tag). */
 export function getPartner(source?: string | null): Partner {
   return PARTNERS[(source || "").toLowerCase()] || PARTNERS[DEFAULT_PARTNER];
+}
+
+/** Allowlist check — only configured package prices may be checked out. */
+export function isKnownPriceId(id: string): boolean {
+  return Object.values(PARTNERS).some((p) => p.packages.some((pk) => pk.stripePriceId === id));
 }

@@ -322,6 +322,14 @@ export function GrowthReport({
                   <li key={f}>{f}</li>
                 ))}
               </ul>
+              {p.stripePriceId ? (
+                <a
+                  className={"gr-pkg__btn" + (p.recommended ? " gr-pkg__btn--rec" : "")}
+                  href={`/api/checkout?price=${p.stripePriceId}&company=${encodeURIComponent(c.number)}&source=${encodeURIComponent(source ?? partner.id)}`}
+                >
+                  Choose {p.name}
+                </a>
+              ) : null}
             </div>
           ))}
         </div>
