@@ -3,8 +3,9 @@ import { SiteFooter } from "@/components/marketing/Footer";
 import { SOURCES, LIVE_SOURCES, REFERENCE_SOURCES } from "@/lib/sources";
 
 export const metadata = {
-  title: "Sources & methodology · CompaniesIQ",
+  title: "Sources & methodology",
   description: "Every figure in CompaniesIQ is real and sourced. This page lists every data source, what it powers, whether it is pulled live, and its licence.",
+  alternates: { canonical: "/sources" },
 };
 
 export default function SourcesPage() {

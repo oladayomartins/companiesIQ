@@ -1,17 +1,49 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Analytics } from "@/components/Analytics";
+import { JsonLd } from "@/components/JsonLd";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "CompaniesIQ — Know every company",
-  description:
-    "UK business intelligence that turns the public business register into market intelligence you can search, track and trust. 5.3 million live companies, one source of truth.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "CompaniesIQ — Know every UK company",
+    template: "%s · CompaniesIQ",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: "/" },
   icons: { icon: "/logo/ciq-mark.svg" },
   openGraph: {
-    title: "CompaniesIQ — Know every company",
-    description: "UK business intelligence from the public register.",
+    title: "CompaniesIQ — Know every UK company",
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_NAME,
     type: "website",
+    locale: "en_GB",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "CompaniesIQ — Know every UK company",
+    description: SITE_DESCRIPTION,
+  },
+};
+
+const ORG_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+  logo: `${SITE_URL}/logo/ciq-mark.svg`,
+};
+
+const SITE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -28,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <Analytics />
+        <JsonLd data={[ORG_SCHEMA, SITE_SCHEMA]} />
       </body>
     </html>
   );

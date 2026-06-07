@@ -1,0 +1,30 @@
+# CompaniesIQ
+
+> Evidence-based UK business intelligence built from the public register. Every
+> figure is sourced and dated — from Companies House (live), the ONS, and Nomis.
+> Educational and neutral; not financial advice.
+
+CompaniesIQ turns the UK public business register into searchable, trustworthy
+market intelligence: 5.5M+ live companies with industry, regional, survival and
+formation data. Used by investors, analysts, consultants, accountants,
+researchers, agencies and business owners.
+
+## Data sources (all cited in-product)
+- Companies House — company registrations, SIC codes, incorporation dates, status, type, location, officers, filings, charges, PSCs (live, Open Government Licence).
+- ONS — business survival rates, industry growth, business population estimates (reference baselines).
+- Nomis — regional employment, population, economic activity, median pay (live).
+- Google Places — optional web-presence enrichment (website, Google Business Profile, reviews), shown only when a confident match exists, otherwise "Not Assessed".
+
+## Principles
+- Factual and source-backed only. No revenue estimates, AI success predictions, hot/warm/cold or lead scores.
+- Unknown values are shown as "Not Assessed", never assumed.
+
+## Key pages
+- Home: https://companiesiq.co.uk/
+- Pricing: https://companiesiq.co.uk/pricing
+- Sources & methodology: https://companiesiq.co.uk/sources
+- Company report: https://companiesiq.co.uk/app/company/{company_number}
+- Industry intelligence: https://companiesiq.co.uk/app/industries/{sector}
+
+## Contact
+DigitWarehouse — https://digitwarehouse.com

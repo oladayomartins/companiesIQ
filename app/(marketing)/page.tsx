@@ -4,6 +4,12 @@ import { SiteFooter } from "@/components/marketing/Footer";
 import { HeroSearch } from "@/components/marketing/HeroSearch";
 import { fmtNumber } from "@/lib/format";
 import { countCompanies } from "@/lib/companies-house";
+import { SITE_DESCRIPTION } from "@/lib/site";
+
+export const metadata = {
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+};
 
 export const revalidate = 3600;
 
