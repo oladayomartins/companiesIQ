@@ -9,7 +9,7 @@ import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analyti
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import { fmtDate, ageLabel } from "@/lib/format";
 
-function OfficerRow({ p }: { p: Officer }) {
+function OfficerRow({ p, unlocked }: { p: Officer; unlocked: boolean }) {
   const inner = (
     <>
       <CompanyAvatar name={p.name} size="sm" tone={p.kind === "company" ? 0 : 2} />
@@ -19,10 +19,12 @@ function OfficerRow({ p }: { p: Officer }) {
       </div>
       <div className="officer__date mono">{fmtDate(p.appointed)}</div>
       <StatusPill status={p.status === "resigned" ? "dissolved" : "active"} />
-      {p.officerId ? <Icon name="chevronRight" size={15} className="officer__chev" /> : null}
+      {p.officerId && unlocked ? <Icon name="chevronRight" size={15} className="officer__chev" /> : null}
     </>
   );
-  if (p.officerId) {
+  // Director profiles are part of the gated intelligence — only link them when
+  // unlocked, so indexable public reports don't point Googlebot at a login wall.
+  if (p.officerId && unlocked) {
     return (
       <Link className="officer is-link" href={`/app/director/${p.officerId}`} style={{ textDecoration: "none" }}>
         {inner}
@@ -30,6 +32,55 @@ function OfficerRow({ p }: { p: Officer }) {
     );
   }
   return <div className="officer">{inner}</div>;
+}
+
+// Paywall shown in place of the Intelligence tab for logged-out visitors.
+function UnlockGate({ number }: { number: string }) {
+  const locked = [
+    ["barChart", "Competitor analysis", "How you stack up against nearby firms in your SIC code"],
+    ["trendUp", "Opportunity signals", "Growth, hiring and filing signals worth acting on"],
+    ["grid", "Market density", "How crowded your market is, locally and nationally"],
+    ["pin", "Regional intelligence", "Live ONS & Nomis economic context for your area"],
+    ["search", "Keyword signals", "Demand signals derived from your sector"],
+    ["bookmark", "Watchlists, alerts & exports", "Track companies and export the full report"],
+  ] as const;
+  return (
+    <Card variant="raised" className="unlock-gate">
+      <CardBody>
+        <div className="unlock-gate__head">
+          <Badge tone="accent" dot>
+            Full intelligence
+          </Badge>
+          <h2 className="unlock-gate__title">Unlock the full intelligence report</h2>
+          <p className="unlock-gate__sub">
+            You&apos;re viewing the free public profile. Sign in to reveal the deep market, competitor and survival
+            intelligence for this company.
+          </p>
+        </div>
+        <ul className="unlock-gate__list">
+          {locked.map(([icon, title, desc]) => (
+            <li key={title}>
+              <Icon name={icon} size={18} color="var(--accent)" />
+              <div>
+                <div className="unlock-gate__item-title">{title}</div>
+                <div className="unlock-gate__item-desc">{desc}</div>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="unlock-gate__cta">
+          <Link href={`/sign-in?next=/company/${number}`}>
+            <Button variant="primary" iconRight="arrowRight">
+              Sign in to unlock
+            </Button>
+          </Link>
+          <Link href="/pricing">
+            <Button variant="secondary">See plans</Button>
+          </Link>
+        </div>
+      </CardBody>
+    </Card>
+  );
 }
 
 export function CompanyProfile({
@@ -42,6 +93,7 @@ export function CompanyProfile({
   similar = [],
   enrichment = null,
   live,
+  unlocked = false,
 }: {
   company: Company;
   officers: Officer[];
@@ -52,10 +104,13 @@ export function CompanyProfile({
   similar?: SimilarCompany[];
   enrichment?: CompanyEnrichment | null;
   live: boolean;
+  unlocked?: boolean;
 }) {
   const c = company;
   const router = useRouter();
-  const [tab, setTab] = useState("intelligence");
+  // Logged-out visitors land on the free public profile (Overview first);
+  // unlocked users open straight into the Intelligence report.
+  const [tab, setTab] = useState(unlocked ? "intelligence" : "overview");
 
   const tags = c.classifications.slice(0, 3).map((cl) => cl.category);
   const addressParts = c.address
@@ -64,9 +119,11 @@ export function CompanyProfile({
 
   return (
     <div className="screen profile">
-      <button className="back" onClick={() => router.push("/app/companies")}>
-        <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> Back to results
-      </button>
+      {unlocked ? (
+        <button className="back" onClick={() => router.push("/app/companies")}>
+          <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> Back to results
+        </button>
+      ) : null}
 
       <div className="profile-head">
         <CompanyAvatar name={c.name} size="xl" />
@@ -98,15 +155,29 @@ export function CompanyProfile({
           </div>
         </div>
         <div className="profile-actions">
-          <Button variant="secondary" iconLeft="bookmark">
-            Watch
-          </Button>
-          <Button variant="secondary" iconLeft="trendUp" onClick={() => router.push(`/company/${c.number}/growth-report`)}>
-            Founder view
-          </Button>
-          <Button variant="primary" iconLeft="download">
-            Export report
-          </Button>
+          {unlocked ? (
+            <>
+              <Button variant="secondary" iconLeft="bookmark">
+                Watch
+              </Button>
+              <Button
+                variant="secondary"
+                iconLeft="trendUp"
+                onClick={() => router.push(`/visibility-review/${c.number}`)}
+              >
+                Founder view
+              </Button>
+              <Button variant="primary" iconLeft="download">
+                Export report
+              </Button>
+            </>
+          ) : (
+            <Link href={`/sign-in?next=/company/${c.number}`}>
+              <Button variant="primary" iconRight="arrowRight">
+                Unlock full report
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -131,7 +202,13 @@ export function CompanyProfile({
         />
       </div>
 
-      {tab === "intelligence" ? <IntelligenceReport report={report} similar={similar} enrichment={enrichment} /> : null}
+      {tab === "intelligence" ? (
+        unlocked ? (
+          <IntelligenceReport report={report} similar={similar} enrichment={enrichment} />
+        ) : (
+          <UnlockGate number={c.number} />
+        )
+      ) : null}
 
       {tab === "overview" ? (
         <div className="profile-grid">
@@ -198,7 +275,7 @@ export function CompanyProfile({
             <CardHeader subtitle="Officers" title="Directors & secretaries" action={<Badge tone="neutral">{officers.length}</Badge>} />
             <CardBody>
               <div className="officer-list">
-                {officers.length ? officers.map((p, i) => <OfficerRow key={i} p={p} />) : <span className="muted">No officers on record.</span>}
+                {officers.length ? officers.map((p, i) => <OfficerRow key={i} p={p} unlocked={unlocked} />) : <span className="muted">No officers on record.</span>}
               </div>
             </CardBody>
           </Card>

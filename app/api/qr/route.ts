@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const format = sp.get("format") || "svg";
   if (!number) return NextResponse.json({ error: "number required" }, { status: 400 });
 
-  const target = `${req.nextUrl.origin}/company/${encodeURIComponent(number)}/growth-report?source=${encodeURIComponent(source)}`;
+  const target = `${req.nextUrl.origin}/visibility-review/${encodeURIComponent(number)}?source=${encodeURIComponent(source)}`;
   const opts = { margin: 1, errorCorrectionLevel: "M" as const };
 
   try {

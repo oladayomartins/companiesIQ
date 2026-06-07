@@ -8,7 +8,7 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-34HW7P1KJD";
 
 // Best-practice, intent-led tracking: send a page_view ONLY for these routes.
 // Deliberately excluded — detail pages that carry an entity identifier
-// (/app/company/[number], /app/director/[id], /app/industries/[sector]):
+// (/company/[number], /app/director/[id], /app/industries/[sector]):
 //   • no company numbers / director IDs leak into analytics
 //   • no high-cardinality URL noise
 //   • we measure acquisition + feature engagement, not which records a user views

@@ -1,11 +1,14 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button, Input, Badge } from "@/components/ds";
 import { getSupabaseBrowser, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export function SignIn() {
   const configured = isSupabaseConfigured();
+  const params = useSearchParams();
+  const next = params.get("next") || "/app";
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +23,9 @@ export function SignIn() {
     if (!supabase) return;
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      // Carry the intended destination through the magic link so the callback
+      // returns the user to the page they were trying to reach.
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
     setBusy(false);
     if (error) setError(error.message);
@@ -47,7 +52,7 @@ export function SignIn() {
               Supabase isn&apos;t configured, so sign-in is disabled. You can still explore the full product with the
               live register and sample data.
             </p>
-            <Link href="/app">
+            <Link href={next}>
               <Button variant="primary" block iconRight="arrowRight">
                 Enter the app
               </Button>
@@ -71,7 +76,7 @@ export function SignIn() {
         )}
 
         <p className="auth-foot">
-          New to CompaniesIQ? <Link href="/pricing">See plans</Link> · <Link href="/app">Browse free</Link>
+          New to CompaniesIQ? <Link href="/pricing">See plans</Link> · <Link href="/company/00502851">View a sample report</Link>
         </p>
       </div>
     </main>

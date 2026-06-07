@@ -120,7 +120,7 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
                   recent.map((c) => (
                     <tr key={c.number}>
                       <td>
-                        <Link href={`/app/company/${c.number}`} className="cell-co" style={{ textDecoration: "none" }}>
+                        <Link href={`/company/${c.number}`} className="cell-co" style={{ textDecoration: "none" }}>
                           <CompanyAvatar name={c.name} size="sm" />
                           <div>
                             <div className="cell-co__name">{c.name}</div>

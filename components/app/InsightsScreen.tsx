@@ -118,7 +118,7 @@ export function InsightsScreen() {
                 <tbody>
                   {data.results.length ? (
                     data.results.map((c) => (
-                      <tr key={c.number} onClick={() => router.push(`/app/company/${c.number}`)}>
+                      <tr key={c.number} onClick={() => router.push(`/company/${c.number}`)}>
                         <td>
                           <div className="cell-co">
                             <CompanyAvatar name={c.name} size="md" />

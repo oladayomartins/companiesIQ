@@ -19,8 +19,11 @@
 .side-item--active .side-item__count { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
 .side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
 .side-user { display: flex; align-items: center; gap: 10px; padding: 8px; border-top: 1px solid var(--border-hair); }
-.side-user__name { font-family: var(--font-sans); font-weight: 600; font-size: 13px; color: var(--text-strong); }
-.side-user__plan { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); letter-spacing: 0.03em; }
+.side-user__meta { flex: 1; min-width: 0; }
+.side-user__name { font-family: var(--font-sans); font-weight: 600; font-size: 13px; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-user__plan { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); letter-spacing: 0.03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-user__signin { display: inline-flex; align-items: center; color: var(--text-muted); }
+.side-user__signin:hover { color: var(--accent); }
 
 /* ---------- Main ---------- */
 .app-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }

@@ -88,7 +88,7 @@ export default async function DirectorPage({ params }: { params: Promise<{ id: s
                 {profile.appointments.map((a, i) => (
                   <tr key={i}>
                     <td>
-                      <Link href={`/app/company/${a.companyNumber}`} className="cell-co" style={{ textDecoration: "none" }}>
+                      <Link href={`/company/${a.companyNumber}`} className="cell-co" style={{ textDecoration: "none" }}>
                         <CompanyAvatar name={a.companyName} size="sm" />
                         <div>
                           <div className="cell-co__name">{a.companyName}</div>

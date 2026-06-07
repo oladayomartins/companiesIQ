@@ -13,5 +13,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${base}/?verify=invalid`);
   }
   const src = res.source ? `&source=${encodeURIComponent(res.source)}` : "";
-  return NextResponse.redirect(`${base}/company/${res.companyNumber}/growth-report?verified=1${src}`);
+  return NextResponse.redirect(`${base}/visibility-review/${res.companyNumber}?verified=1${src}`);
 }

@@ -101,7 +101,7 @@ export function CampaignsScreen({ stats }: { stats: CampaignStats | null }) {
           <CardHeader subtitle="For printed letters" title="QR code generator" />
           <CardBody>
             <p className="report__disclaimer" style={{ padding: "0 0 12px" }}>
-              Each QR points to <span className="mono">/company/&lt;number&gt;/growth-report?source=&lt;source&gt;</span>.
+              Each QR points to <span className="mono">/visibility-review/&lt;number&gt;?source=&lt;source&gt;</span>.
             </p>
             <div className="filter-group" style={{ marginBottom: 12 }}>
               <div className="filter-group__head">Company numbers (one per line or comma-separated)</div>

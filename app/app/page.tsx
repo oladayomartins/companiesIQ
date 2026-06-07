@@ -199,7 +199,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     recent.map((c) => (
                       <tr key={c.number}>
                         <td>
-                          <Link href={`/app/company/${c.number}`} className="cell-co" style={{ textDecoration: "none" }}>
+                          <Link href={`/company/${c.number}`} className="cell-co" style={{ textDecoration: "none" }}>
                             <div>
                               <div className="cell-co__name">{c.name}</div>
                               <div className="cell-co__no">

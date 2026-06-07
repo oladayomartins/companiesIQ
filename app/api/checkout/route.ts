@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const stripe = new Stripe(key);
-    const back = `${origin}/company/${encodeURIComponent(company)}/growth-report?source=${encodeURIComponent(source)}`;
+    const back = `${origin}/visibility-review/${encodeURIComponent(company)}?source=${encodeURIComponent(source)}`;
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [{ price, quantity: 1 }],

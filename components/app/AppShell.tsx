@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { Icon, IconButton, CompanyAvatar, type IconName } from "@/components/ds";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
 
 const NAV: { id: string; label: string; icon: IconName; href: string; count?: number }[] = [
   { id: "dashboard", label: "Dashboard", icon: "grid", href: "/app" },
@@ -44,7 +45,22 @@ function TopSearch() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+  // Resolve the signed-in user for the sidebar footer (null in dev when
+  // Supabase isn't configured, or for the brief moment before it loads).
+  useEffect(() => {
+    const sb = getSupabaseBrowser();
+    if (!sb) return;
+    sb.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+  }, []);
+  async function signOut() {
+    const sb = getSupabaseBrowser();
+    if (sb) await sb.auth.signOut();
+    router.push("/sign-in");
+    router.refresh();
+  }
   // Close the mobile drawer whenever the route changes.
   useEffect(() => {
     setMenuOpen(false);
@@ -87,11 +103,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="side-item__label">Settings</span>
           </Link>
           <div className="side-user">
-            <CompanyAvatar name="CIQ" size="sm" tone={0} />
+            <CompanyAvatar name={email ? email[0].toUpperCase() : "CIQ"} size="sm" tone={0} />
             <div className="side-user__meta">
-              <div className="side-user__name">Guest</div>
-              <div className="side-user__plan">Free · sign in to save</div>
+              <div className="side-user__name">{email ? email.split("@")[0] : "Guest"}</div>
+              <div className="side-user__plan">{email ?? "Not signed in"}</div>
             </div>
+            {email ? (
+              <IconButton icon="external" label="Sign out" size="sm" onClick={signOut} />
+            ) : (
+              <Link href="/sign-in" className="side-user__signin">
+                <Icon name="arrowRight" size={16} />
+              </Link>
+            )}
           </div>
         </div>
       </aside>

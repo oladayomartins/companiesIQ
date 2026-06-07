@@ -297,7 +297,7 @@ export function IntelligenceReport({ report, similar = [], enrichment = null }: 
           {similar.length ? (
             <div className="sim-list">
               {similar.map((s) => (
-                <Link key={s.number} href={`/app/company/${s.number}`} className="sim-row">
+                <Link key={s.number} href={`/company/${s.number}`} className="sim-row">
                   <div className="sim-row__main">
                     <div className="sim-row__name">{s.name}</div>
                     <div className="sim-row__meta mono">

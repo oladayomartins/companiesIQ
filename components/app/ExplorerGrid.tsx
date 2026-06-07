@@ -98,7 +98,7 @@ export function ExplorerGrid({ rows }: { rows: EnrichedResult[] }) {
         domLayout="autoHeight"
         suppressCellFocus
         defaultColDef={{ resizable: true, sortable: true, suppressMovable: false, cellStyle: { display: "flex", alignItems: "center", lineHeight: "normal" } }}
-        onRowClicked={(e) => e.data && router.push(`/app/company/${e.data.number}`)}
+        onRowClicked={(e) => e.data && router.push(`/company/${e.data.number}`)}
         rowStyle={{ cursor: "pointer" }}
       />
     </div>

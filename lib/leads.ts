@@ -41,7 +41,7 @@ async function sendConfirmation(lead: LeadInput, token: string, baseUrl: string)
   const key = process.env.RESEND_API_KEY;
   const from = process.env.ALERTS_FROM_EMAIL;
   const verifyUrl = `${baseUrl}/api/leads/verify?token=${token}`;
-  const reportUrl = `${baseUrl}/company/${lead.companyNumber}/growth-report${lead.source ? `?source=${encodeURIComponent(lead.source)}` : ""}`;
+  const reportUrl = `${baseUrl}/visibility-review/${lead.companyNumber}${lead.source ? `?source=${encodeURIComponent(lead.source)}` : ""}`;
   if (!key || !from) {
     console.log(`[lead] ${lead.email} for ${lead.companyNumber} — confirmation logged (set RESEND_API_KEY + ALERTS_FROM_EMAIL to send)`);
     return false;

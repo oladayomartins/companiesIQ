@@ -23,7 +23,7 @@ async function liveActiveCount(): Promise<number | null> {
 
 function PreviewRow({ name, no, status, sic, rev }: { name: string; no: string; status: string; sic: string; rev: string }) {
   return (
-    <Link href={`/app/company/${no}`} className="pv-row" style={{ textDecoration: "none" }}>
+    <Link href={`/company/${no}`} className="pv-row" style={{ textDecoration: "none" }}>
       <div className="pv-co">
         <CompanyAvatar name={name} size="sm" />
         <div>

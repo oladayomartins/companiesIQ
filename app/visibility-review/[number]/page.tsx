@@ -1,8 +1,9 @@
-// Founder Growth Report — the DigitWarehouse QR funnel.
-// PUBLIC, standalone (no app chrome): cold founders who scanned a letter aren't
-// logged in. Same data engine as the standard report (/app/company/[number]),
-// different, conversion-focused presentation. ?source=<partner> tags the QR
-// campaign; ?verified=1 marks a confirmed lead.
+// DigitWarehouse founder funnel — the QR/letter destination.
+// PRIVATE + noindex,nofollow: this is a conversion funnel, NOT SEO content.
+// Standalone (no app chrome): cold founders who scanned a letter aren't logged
+// in. Same data engine as the public report (/company/[number]), different,
+// conversion-focused presentation. ?source=<partner> tags the QR campaign;
+// ?verified=1 marks a confirmed lead; ?purchase=success after checkout.
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCompanyBundle } from "@/lib/data";
@@ -21,12 +22,12 @@ export async function generateMetadata({ params }: { params: Promise<{ number: s
   const { number } = await params;
   const bundle = await getCompanyBundle(number);
   return {
-    title: bundle ? `${bundle.company.name} — Growth Report` : "Growth Report",
-    robots: { index: false }, // funnel pages aren't for search indexing
+    title: bundle ? `${bundle.company.name} — Visibility Review` : "Visibility Review",
+    robots: { index: false, follow: false }, // conversion funnel — never indexed
   };
 }
 
-export default async function GrowthReportPage({
+export default async function VisibilityReviewPage({
   params,
   searchParams,
 }: {
