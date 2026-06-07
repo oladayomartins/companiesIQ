@@ -11,6 +11,7 @@ import { getSimilarCompanies } from "@/lib/similar";
 import { getRegionLive } from "@/lib/nomis";
 import { enrichCompany, type CompanyEnrichment } from "@/lib/enrichment";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { resolveReportAccess } from "@/lib/access";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
 import { JsonLd } from "@/components/JsonLd";
@@ -43,7 +44,13 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   if (!bundle) notFound();
 
   const c = bundle.company;
-  const unlocked = !!(await getCurrentUser());
+  const user = await getCurrentUser();
+  const access = await resolveReportAccess(user, c.number);
+  const unlocked = access.unlocked;
+  // Which paywall to show when locked: cold visitors get a "create free account"
+  // gate; free users who've spent their monthly report get an "upgrade" gate.
+  const gate = access.state === "free_quota_exceeded" ? "quota" : "anonymous";
+  const signedIn = !!user;
 
   const [economicLive, similar, enrichment] = await Promise.all([
     getRegionLive(c.geo?.region),
@@ -84,7 +91,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   return (
     <>
       <JsonLd data={[orgSchema, breadcrumb]} />
-      <PublicReportChrome unlocked={unlocked}>
+      <PublicReportChrome unlocked={unlocked} signedIn={signedIn}>
         <CompanyProfile
           company={c}
           officers={bundle.officers}
@@ -96,6 +103,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           enrichment={enrichment}
           live={bundle.live}
           unlocked={unlocked}
+          gate={gate}
         />
       </PublicReportChrome>
     </>

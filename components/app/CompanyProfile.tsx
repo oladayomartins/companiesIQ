@@ -34,8 +34,10 @@ function OfficerRow({ p, unlocked }: { p: Officer; unlocked: boolean }) {
   return <div className="officer">{inner}</div>;
 }
 
-// Paywall shown in place of the Intelligence tab for logged-out visitors.
-function UnlockGate({ number }: { number: string }) {
+// Paywall shown in place of the Intelligence tab when the report is locked.
+// "anonymous" → cold visitor (create a free account, 1 free report/mo);
+// "quota"     → free user who's spent this month's report (upgrade for unlimited).
+function UnlockGate({ number, variant }: { number: string; variant: "anonymous" | "quota" }) {
   const locked = [
     ["barChart", "Competitor analysis", "How you stack up against nearby firms in your SIC code"],
     ["trendUp", "Opportunity signals", "Growth, hiring and filing signals worth acting on"],
@@ -44,6 +46,7 @@ function UnlockGate({ number }: { number: string }) {
     ["search", "Keyword signals", "Demand signals derived from your sector"],
     ["bookmark", "Watchlists, alerts & exports", "Track companies and export the full report"],
   ] as const;
+  const quota = variant === "quota";
   return (
     <Card variant="raised" className="unlock-gate">
       <CardBody>
@@ -51,10 +54,13 @@ function UnlockGate({ number }: { number: string }) {
           <Badge tone="accent" dot>
             Full intelligence
           </Badge>
-          <h2 className="unlock-gate__title">Unlock the full intelligence report</h2>
+          <h2 className="unlock-gate__title">
+            {quota ? "You've used your free report this month" : "Unlock the full intelligence report"}
+          </h2>
           <p className="unlock-gate__sub">
-            You&apos;re viewing the free public profile. Sign in to reveal the deep market, competitor and survival
-            intelligence for this company.
+            {quota
+              ? "Free accounts include one full intelligence report each month. Upgrade for unlimited reports, exports and alerts across every UK company."
+              : "You're viewing the free public profile. Create a free account to read one full intelligence report a month — or upgrade for unlimited access."}
           </p>
         </div>
         <ul className="unlock-gate__list">
@@ -69,11 +75,19 @@ function UnlockGate({ number }: { number: string }) {
           ))}
         </ul>
         <div className="unlock-gate__cta">
-          <Link href={`/sign-in?next=/company/${number}`}>
-            <Button variant="primary" iconRight="arrowRight">
-              Sign in to unlock
-            </Button>
-          </Link>
+          {quota ? (
+            <Link href="/pricing">
+              <Button variant="primary" iconRight="arrowRight">
+                Upgrade for unlimited
+              </Button>
+            </Link>
+          ) : (
+            <Link href={`/sign-in?next=/company/${number}`}>
+              <Button variant="primary" iconRight="arrowRight">
+                Create a free account
+              </Button>
+            </Link>
+          )}
           <Link href="/pricing">
             <Button variant="secondary">See plans</Button>
           </Link>
@@ -94,6 +108,7 @@ export function CompanyProfile({
   enrichment = null,
   live,
   unlocked = false,
+  gate = "anonymous",
 }: {
   company: Company;
   officers: Officer[];
@@ -105,6 +120,7 @@ export function CompanyProfile({
   enrichment?: CompanyEnrichment | null;
   live: boolean;
   unlocked?: boolean;
+  gate?: "anonymous" | "quota";
 }) {
   const c = company;
   const router = useRouter();
@@ -171,6 +187,12 @@ export function CompanyProfile({
                 Export report
               </Button>
             </>
+          ) : gate === "quota" ? (
+            <Link href="/pricing">
+              <Button variant="primary" iconRight="arrowRight">
+                Upgrade for unlimited
+              </Button>
+            </Link>
           ) : (
             <Link href={`/sign-in?next=/company/${c.number}`}>
               <Button variant="primary" iconRight="arrowRight">
@@ -206,7 +228,7 @@ export function CompanyProfile({
         unlocked ? (
           <IntelligenceReport report={report} similar={similar} enrichment={enrichment} />
         ) : (
-          <UnlockGate number={c.number} />
+          <UnlockGate number={c.number} variant={gate} />
         )
       ) : null}
 

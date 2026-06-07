@@ -4,7 +4,15 @@ import { Button } from "@/components/ds";
 // Slim, dark chrome for the PUBLIC company report (/company/[number]).
 // These pages live outside the /app shell — cold visitors and Googlebot land
 // here — so they get their own header (sign-in / dashboard) and a light footer.
-export function PublicReportChrome({ unlocked, children }: { unlocked: boolean; children: React.ReactNode }) {
+export function PublicReportChrome({
+  unlocked,
+  signedIn = false,
+  children,
+}: {
+  unlocked: boolean;
+  signedIn?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div className="ciq-dark report-public">
       <header className="rep-head">
@@ -22,6 +30,17 @@ export function PublicReportChrome({ unlocked, children }: { unlocked: boolean; 
                 Open dashboard
               </Button>
             </Link>
+          ) : signedIn ? (
+            <>
+              <Link className="rep-head__link" href="/app">
+                Dashboard
+              </Link>
+              <Link href="/pricing">
+                <Button variant="primary" iconRight="arrowRight">
+                  Upgrade
+                </Button>
+              </Link>
+            </>
           ) : (
             <>
               <Link className="rep-head__link" href="/sign-in">

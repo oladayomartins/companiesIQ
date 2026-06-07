@@ -198,3 +198,40 @@ create table if not exists public.funnel_events (
 );
 create index if not exists funnel_events_event_idx on public.funnel_events (event);
 alter table public.funnel_events enable row level security;
+
+-- ------------------------------------------------------------
+-- Subscriptions + report quota (Public → Free Account → Paid)
+-- ------------------------------------------------------------
+-- Per-user subscription state, mirrored from Stripe by the webhook (service
+-- role). Drives the report unlock + capability gates.
+create table if not exists public.subscriptions (
+  user_id                uuid primary key references auth.users(id) on delete cascade,
+  plan                   text not null default 'free',     -- free | analyst | team | enterprise
+  status                 text not null default 'inactive',  -- active | trialing | past_due | canceled | inactive
+  stripe_customer_id     text,
+  stripe_subscription_id text,
+  current_period_end     timestamptz,
+  updated_at             timestamptz not null default now()
+);
+alter table public.subscriptions enable row level security;
+drop policy if exists "own subscription read" on public.subscriptions;
+create policy "own subscription read" on public.subscriptions
+  for select using (auth.uid() = user_id);
+-- Writes happen only via the service role (Stripe webhook), which bypasses RLS.
+
+-- Meters how many DISTINCT companies a free account has opened a full report
+-- for in a given calendar month (UTC). Re-opening the same company that month
+-- does not consume additional quota.
+create table if not exists public.report_unlocks (
+  user_id        uuid not null references auth.users(id) on delete cascade,
+  company_number text not null,
+  month          text not null,                 -- 'YYYY-MM' (UTC)
+  unlocked_at    timestamptz not null default now(),
+  primary key (user_id, company_number, month)
+);
+alter table public.report_unlocks enable row level security;
+drop policy if exists "own unlocks read" on public.report_unlocks;
+create policy "own unlocks read" on public.report_unlocks
+  for select using (auth.uid() = user_id);
+create index if not exists report_unlocks_user_month_idx
+  on public.report_unlocks (user_id, month);
