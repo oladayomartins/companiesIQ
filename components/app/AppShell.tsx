@@ -11,6 +11,7 @@ const NAV: { id: string; label: string; icon: IconName; href: string; count?: nu
   { id: "industries", label: "Industries", icon: "building", href: "/app/industries" },
   { id: "alerts", label: "Alerts", icon: "bell", href: "/app/alerts" },
   { id: "watchlist", label: "Watchlists", icon: "bookmark", href: "/app/watchlists" },
+  { id: "campaigns", label: "Campaigns", icon: "briefcase", href: "/app/campaigns" },
 ];
 
 function isActive(pathname: string, href: string): boolean {

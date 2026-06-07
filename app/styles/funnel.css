@@ -89,6 +89,12 @@
 .gr-ex__name { font-weight: 600; color: var(--text-strong); font-size: 14px; }
 .gr-ex__signals { display: flex; gap: 6px; flex-wrap: wrap; }
 .gr-chip { font-family: var(--font-mono); font-size: 11px; color: var(--pos); background: var(--pos-bg); border-radius: var(--radius-pill); padding: 3px 9px; }
+
+/* Locked (gated) competitor examples */
+.gr-locked { position: relative; }
+.gr-locked__blur { display: flex; flex-direction: column; gap: 10px; filter: blur(5px); opacity: 0.55; pointer-events: none; user-select: none; }
+.gr-locked__cta { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 700; font-size: 14px; color: var(--accent); text-decoration: none; background: color-mix(in srgb, var(--surface-card) 55%, transparent); border-radius: var(--radius-md); }
+.gr-locked__cta:hover { color: var(--accent-hover); }
 .gr-callout { margin-top: 16px; background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); border-radius: var(--radius-md); padding: 14px 16px; font-size: 14px; line-height: 1.55; color: var(--text-body); }
 
 /* Biggest opportunity + roadmap checklist */

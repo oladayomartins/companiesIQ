@@ -92,6 +92,8 @@ export function GrowthReport({
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  // Competitor examples unlock once the founder submits the form or has verified.
+  const unlocked = verified || status === "done";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -180,20 +182,40 @@ export function GrowthReport({
           {comp!.examples.length ? (
             <>
               <h3 className="gr-h3">Visible businesses in your area</h3>
-              <div className="gr-examples">
-                {comp!.examples.map((e, i) => (
-                  <div className="gr-ex" key={i}>
-                    <div className="gr-ex__name">{e.name}</div>
-                    <div className="gr-ex__signals">
-                      {e.website ? <span className="gr-chip">✓ Website</span> : null}
-                      {e.gbp ? <span className="gr-chip">✓ Profile</span> : null}
-                      {(e.reviewCount ?? 0) > 0 ? (
-                        <span className="gr-chip">✓ {fmtNumber(e.reviewCount!)} reviews{e.reviewRating ? ` · ${e.reviewRating}★` : ""}</span>
-                      ) : null}
+              {unlocked ? (
+                <div className="gr-examples">
+                  {comp!.examples.map((e, i) => (
+                    <div className="gr-ex" key={i}>
+                      <div className="gr-ex__name">{e.name}</div>
+                      <div className="gr-ex__signals">
+                        {e.website ? <span className="gr-chip">✓ Website</span> : null}
+                        {e.gbp ? <span className="gr-chip">✓ Profile</span> : null}
+                        {(e.reviewCount ?? 0) > 0 ? (
+                          <span className="gr-chip">✓ {fmtNumber(e.reviewCount!)} reviews{e.reviewRating ? ` · ${e.reviewRating}★` : ""}</span>
+                        ) : null}
+                      </div>
                     </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="gr-locked">
+                  <div className="gr-locked__blur" aria-hidden>
+                    {comp!.examples.map((_, i) => (
+                      <div className="gr-ex" key={i}>
+                        <div className="gr-ex__name">●●●●●● Ltd</div>
+                        <div className="gr-ex__signals">
+                          <span className="gr-chip">✓ Website</span>
+                          <span className="gr-chip">✓ Profile</span>
+                          <span className="gr-chip">✓ ●● reviews</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                  <a className="gr-locked__cta" href="#report">
+                    🔒 See the {comp!.examples.length} businesses ahead of you — unlock below
+                  </a>
+                </div>
+              )}
             </>
           ) : null}
           <p className="gr-source">Measured across {comp!.sampleSize} similar {c.region} businesses · Google Places</p>

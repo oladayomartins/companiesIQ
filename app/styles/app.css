@@ -226,6 +226,14 @@
 .app-loading, .app-error { padding: 60px 32px; font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
 .app-error { color: var(--neg); }
 
+/* ---- Campaigns: QR generator ---- */
+.qr-input { width: 100%; font-family: var(--font-sans); font-size: 13px; color: var(--text-strong); background: var(--surface-sunken); border: 1px solid var(--border-hair); border-radius: var(--radius-md); padding: 8px 11px; }
+.qr-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--focus-ring); }
+.qr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 16px; }
+.qr-card { text-align: center; border: 1px solid var(--border-hair); border-radius: var(--radius-md); padding: 12px; background: var(--surface-card); display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.qr-card img { background: #fff; border-radius: 6px; padding: 6px; } /* QR modules are dark — needs a white field on the ink surface */
+.qr-card__no { font-size: 11px; color: var(--text-muted); }
+
 /* ============================================================
    Dashboard — three-up ranked lists
    ============================================================ */
