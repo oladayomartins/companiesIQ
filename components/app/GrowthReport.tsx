@@ -1,10 +1,16 @@
 "use client";
 import { useState } from "react";
-import { fmtNumber, fmtDelta } from "@/lib/format";
+import { Icon } from "@/components/ds";
+import { fmtNumber } from "@/lib/format";
 import type { Partner } from "@/lib/partners";
 
-// Plain, serializable props from the server page. All market figures are
-// CompaniesIQ data (CH/ONS/Nomis); presence figures are measured via Places.
+interface CompetitorExample {
+  name: string;
+  website: boolean;
+  gbp: boolean;
+  reviewCount: number | null;
+  reviewRating: number | null;
+}
 interface Competitors {
   total: number;
   sampleSize: number;
@@ -12,6 +18,8 @@ interface Competitors {
   pctGbp: number | null;
   pctReviews: number | null;
   avgRating: number | null;
+  avgSignals: number | null;
+  examples: CompetitorExample[];
 }
 interface Subject {
   website: boolean;
@@ -34,14 +42,29 @@ export interface GrowthData {
 const ROADMAP = [
   ["Website", "A fast, mobile-friendly site customers and search engines can read."],
   ["Google Business Profile", "The listing that puts you on the map and in the local pack."],
-  ["Local citations", "Consistent name, address and phone across directories."],
-  ["Reviews", "Social proof that lifts both ranking and conversion."],
-  ["Service pages", "Pages that match what people actually search for."],
+  ["Customer reviews", "Social proof that lifts both ranking and conversion."],
+  ["Local SEO & citations", "Consistent details across directories so you rank locally."],
   ["AI visibility", "Structured data so assistants can find and recommend you."],
 ];
 
-function pctText(n: number | null): string {
-  return n == null ? "—" : `${n}%`;
+// Subject signal state — honest: "Not detected" when we couldn't confidently
+// find the business at all, "Not found" when we found it but the signal is absent.
+function subjStatus(present: boolean, measured: boolean): { ok: boolean; text: string } {
+  if (present) return { ok: true, text: "Detected" };
+  return { ok: false, text: measured ? "Not found" : "Not detected" };
+}
+
+function SignalRow({ label, present, measured }: { label: string; present: boolean; measured: boolean }) {
+  const s = subjStatus(present, measured);
+  return (
+    <div className="gr-sig">
+      <span className={"gr-sig__icon " + (s.ok ? "gr-sig__icon--ok" : "gr-sig__icon--no")}>
+        <Icon name={s.ok ? "check" : "x"} size={13} />
+      </span>
+      <span className="gr-sig__label">{label}</span>
+      <span className={"gr-sig__status " + (s.ok ? "is-ok" : "")}>{s.text}</span>
+    </div>
+  );
 }
 
 export function GrowthReport({
@@ -58,6 +81,13 @@ export function GrowthReport({
   const c = data;
   const comp = c.competitors;
   const enough = !!comp && comp.sampleSize >= 3;
+  const subj = c.subject;
+  const measured = !!subj?.measured;
+  const hasWeb = !!subj?.website;
+  const hasGbp = !!subj?.gbp;
+  const hasRev = (subj?.reviewCount ?? 0) > 0;
+  const found = (hasWeb ? 1 : 0) + (hasGbp ? 1 : 0) + (hasRev ? 1 : 0);
+  const behind = enough && comp!.avgSignals != null && found < comp!.avgSignals;
 
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
@@ -86,137 +116,177 @@ export function GrowthReport({
     }
   }
 
-  const subjectVal = (has: boolean, measured: boolean) => (!measured ? "Not assessed" : has ? "Yes" : "No");
-
   return (
     <main className="gr">
       {verified ? <div className="gr-verified">✓ Email confirmed — your full report is unlocked.</div> : null}
 
-      {/* 1 · Welcome */}
+      {/* Hero */}
       <header className="gr-hero">
         <div className="gr-eyebrow">{partner.name} · Growth Report</div>
         <h1 className="gr-title">{c.name}</h1>
         <p className="gr-sub">
           {c.sector} · {c.region}
         </p>
-        <p className="gr-lead">A snapshot of how your business shows up online — and how you compare in {c.region}.</p>
       </header>
 
-      {/* 2 · Local Competition Snapshot (the hook) */}
-      <section className="gr-section">
-        <h2 className="gr-h2">Your local market</h2>
-        <div className="gr-stats">
-          <div className="gr-stat">
-            <div className="gr-stat__n">{fmtNumber(c.local.inSameIndustry)}</div>
-            <div className="gr-stat__l">Similar businesses in {c.region}</div>
+      {/* 1 · Visibility snapshot — the founder's own status, up top */}
+      <section className="gr-section gr-section--accent">
+        <h2 className="gr-h2">Your visibility snapshot</h2>
+        <div className="gr-snapshot">
+          <div className="gr-snap">
+            <div className="gr-snap__h">{c.name}</div>
+            <SignalRow label="Website" present={hasWeb} measured={measured} />
+            <SignalRow label="Google Business Profile" present={hasGbp} measured={measured} />
+            <SignalRow label="Customer reviews" present={hasRev} measured={measured} />
+            <div className="gr-snap__count">{found} of 3 visibility signals found</div>
           </div>
-          <div className="gr-stat">
-            <div className="gr-stat__n">{fmtNumber(c.local.newEntrants)}</div>
-            <div className="gr-stat__l">New entrants (last 12 months)</div>
-          </div>
-          <div className="gr-stat">
-            <div className="gr-stat__n">{fmtDelta(c.industry.annualGrowth)}</div>
-            <div className="gr-stat__l">Industry growth / year</div>
-          </div>
-          <div className="gr-stat">
-            <div className="gr-stat__n">{c.local.density}</div>
-            <div className="gr-stat__l">Market density</div>
-          </div>
+          {enough ? (
+            <div className="gr-snap">
+              <div className="gr-snap__h">Similar businesses in {c.region}</div>
+              <div className="gr-sig">
+                <span className="gr-sig__label">Website</span>
+                <span className="gr-sig__pct">{comp!.pctWebsite}%</span>
+              </div>
+              <div className="gr-sig">
+                <span className="gr-sig__label">Google Business Profile</span>
+                <span className="gr-sig__pct">{comp!.pctGbp}%</span>
+              </div>
+              <div className="gr-sig">
+                <span className="gr-sig__label">Customer reviews</span>
+                <span className="gr-sig__pct">{comp!.pctReviews}%</span>
+              </div>
+              <div className="gr-snap__count">{comp!.avgSignals} of 3 on average</div>
+            </div>
+          ) : null}
         </div>
-        <p className="gr-source">Source · Companies House &amp; ONS</p>
+        <p className="gr-verdict">
+          {enough
+            ? behind
+              ? `We couldn't find an established online presence for ${c.name}, while similar businesses in ${c.region} average ${comp!.avgSignals} of 3 visibility signals. Customers searching locally may find them before they find you.`
+              : `${c.name} is keeping pace with similar businesses in ${c.region} on the signals we can measure.`
+            : `Here's how discoverable ${c.name} looks online today, and the steps to improve it.`}
+        </p>
       </section>
 
-      {/* 3 · What competitors are doing */}
-      <section className="gr-section gr-section--accent">
-        <h2 className="gr-h2">What your competitors are doing</h2>
-        {enough ? (
-          <>
-            <div className="gr-bars">
-              <Bar label="Have a website" pct={comp!.pctWebsite} />
-              <Bar label="Have a Google Business Profile" pct={comp!.pctGbp} />
-              <Bar label="Have customer reviews" pct={comp!.pctReviews} />
+      {/* 2 · How competitors compare + real examples */}
+      {enough ? (
+        <section className="gr-section">
+          <h2 className="gr-h2">Businesses like yours are already visible</h2>
+          <div className="gr-bars">
+            <Bar label="Have a website" pct={comp!.pctWebsite} />
+            <Bar label="Have a Google Business Profile" pct={comp!.pctGbp} />
+            <Bar label="Have customer reviews" pct={comp!.pctReviews} />
+          </div>
+          {comp!.examples.length ? (
+            <>
+              <h3 className="gr-h3">Visible businesses in your area</h3>
+              <div className="gr-examples">
+                {comp!.examples.map((e, i) => (
+                  <div className="gr-ex" key={i}>
+                    <div className="gr-ex__name">{e.name}</div>
+                    <div className="gr-ex__signals">
+                      {e.website ? <span className="gr-chip">✓ Website</span> : null}
+                      {e.gbp ? <span className="gr-chip">✓ Profile</span> : null}
+                      {(e.reviewCount ?? 0) > 0 ? (
+                        <span className="gr-chip">✓ {fmtNumber(e.reviewCount!)} reviews{e.reviewRating ? ` · ${e.reviewRating}★` : ""}</span>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
+          <p className="gr-source">Measured across {comp!.sampleSize} similar {c.region} businesses · Google Places</p>
+          {behind ? (
+            <div className="gr-callout">
+              <strong>What this means.</strong> Customers searching for a business like yours are more likely to discover
+              these competitors first. Most have already established their presence through a Google Business Profile, a
+              website and reviews.
             </div>
-            <p className="gr-source">
-              Measured across {comp!.sampleSize} similar {c.region} businesses{comp!.avgRating ? ` · avg rating ${comp!.avgRating}★` : ""} · Google Places
-            </p>
-          </>
-        ) : (
+          ) : null}
+        </section>
+      ) : (
+        <section className="gr-section">
+          <h2 className="gr-h2">How you compare locally</h2>
           <p className="gr-muted">
             We&apos;re still measuring the online presence of businesses in your area. Request your report below and
             we&apos;ll include the full competitor breakdown when it&apos;s ready — we never show estimated figures.
           </p>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* 4 · Visibility gap */}
+      {/* 3 · Biggest opportunity */}
       <section className="gr-section">
-        <h2 className="gr-h2">Your visibility vs the competition</h2>
-        <table className="gr-gap">
-          <thead>
-            <tr>
-              <th>Signal</th>
-              <th>Your business</th>
-              <th>Competitors</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Website</td>
-              <td>{c.subject ? subjectVal(c.subject.website, c.subject.measured) : "Not assessed"}</td>
-              <td>{enough ? pctText(comp!.pctWebsite) : "—"}</td>
-            </tr>
-            <tr>
-              <td>Google Business Profile</td>
-              <td>{c.subject ? subjectVal(c.subject.gbp, c.subject.measured) : "Not assessed"}</td>
-              <td>{enough ? pctText(comp!.pctGbp) : "—"}</td>
-            </tr>
-            <tr>
-              <td>Reviews</td>
-              <td>
-                {c.subject?.measured && (c.subject.reviewCount ?? 0) > 0
-                  ? `${fmtNumber(c.subject.reviewCount!)}${c.subject.reviewRating ? ` · ${c.subject.reviewRating}★` : ""}`
-                  : c.subject?.measured
-                    ? "None found"
-                    : "Not assessed"}
-              </td>
-              <td>{enough ? pctText(comp!.pctReviews) : "—"}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p className="gr-source">Web-presence signals measured via Google Places; &ldquo;Not assessed&rdquo; where we have no confident match.</p>
-      </section>
-
-      {/* 5 · Why this matters */}
-      <section className="gr-section">
-        <h2 className="gr-h2">Why this matters</h2>
-        <p className="gr-body">
-          Most buying journeys start with a search. When customers look for a business like yours, the ones they find
-          first — on Google, in the map pack, and increasingly in AI assistants — win the enquiry. The gaps above are
-          the difference between being found and being missed.
-        </p>
-      </section>
-
-      {/* 6 · Growth roadmap */}
-      <section className="gr-section">
-        <h2 className="gr-h2">Your growth roadmap</h2>
-        <ol className="gr-roadmap">
-          {ROADMAP.map(([title, desc], i) => (
-            <li key={title}>
-              <span className="gr-roadmap__n">{i + 1}</span>
-              <div>
-                <div className="gr-roadmap__t">{title}</div>
-                <div className="gr-roadmap__d">{desc}</div>
-              </div>
-            </li>
-          ))}
+        <h2 className="gr-h2">Your biggest opportunity</h2>
+        <p className="gr-body" style={{ marginBottom: 14 }}>The fastest ways to become more discoverable:</p>
+        <ol className="gr-steps">
+          <li>Create a Google Business Profile so you appear on the map and in the local pack.</li>
+          <li>Launch a professional website customers and search engines can read.</li>
+          <li>Start collecting customer reviews to build trust and ranking.</li>
         </ol>
       </section>
 
-      {/* 7 · Exclusive offer */}
+      {/* 4 · Growth roadmap (checklist) */}
+      <section className="gr-section">
+        <h2 className="gr-h2">Your growth roadmap</h2>
+        <div className="gr-roadmap">
+          {ROADMAP.map(([title, desc]) => (
+            <div className="gr-task" key={title}>
+              <span className="gr-task__box">
+                <Icon name="check" size={13} />
+              </span>
+              <div className="gr-task__main">
+                <div className="gr-task__t">{title}</div>
+                <div className="gr-task__d">{desc}</div>
+              </div>
+              <span className="gr-task__status">Not started</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 5 · Unlock full report — lead capture BEFORE pricing */}
+      <section className="gr-section gr-section--cta" id="report">
+        <h2 className="gr-h2">Unlock your full report</h2>
+        {status === "done" ? (
+          <div className="gr-done">
+            <p>
+              <strong>Check your inbox.</strong> We&apos;ve emailed {form.email || "you"} a link to confirm and open your
+              full report.
+            </p>
+            <button className="gr-btn gr-btn--ghost" onClick={() => window.print()}>
+              Print / save as PDF
+            </button>
+          </div>
+        ) : (
+          <>
+            <p className="gr-body" style={{ marginBottom: 14 }}>
+              Get the full breakdown — your signals, the competitor comparison and your roadmap — emailed to you.
+            </p>
+            <form className="gr-form" onSubmit={submit}>
+              <div className="gr-form__row">
+                <input required placeholder="First name" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
+                <input required placeholder="Last name" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
+              </div>
+              <input required type="email" placeholder="Email address" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <input type="tel" placeholder="Phone number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              {error ? <div className="gr-err">{error}</div> : null}
+              <button className="gr-btn" type="submit" disabled={status === "sending"}>
+                {status === "sending" ? "Sending…" : "Email me the full report"}
+              </button>
+              <p className="gr-fineprint">We&apos;ll email you a confirmation link. No spam.</p>
+            </form>
+          </>
+        )}
+      </section>
+
+      {/* 6 · Offer */}
       <section className="gr-section">
         <h2 className="gr-h2">Get this exclusive offer to level up</h2>
         <p className="gr-body" style={{ marginBottom: 18 }}>
-          {partner.name} can close the gaps above — pick a package, or book a free review to talk it through.
+          {found < 3
+            ? `You're missing ${3 - found} of 3 key visibility signals. ${partner.name} can close the gaps — pick a package, or book a free review.`
+            : `${partner.name} can take your visibility further — pick a package, or book a free review.`}
         </p>
         <div className="gr-packages">
           {partner.packages.map((p) => (
@@ -224,6 +294,7 @@ export function GrowthReport({
               {p.recommended ? <div className="gr-pkg__badge">Recommended</div> : null}
               <div className="gr-pkg__name">{p.name}</div>
               <div className="gr-pkg__price">{p.price}</div>
+              {p.tagline ? <div className="gr-pkg__tag">{p.tagline}</div> : null}
               <ul className="gr-pkg__features">
                 {p.features.map((f) => (
                   <li key={f}>{f}</li>
@@ -237,36 +308,6 @@ export function GrowthReport({
             {partner.bookingLabel}
           </a>
         </div>
-      </section>
-
-      {/* 8 · Lead capture / download */}
-      <section className="gr-section gr-section--cta" id="report">
-        <h2 className="gr-h2">Get your full report</h2>
-        {status === "done" ? (
-          <div className="gr-done">
-            <p>
-              <strong>Check your inbox.</strong> We&apos;ve emailed {form.email || "you"} a link to confirm and open your
-              full report.
-            </p>
-            <button className="gr-btn gr-btn--ghost" onClick={() => window.print()}>
-              Print / save as PDF
-            </button>
-          </div>
-        ) : (
-          <form className="gr-form" onSubmit={submit}>
-            <div className="gr-form__row">
-              <input required placeholder="First name" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
-              <input required placeholder="Last name" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
-            </div>
-            <input required type="email" placeholder="Email address" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <input type="tel" placeholder="Phone number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            {error ? <div className="gr-err">{error}</div> : null}
-            <button className="gr-btn" type="submit" disabled={status === "sending"}>
-              {status === "sending" ? "Sending…" : "Email me the full report"}
-            </button>
-            <p className="gr-fineprint">We&apos;ll email you a confirmation link. No spam.</p>
-          </form>
-        )}
       </section>
 
       <footer className="gr-foot">

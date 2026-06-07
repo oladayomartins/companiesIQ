@@ -11,6 +11,7 @@
 export interface PartnerPackage {
   name: string;
   price: string;
+  tagline?: string;
   recommended?: boolean;
   features: string[];
 }
@@ -35,16 +36,18 @@ export const PARTNERS: Record<string, Partner> = {
     bookingLabel: "Book a Free Visibility Review",
     packages: [
       {
-        name: "Launch",
+        name: "Business Launch",
         price: "£500",
+        tagline: "Get your business online.",
         features: ["5-page website", "Mobile responsive", "Contact form", "Analytics", "SSL", "Basic SEO"],
       },
       {
-        name: "Growth",
+        name: "Local Growth",
         price: "£1,000",
+        tagline: "Become visible in local search.",
         recommended: true,
         features: [
-          "Everything in Launch",
+          "Everything in Business Launch",
           "Google Business Profile setup",
           "GBP optimisation",
           "Local SEO",
@@ -54,10 +57,11 @@ export const PARTNERS: Record<string, Partner> = {
         ],
       },
       {
-        name: "Visibility",
+        name: "AI Visibility",
         price: "£1,500",
+        tagline: "Appear across Google and AI search.",
         features: [
-          "Everything in Growth",
+          "Everything in Local Growth",
           "AI visibility optimisation",
           "LLM discoverability",
           "Structured data",

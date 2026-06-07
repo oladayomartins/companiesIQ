@@ -64,7 +64,41 @@
 .gr-pkg__features { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .gr-pkg__features li { font-size: 13px; color: var(--text-body); padding-left: 20px; position: relative; line-height: 1.4; }
 .gr-pkg__features li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+.gr-pkg__tag { font-size: 12px; color: var(--text-muted); margin: -8px 0 14px; }
 .gr-offer-cta { margin-top: 20px; text-align: center; }
+
+/* Visibility snapshot (you vs competitors) */
+.gr-snapshot { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.gr-snap { background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-md); padding: 16px; }
+.gr-snap__h { font-weight: 700; font-size: 13px; color: var(--text-strong); margin-bottom: 10px; }
+.gr-snap__count { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-hair); font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+.gr-sig { display: flex; align-items: center; gap: 9px; padding: 7px 0; font-size: 14px; }
+.gr-sig__icon { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gr-sig__icon--ok { background: var(--pos-bg); color: var(--pos); }
+.gr-sig__icon--no { background: var(--neg-bg); color: var(--neg); }
+.gr-sig__label { flex: 1; color: var(--text-body); }
+.gr-sig__status { font-size: 12px; color: var(--neg); font-weight: 600; }
+.gr-sig__status.is-ok { color: var(--pos); }
+.gr-sig__pct { font-family: var(--font-mono); font-weight: 700; color: var(--accent); }
+.gr-verdict { margin-top: 16px; font-size: 15px; line-height: 1.55; color: var(--text-strong); font-weight: 500; }
+
+/* Competitor examples + callout */
+.gr-h3 { font-family: var(--font-grotesk); font-weight: 700; font-size: 15px; color: var(--text-strong); margin: 22px 0 12px; }
+.gr-examples { display: flex; flex-direction: column; gap: 10px; }
+.gr-ex { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--border-hair); border-radius: var(--radius-md); background: var(--surface-card); flex-wrap: wrap; }
+.gr-ex__name { font-weight: 600; color: var(--text-strong); font-size: 14px; }
+.gr-ex__signals { display: flex; gap: 6px; flex-wrap: wrap; }
+.gr-chip { font-family: var(--font-mono); font-size: 11px; color: var(--pos); background: var(--pos-bg); border-radius: var(--radius-pill); padding: 3px 9px; }
+.gr-callout { margin-top: 16px; background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); border-radius: var(--radius-md); padding: 14px 16px; font-size: 14px; line-height: 1.55; color: var(--text-body); }
+
+/* Biggest opportunity + roadmap checklist */
+.gr-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; color: var(--text-body); line-height: 1.5; }
+.gr-task { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--border-hair); border-radius: var(--radius-md); }
+.gr-task__box { width: 22px; height: 22px; border-radius: 6px; background: var(--accent-tint); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gr-task__main { flex: 1; }
+.gr-task__t { font-weight: 700; font-size: 14px; color: var(--text-strong); }
+.gr-task__d { font-size: 13px; color: var(--text-muted); margin-top: 2px; line-height: 1.45; }
+.gr-task__status { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); border: 1px solid var(--border-hair); border-radius: var(--radius-pill); padding: 3px 9px; flex-shrink: 0; }
 
 /* Form + buttons */
 .gr-form { display: flex; flex-direction: column; gap: 12px; max-width: 460px; }
@@ -93,7 +127,7 @@
 .gr-foot { margin-top: 32px; text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); line-height: 1.6; }
 
 @media (max-width: 720px) {
-  .gr-stats, .gr-packages { grid-template-columns: 1fr; }
+  .gr-stats, .gr-packages, .gr-snapshot { grid-template-columns: 1fr; }
   .gr-form__row { flex-direction: column; }
   .gr-title { font-size: 28px; }
 }
