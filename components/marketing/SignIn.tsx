@@ -42,8 +42,11 @@ export function SignIn() {
             Companies<span className="site-logo__iq">IQ</span>
           </span>
         </Link>
-        <h1 className="auth-title">Sign in</h1>
-        <p className="auth-sub">Read the register. Free to search — no card required.</p>
+        <h1 className="auth-title">Sign in or sign up</h1>
+        <p className="auth-sub">
+          One email field — no password. We&apos;ll send you a secure magic link. New to CompaniesIQ? Your account is
+          created automatically the first time.
+        </p>
 
         {!configured ? (
           <div className="auth-note">
@@ -63,20 +66,24 @@ export function SignIn() {
             <Badge tone="pos" dot>
               Check your inbox
             </Badge>
-            <p>We sent a magic link to {email}. Open it on this device to sign in.</p>
+            <p>
+              We&apos;ve emailed a one-click magic link to <strong>{email}</strong>. Open it on this device to continue —
+              it signs you in (or creates your account) instantly. No password needed.
+            </p>
           </div>
         ) : (
           <form onSubmit={submit} className="auth-form">
-            <Input label="Work email" type="email" placeholder="you@company.co.uk" value={email} onChange={(e) => setEmail(e.target.value)} required iconLeft="users" />
+            <Input label="Email address" type="email" placeholder="you@company.co.uk" value={email} onChange={(e) => setEmail(e.target.value)} required iconLeft="users" />
             {error ? <span className="ciq-field__hint ciq-field__hint--error">{error}</span> : null}
             <Button variant="primary" block type="submit" disabled={busy} iconRight="arrowRight">
               {busy ? "Sending…" : "Email me a magic link"}
             </Button>
+            <p className="auth-hint">Passwordless · the same link signs you in and signs you up.</p>
           </form>
         )}
 
         <p className="auth-foot">
-          New to CompaniesIQ? <Link href="/pricing">See plans</Link> · <Link href="/company/00502851">View a sample report</Link>
+          Free to search · no card required · <Link href="/pricing">see plans</Link>
         </p>
       </div>
     </main>
