@@ -2,20 +2,23 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Analytics } from "@/components/Analytics";
 import { JsonLd } from "@/components/JsonLd";
-import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_KEYWORDS } from "@/lib/site";
+
+const DEFAULT_TITLE = "CompaniesIQ — UK company intelligence platform";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "CompaniesIQ — Know every UK company",
+    default: DEFAULT_TITLE,
     template: "%s · CompaniesIQ",
   },
   description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
   applicationName: SITE_NAME,
   alternates: { canonical: "/" },
   icons: { icon: "/logo/ciq-mark.svg" },
   openGraph: {
-    title: "CompaniesIQ — Know every UK company",
+    title: DEFAULT_TITLE,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: SITE_NAME,
@@ -24,7 +27,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CompaniesIQ — Know every UK company",
+    title: DEFAULT_TITLE,
     description: SITE_DESCRIPTION,
   },
 };

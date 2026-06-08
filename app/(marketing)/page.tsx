@@ -85,11 +85,13 @@ export default async function LandingPage() {
             </Badge>
           </div>
           <h1 className="hero__title">
-            Spot new business opportunities <em>the day they appear</em>.
+            Spot new business opportunities
+            <br />
+            <em>the day they appear</em>.
           </h1>
           <p className="hero__sub">
-            CompaniesIQ turns Companies House filings into searchable market intelligence — track every newly registered
-            UK company, growing sector and regional trend, built for sales teams, investors, agencies and analysts.
+            The UK company &amp; market intelligence platform built on Companies House — find newly registered
+            businesses, growing sectors and new-company alerts before your competitors.
           </p>
           <HeroSearch />
           <div className="hero__trust">
@@ -152,7 +154,7 @@ export default async function LandingPage() {
           </Link>
           <div className="live-stat">
             <div className="live-stat__label mono">Most active activity</div>
-            <div className="live-stat__value live-stat__value--sm">{insights?.topSic ? insights.topSic.label : "—"}</div>
+            <div className="live-stat__value">{insights?.topSic ? insights.topSic.label : "—"}</div>
             <div className="live-stat__sub">{insights?.topSic ? `SIC ${insights.topSic.key}` : "by new registrations"}</div>
           </div>
         </div>

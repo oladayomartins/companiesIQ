@@ -49,7 +49,7 @@ export function SiteFooter() {
               Companies<span className="site-logo__iq">IQ</span>
             </span>
           </div>
-          <p className="site-foot__tag">UK business intelligence from the public register.</p>
+          <p className="site-foot__tag">The UK company intelligence platform — newly registered companies, market trends and new-company alerts from Companies House data.</p>
           <p className="site-foot__src mono">Data © Crown copyright, Companies House. Reused under the Open Government Licence.</p>
         </div>
         <div className="site-foot__cols">
