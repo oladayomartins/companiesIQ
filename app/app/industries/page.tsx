@@ -3,10 +3,23 @@ import { Card, CardBody, Badge, Icon } from "@/components/ds";
 import { SECTOR_STATS } from "@/lib/ons";
 import { fmtNumber, fmtDelta } from "@/lib/format";
 import { slugify } from "@/lib/slug";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { isSubscribed } from "@/lib/access";
+import { ProGate } from "@/components/app/ProGate";
 
 export const metadata = { title: "Industries · CompaniesIQ" };
+export const dynamic = "force-dynamic";
 
-export default function IndustriesPage() {
+export default async function IndustriesPage() {
+  if (!(await isSubscribed(await getCurrentUser()))) {
+    return (
+      <ProGate
+        icon="building"
+        title="Industry intelligence"
+        features={["Every UK sector ranked by activity", "Growth & 5-yr survival benchmarks", "Drill into any sector's companies"]}
+      />
+    );
+  }
   const sectors = Object.values(SECTOR_STATS).sort((a, b) => b.businesses - a.businesses);
   return (
     <div className="screen">

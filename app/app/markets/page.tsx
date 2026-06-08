@@ -5,9 +5,12 @@ import { getRegionIndicators } from "@/lib/nomis";
 import { REGION_STATS } from "@/lib/ons";
 import { fmtNumber, fmtDelta } from "@/lib/format";
 import { IncorporationTrend, SectorBars } from "@/components/app/Charts";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { isSubscribed } from "@/lib/access";
+import { ProGate } from "@/components/app/ProGate";
 
 export const metadata = { title: "Markets · CompaniesIQ" };
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 function RankList({ items, suffix }: { items: { key: string; label: string; count: number }[]; suffix?: string }) {
   return (
@@ -33,6 +36,15 @@ function RankList({ items, suffix }: { items: { key: string; label: string; coun
 }
 
 export default async function MarketsPage() {
+  if (!(await isSubscribed(await getCurrentUser()))) {
+    return (
+      <ProGate
+        icon="barChart"
+        title="Market intelligence"
+        features={["Regional & sector market analytics", "Live formation trends", "Survival & growth benchmarks"]}
+      />
+    );
+  }
   const sectors = sectorBreakdown();
   const sectorData = sectors.map((s) => ({ name: s.name, count: s.count }));
   const fastest = fastestGrowingSectors(6);

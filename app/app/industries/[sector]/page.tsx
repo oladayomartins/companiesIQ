@@ -8,14 +8,22 @@ import { explore, type EnrichedResult } from "@/lib/data";
 import { isoDaysAgo } from "@/lib/companies-house";
 import { fmtNumber, fmtDelta, fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { isSubscribed } from "@/lib/access";
+import { ProGate } from "@/components/app/ProGate";
 
-export const revalidate = 3600;
-
-export function generateStaticParams() {
-  return Object.values(SECTOR_STATS).map((s) => ({ sector: slugify(s.sector) }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function SectorPage({ params }: { params: Promise<{ sector: string }> }) {
+  if (!(await isSubscribed(await getCurrentUser()))) {
+    return (
+      <ProGate
+        icon="building"
+        title="Industry intelligence"
+        features={["Sector survival & growth benchmarks", "Regional growth index", "Live companies in the sector"]}
+      />
+    );
+  }
   const { sector: slug } = await params;
   const stat = Object.values(SECTOR_STATS).find((s) => slugify(s.sector) === slug);
   if (!stat) notFound();
