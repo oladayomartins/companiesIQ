@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { SECTOR_STATS, REGION_STATS } from "@/lib/ons";
 import { slugify } from "@/lib/slug";
+import { SIGNALS } from "@/lib/signals";
+import { CITIES } from "@/lib/cities";
 
 // Static, content-bearing URLs: marketing + the public SEO landing pages
 // (industry + market, including every sector and region). The public company
@@ -16,6 +18,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/sources`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/industry`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${SITE_URL}/market`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_URL}/city`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_URL}/signals`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
   ];
   const industries: MetadataRoute.Sitemap = Object.values(SECTOR_STATS).map((s) => ({
     url: `${SITE_URL}/industry/${slugify(s.sector)}`,
@@ -29,5 +33,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: "weekly",
     priority: 0.6,
   }));
-  return [...marketing, ...industries, ...markets];
+  const cities: MetadataRoute.Sitemap = CITIES.map((c) => ({
+    url: `${SITE_URL}/city/${slugify(c.name)}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.5,
+  }));
+  const signals: MetadataRoute.Sitemap = SIGNALS.map((s) => ({
+    url: `${SITE_URL}/signals/${s.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.5,
+  }));
+  return [...marketing, ...industries, ...markets, ...cities, ...signals];
 }
