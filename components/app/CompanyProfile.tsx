@@ -66,7 +66,7 @@ function LockedIntelligence({
               exports, alerts and watchlists across every UK company.
             </p>
             <div className="locked-intel__cta">
-              <Link href="/pricing">
+              <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
                 <Button variant="primary" iconRight="arrowRight">
                   Go Pro
                 </Button>
@@ -175,7 +175,7 @@ export function CompanyProfile({
               </Button>
             </>
           ) : (
-            <Link href="/pricing">
+            <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
               <Button variant="primary" iconRight="arrowRight">
                 Go Pro
               </Button>

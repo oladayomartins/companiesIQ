@@ -63,7 +63,7 @@ function RankList({ items, href, locked = false }: { items: RadarBucket[]; href?
           <div className="list-lock__blur" aria-hidden="true">
             {hidden.slice(0, 4).map((b, i) => row(b, i + FREE_VISIBLE))}
           </div>
-          <Link className="list-lock__cta" href="/pricing">
+          <Link className="list-lock__cta" href="/app/upgrade">
             <Icon name="shield" size={14} /> Go Pro to see all {items.length} →
           </Link>
         </div>
@@ -245,7 +245,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                   {locked && recent.length > FREE_VISIBLE ? (
                     <tr className="lock-row">
                       <td colSpan={4}>
-                        <Link href="/pricing" className="lock-row__cta">
+                        <Link href="/app/upgrade" className="lock-row__cta">
                           <Icon name="shield" size={15} /> Go Pro to see every new UK company registration →
                         </Link>
                       </td>

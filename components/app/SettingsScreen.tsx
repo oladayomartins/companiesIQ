@@ -71,7 +71,7 @@ export function SettingsScreen({ email, plan }: { email: string; plan: string })
             {busy === "portal" ? "Opening…" : "Manage billing"}
           </Button>
         ) : (
-          <Link href="/pricing">
+          <Link href="/app/upgrade">
             <Button variant="primary" iconRight="arrowRight">
               Upgrade to Pro
             </Button>

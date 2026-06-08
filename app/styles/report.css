@@ -105,6 +105,22 @@
 .locked-intel__sub { color: var(--text-muted); line-height: 1.55; margin: 0 0 18px; }
 .locked-intel__cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
+/* Public search teaser */
+.search-list { display: flex; flex-direction: column; }
+.search-row { display: grid; grid-template-columns: auto 1fr 140px 110px auto; align-items: center; gap: 14px; padding: 12px 6px; border-bottom: 1px solid var(--border-hair); }
+.search-row__main { min-width: 0; }
+.search-row__name { font-weight: 600; color: var(--text-strong); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-row__no { font-size: 11px; color: var(--text-muted); }
+.search-row__sector { font-size: 13px; color: var(--text-muted); }
+.search-row__date { font-size: 13px; color: var(--text-muted); }
+.search-lock { position: relative; }
+.search-lock__blur { filter: blur(6px); pointer-events: none; user-select: none; opacity: 0.5; max-height: 320px; overflow: hidden; }
+.search-lock__overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; padding: 24px; background: linear-gradient(to bottom, color-mix(in srgb, var(--bg-page) 25%, transparent), var(--bg-page) 65%); }
+.search-lock__icon { width: 46px; height: 46px; border-radius: 12px; background: var(--accent-tint); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+.search-lock__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 20px; letter-spacing: -0.02em; color: var(--text-strong); margin-top: 6px; }
+.search-lock__sub { color: var(--text-muted); max-width: 440px; line-height: 1.5; margin: 0 0 8px; }
+@media (max-width: 720px) { .search-row { grid-template-columns: auto 1fr auto; } .search-row__sector, .search-row__date { display: none; } }
+
 /* Blog (public, dark) */
 .blog-card__date { color: var(--text-faint); font-size: 12px; margin-top: 12px; }
 .blog-post { max-width: 760px; }

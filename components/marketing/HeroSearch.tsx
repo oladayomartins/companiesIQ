@@ -21,7 +21,7 @@ export function HeroSearch() {
     const id = setInterval(() => setI((n) => (n + 1) % EXAMPLES.length), 2800);
     return () => clearInterval(id);
   }, []);
-  const go = () => router.push(`/app/companies${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
+  const go = () => router.push(`/search${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
   return (
     <form
       className="hero__search"

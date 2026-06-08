@@ -185,6 +185,21 @@
 .lock-row__cta { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; font-size: 14px; font-weight: 700; color: var(--accent); text-decoration: none; }
 .lock-row__cta:hover { text-decoration: underline; }
 
+/* In-app upgrade tiers */
+.upgrade-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.upgrade-tier { position: relative; background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-lg, 16px); padding: 24px; }
+.upgrade-tier--pop { border-color: color-mix(in srgb, var(--accent) 55%, var(--border-hair)); box-shadow: 0 8px 30px color-mix(in srgb, var(--accent) 12%, transparent); }
+.upgrade-tier__flag { position: absolute; top: -12px; right: 18px; }
+.upgrade-tier__name { font-family: var(--font-grotesk); font-weight: 800; font-size: 17px; color: var(--text-strong); }
+.upgrade-tier__tag { color: var(--text-muted); font-size: 13px; margin: 4px 0 14px; min-height: 34px; }
+.upgrade-tier__price { margin-bottom: 16px; display: flex; align-items: baseline; gap: 4px; }
+.upgrade-tier__amt { font-family: var(--font-grotesk); font-weight: 800; font-size: 30px; color: var(--text-strong); letter-spacing: -0.02em; }
+.upgrade-tier__per { font-size: 13px; color: var(--text-muted); }
+.upgrade-tier__feats { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-direction: column; gap: 9px; }
+.upgrade-tier__feats li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-body); }
+.upgrade-note { text-align: center; color: var(--text-faint); font-size: 11px; margin-top: 18px; }
+@media (max-width: 880px) { .upgrade-tiers { grid-template-columns: 1fr; } }
+
 /* ---------- Quick insights ---------- */
 .insight-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .insight-card { display: flex; gap: 12px; align-items: flex-start; }

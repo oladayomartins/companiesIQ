@@ -22,7 +22,7 @@ export function ProGate({ icon, title, features }: { icon: IconName; title: stri
             </li>
           ))}
         </ul>
-        <Link href="/pricing">
+        <Link href="/app/upgrade">
           <Button variant="primary" iconRight="arrowRight">
             See plans
           </Button>
