@@ -95,6 +95,25 @@
 .unlock-gate__item-desc { color: var(--text-muted); font-size: 13px; line-height: 1.45; }
 .unlock-gate__cta { display: flex; gap: 12px; flex-wrap: wrap; }
 
+/* Blog (public, dark) */
+.blog-card__date { color: var(--text-faint); font-size: 12px; margin-top: 12px; }
+.blog-post { max-width: 760px; }
+.blog-post__head { margin-bottom: 22px; }
+.blog-post__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 34px; line-height: 1.15; letter-spacing: -0.03em; color: var(--text-strong); margin: 10px 0 8px; }
+.blog-post__meta { color: var(--text-faint); font-size: 13px; }
+.blog-post__cover { width: 100%; border-radius: var(--radius-lg, 14px); margin-bottom: 24px; border: 1px solid var(--border-hair); }
+/* The shared .prose rules (marketing.css) resolve to dark tokens under .ciq-dark */
+.blog-prose { padding: 0; max-width: none; }
+.blog-prose h2 { font-size: 24px; }
+.blog-prose a { color: var(--accent); }
+.blog-prose code { font-family: var(--font-mono); font-size: 0.9em; background: color-mix(in srgb, var(--text-strong) 8%, transparent); padding: 1px 5px; border-radius: 4px; }
+.blog-prose pre { background: var(--surface-sunken); border: 1px solid var(--border-hair); border-radius: var(--radius-md); padding: 14px; overflow-x: auto; }
+.blog-faq { margin-top: 36px; border-top: 1px solid var(--border-hair); padding-top: 24px; }
+.blog-faq__q { font-family: var(--font-grotesk); font-weight: 700; font-size: 17px; color: var(--text-strong); margin: 18px 0 6px; }
+.blog-faq__a { color: var(--text-muted); line-height: 1.6; margin: 0; }
+.blog-related { margin-top: 28px; }
+@media (max-width: 560px) { .blog-post__title { font-size: 27px; } }
+
 /* Report → industry/market internal links (SEO graph from the money pages) */
 .profile-related { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 4px; }
 .profile-related a { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); text-decoration: none; padding: 6px 12px; border: 1px solid var(--border-hair); border-radius: var(--radius-pill); transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }

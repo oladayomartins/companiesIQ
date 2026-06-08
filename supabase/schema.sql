@@ -235,3 +235,30 @@ create policy "own unlocks read" on public.report_unlocks
   for select using (auth.uid() = user_id);
 create index if not exists report_unlocks_user_month_idx
   on public.report_unlocks (user_id, month);
+
+-- ------------------------------------------------------------
+-- Blog posts (public, indexable; admin-authored)
+-- ------------------------------------------------------------
+create table if not exists public.posts (
+  id               uuid primary key default gen_random_uuid(),
+  slug             text unique not null,
+  title            text not null,
+  excerpt          text,
+  body_md          text not null default '',
+  meta_description text,
+  cover_image      text,
+  faq              jsonb not null default '[]'::jsonb,   -- [{q,a}]
+  related          jsonb not null default '[]'::jsonb,   -- [{label,href}]
+  status           text not null default 'draft',         -- draft | published
+  published_at     timestamptz,
+  author           text,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
+);
+alter table public.posts enable row level security;
+-- Anyone may read PUBLISHED posts; all writes go through the service role
+-- (admin API routes), which bypasses RLS.
+drop policy if exists "read published posts" on public.posts;
+create policy "read published posts" on public.posts
+  for select using (status = 'published');
+create index if not exists posts_status_pub_idx on public.posts (status, published_at desc);

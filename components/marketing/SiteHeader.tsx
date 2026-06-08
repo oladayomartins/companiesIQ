@@ -38,7 +38,7 @@ export function SiteHeader() {
           </Link>
           <Link href="/app">
             <Button variant="primary" iconRight="arrowRight">
-              Book a demo
+              Get started
             </Button>
           </Link>
         </div>

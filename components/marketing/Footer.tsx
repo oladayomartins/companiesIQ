@@ -1,25 +1,41 @@
 "use client";
 import Link from "next/link";
 
-const COLS: [string, string[]][] = [
-  ["Product", ["Search", "Company profiles", "Watchlists", "Signals", "Markets", "API"]],
-  ["Data", ["Coverage", "Sources", "SIC explorer", "Methodology", "Changelog"]],
-  ["Company", ["About", "Customers", "Careers", "Press", "Contact"]],
-  ["Legal", ["Privacy", "Terms", "Data protection", "Status"]],
+// Every entry resolves to a real, live route — no placeholder/dead links.
+const COLS: [string, [string, string][]][] = [
+  [
+    "Explore",
+    [
+      ["Industries", "/industry"],
+      ["Markets", "/market"],
+      ["Cities", "/city"],
+      ["Signals", "/signals"],
+      ["Pricing", "/pricing"],
+    ],
+  ],
+  [
+    "Data",
+    [
+      ["Sources & methodology", "/sources"],
+      ["Blog", "/blog"],
+    ],
+  ],
+  [
+    "Company",
+    [
+      ["About", "/about"],
+      ["Contact", "/contact"],
+      ["Sign in", "/sign-in"],
+    ],
+  ],
+  [
+    "Legal",
+    [
+      ["Privacy", "/privacy"],
+      ["Terms", "/terms"],
+    ],
+  ],
 ];
-
-// Footer items that resolve to a real route; everything else is a placeholder.
-const ROUTES: Record<string, string> = {
-  Search: "/app/companies",
-  "Company profiles": "/app/companies",
-  Watchlists: "/app/watchlists",
-  Signals: "/app/alerts",
-  Markets: "/app/markets",
-  Sources: "/sources",
-  Methodology: "/sources",
-  Coverage: "/sources",
-  About: "/#about",
-};
 
 export function SiteFooter() {
   return (
@@ -40,17 +56,11 @@ export function SiteFooter() {
           {COLS.map(([h, items]) => (
             <div className="foot-col" key={h}>
               <div className="foot-col__h mono">{h}</div>
-              {items.map((i) =>
-                ROUTES[i] ? (
-                  <Link className="foot-col__link" key={i} href={ROUTES[i]}>
-                    {i}
-                  </Link>
-                ) : (
-                  <a className="foot-col__link" key={i} href="#" onClick={(e) => e.preventDefault()}>
-                    {i}
-                  </a>
-                )
-              )}
+              {items.map(([label, href]) => (
+                <Link className="foot-col__link" key={label} href={href}>
+                  {label}
+                </Link>
+              ))}
             </div>
           ))}
         </div>
