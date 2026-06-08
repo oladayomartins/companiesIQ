@@ -41,7 +41,7 @@ export function UpgradeScreen() {
   }
 
   return (
-    <div className="screen" style={{ maxWidth: 1040 }}>
+    <div className="screen">
       <div className="screen-head">
         <div>
           <div className="app-eyebrow">Upgrade</div>

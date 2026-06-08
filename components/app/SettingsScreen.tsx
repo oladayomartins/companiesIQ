@@ -60,7 +60,7 @@ export function SettingsScreen({ email, fullName, billing, comped = false }: { e
   }
 
   return (
-    <div className="screen" style={{ maxWidth: 760 }}>
+    <div className="screen">
       <div className="screen-head">
         <div>
           <div className="app-eyebrow">Account</div>

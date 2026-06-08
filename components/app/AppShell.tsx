@@ -153,8 +153,13 @@ export function AppShell({
             <span className="live-pill">
               <span className="live-dot" /> Live · Companies House
             </span>
-            <IconButton icon="bell" label="Alerts" />
-            <IconButton icon="download" label="Export" />
+            <IconButton
+              icon="bell"
+              label="Alerts"
+              className={pathname.startsWith("/app/alerts") ? "is-active" : ""}
+              onClick={() => router.push("/app/alerts")}
+            />
+            <IconButton icon="download" label="Export" onClick={() => router.push("/app/companies")} />
           </div>
         </header>
         <div className="app-scroll">{children}</div>
