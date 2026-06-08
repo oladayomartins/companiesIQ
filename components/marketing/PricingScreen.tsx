@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/marketing/Footer";
 import { MARKETING_TIERS, type Plan } from "@/lib/subscription";
 import { FAQS } from "@/lib/pricing-faqs";
 
-function PricingTier({ tier, annual }: { tier: Plan; annual: boolean }) {
+function PricingTier({ tier, annual, onChoose, busy }: { tier: Plan; annual: boolean; onChoose: () => void; busy: boolean }) {
   const custom = tier.monthly === null;
   return (
     <Card className={"tier" + (tier.popular ? " tier--popular" : "")} variant={tier.popular ? "raised" : "default"}>
@@ -28,8 +28,8 @@ function PricingTier({ tier, annual }: { tier: Plan; annual: boolean }) {
           )}
         </div>
         <div className="tier__billed mono">{custom ? "Annual contract" : annual ? "billed annually" : "billed monthly"}</div>
-        <Button variant={tier.ctaVariant} block iconRight={custom ? undefined : "arrowRight"}>
-          {tier.cta}
+        <Button variant={tier.ctaVariant} block iconRight={custom ? undefined : "arrowRight"} onClick={onChoose} disabled={busy}>
+          {busy ? "One moment…" : tier.cta}
         </Button>
         <ul className="tier__feats">
           {tier.features.map((f) => (
@@ -46,6 +46,40 @@ function PricingTier({ tier, annual }: { tier: Plan; annual: boolean }) {
 
 export function PricingScreen() {
   const [annual, setAnnual] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function choose(tier: Plan) {
+    // Enterprise is sales-led — no self-serve checkout.
+    if (tier.monthly === null) {
+      window.location.href = "mailto:sales@companiesiq.co.uk?subject=CompaniesIQ%20Enterprise";
+      return;
+    }
+    setBusy(tier.id);
+    setError(null);
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ plan: tier.id, interval: annual ? "annual" : "monthly" }),
+      });
+      if (res.status === 401) {
+        window.location.href = "/sign-in?next=/pricing";
+        return;
+      }
+      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setError(data.error || "Subscriptions aren't available yet.");
+    } catch {
+      setError("Something went wrong starting checkout.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <main className="site">
       <section className="pricing-hero">
@@ -62,9 +96,14 @@ export function PricingScreen() {
 
       <section className="tiers">
         {MARKETING_TIERS.map((t) => (
-          <PricingTier key={t.id} tier={t} annual={annual} />
+          <PricingTier key={t.id} tier={t} annual={annual} onChoose={() => choose(t)} busy={busy === t.id} />
         ))}
       </section>
+      {error ? (
+        <p className="pricing-error" role="alert" style={{ textAlign: "center", color: "var(--neg)", marginTop: 16 }}>
+          {error}
+        </p>
+      ) : null}
 
       <section className="faq">
         <div className="section__head">
