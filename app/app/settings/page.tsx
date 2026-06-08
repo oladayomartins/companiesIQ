@@ -1,5 +1,6 @@
 import { getCurrentUser, getSupabaseAdmin } from "@/lib/supabase/server";
 import { getBillingSummary } from "@/lib/billing";
+import { isAdmin, isPartner } from "@/lib/admin";
 import { SettingsScreen } from "@/components/app/SettingsScreen";
 
 export const dynamic = "force-dynamic";
@@ -18,5 +19,6 @@ export default async function SettingsPage() {
     }
   }
   const billing = await getBillingSummary(user);
-  return <SettingsScreen email={user?.email ?? "—"} fullName={fullName} billing={billing} />;
+  const comped = isAdmin(user) || isPartner(user);
+  return <SettingsScreen email={user?.email ?? "—"} fullName={fullName} billing={billing} comped={comped} />;
 }

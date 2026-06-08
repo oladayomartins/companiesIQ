@@ -1,14 +1,14 @@
 import { Suspense } from "react";
 import { SearchScreen } from "@/components/app/SearchScreen";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { isSubscribed } from "@/lib/access";
+import { hasProAccess } from "@/lib/access";
 import { ProGate } from "@/components/app/ProGate";
 
 export const metadata = { title: "Companies · CompaniesIQ" };
 export const dynamic = "force-dynamic";
 
 export default async function CompaniesPage() {
-  if (!(await isSubscribed(await getCurrentUser()))) {
+  if (!(await hasProAccess(await getCurrentUser()))) {
     return (
       <ProGate
         icon="search"

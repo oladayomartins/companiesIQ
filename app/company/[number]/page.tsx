@@ -12,7 +12,7 @@ import { getRegionLive } from "@/lib/nomis";
 import { enrichCompany, type CompanyEnrichment } from "@/lib/enrichment";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { isPartner } from "@/lib/admin";
-import { isSubscribed } from "@/lib/access";
+import { hasProAccess } from "@/lib/access";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
 import { JsonLd } from "@/components/JsonLd";
@@ -49,7 +49,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   // Intelligence is Pro-only: subscribers see the full report; everyone else
   // (anonymous or free) gets the public profile + a blurred Go-Pro teaser.
   const signedIn = !!user;
-  const subscribed = await isSubscribed(user);
+  const subscribed = await hasProAccess(user);
   const unlocked = subscribed;
   const partner = isPartner(user);
 

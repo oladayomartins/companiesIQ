@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/lib/supabase/server";
-import { isSubscribed } from "@/lib/access";
+import { hasProAccess } from "@/lib/access";
 import { ProGate } from "@/components/app/ProGate";
 import { Placeholder } from "@/components/app/Placeholder";
 
@@ -8,7 +8,7 @@ export const metadata = { title: "Watchlists · CompaniesIQ" };
 
 export default async function WatchlistsPage() {
   const user = await getCurrentUser();
-  if (!(await isSubscribed(user))) {
+  if (!(await hasProAccess(user))) {
     return (
       <ProGate
         icon="bookmark"

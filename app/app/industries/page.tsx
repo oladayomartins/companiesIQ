@@ -4,14 +4,14 @@ import { SECTOR_STATS } from "@/lib/ons";
 import { fmtNumber, fmtDelta } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { isSubscribed } from "@/lib/access";
+import { hasProAccess } from "@/lib/access";
 import { ProGate } from "@/components/app/ProGate";
 
 export const metadata = { title: "Industries · CompaniesIQ" };
 export const dynamic = "force-dynamic";
 
 export default async function IndustriesPage() {
-  if (!(await isSubscribed(await getCurrentUser()))) {
+  if (!(await hasProAccess(await getCurrentUser()))) {
     return (
       <ProGate
         icon="building"

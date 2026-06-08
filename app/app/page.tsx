@@ -5,7 +5,7 @@ import { DateRangeSelector } from "@/components/app/DateRangeSelector";
 import { TrendLine } from "@/components/app/Charts";
 import { getRegisterKpis, getRadarData, getFormationTrend, type RadarData, type RadarBucket } from "@/lib/live-stats";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { isSubscribed } from "@/lib/access";
+import { hasProAccess } from "@/lib/access";
 import { resolveRange } from "@/lib/ranges";
 import { fmtNumber, fmtDate, fmtDelta } from "@/lib/format";
 import { slugify } from "@/lib/slug";
@@ -77,7 +77,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const win = resolveRange({ range, from, to });
   const { days, label } = win;
   const windowLabel = win.custom ? win.label : label.replace(/^Last /, "").toLowerCase(); // e.g. "30 days"
-  const subscribed = await isSubscribed(await getCurrentUser());
+  const subscribed = await hasProAccess(await getCurrentUser());
   const locked = !subscribed;
 
   let kpis = null as Awaited<ReturnType<typeof getRegisterKpis>> | null;

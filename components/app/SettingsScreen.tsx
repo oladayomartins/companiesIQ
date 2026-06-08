@@ -9,9 +9,12 @@ import type { BillingSummary } from "@/lib/billing";
 
 const PLAN_LABEL: Record<string, string> = { free: "Free", analyst: "Analyst", team: "Team", enterprise: "Enterprise" };
 
-export function SettingsScreen({ email, fullName, billing }: { email: string; fullName: string; billing: BillingSummary }) {
+export function SettingsScreen({ email, fullName, billing, comped = false }: { email: string; fullName: string; billing: BillingSummary; comped?: boolean }) {
   const router = useRouter();
   const subscribed = billing.plan !== "free";
+  // Comped = admin/partner (e.g. DigitWarehouse) with full Pro access but no
+  // paid Stripe subscription. Show their access state, not an upgrade nudge.
+  const compedOnly = comped && !subscribed;
 
   // Profile
   const [name, setName] = useState(fullName);
@@ -100,10 +103,16 @@ export function SettingsScreen({ email, fullName, billing }: { email: string; fu
             <div>
               <div className="set-field__label">Current plan</div>
               <div className="set-billing__plan">
-                <Badge tone={subscribed ? "accent" : "neutral"} dot>
-                  {PLAN_LABEL[billing.plan] ?? billing.plan}
+                <Badge tone={subscribed || compedOnly ? "accent" : "neutral"} dot>
+                  {compedOnly ? "Full access" : PLAN_LABEL[billing.plan] ?? billing.plan}
                 </Badge>
-                {subscribed ? <span className="set-field__hint">{billing.status}</span> : <span className="set-field__hint">No active subscription</span>}
+                {subscribed ? (
+                  <span className="set-field__hint">{billing.status}</span>
+                ) : compedOnly ? (
+                  <span className="set-field__hint">Complimentary — partner / admin account</span>
+                ) : (
+                  <span className="set-field__hint">No active subscription</span>
+                )}
               </div>
               {subscribed && billing.currentPeriodEnd ? (
                 <div className="set-field__hint" style={{ marginTop: 6 }}>
@@ -116,7 +125,7 @@ export function SettingsScreen({ email, fullName, billing }: { email: string; fu
                 <Button variant="secondary" onClick={portal} disabled={!!busy}>
                   {busy === "portal" ? "Opening…" : "Manage billing"}
                 </Button>
-              ) : (
+              ) : compedOnly ? null : (
                 <Link href="/app/upgrade">
                   <Button variant="primary" iconRight="arrowRight">
                     Upgrade to Pro
@@ -152,7 +161,11 @@ export function SettingsScreen({ email, fullName, billing }: { email: string; fu
               </div>
             ) : (
               <p className="set-field__hint" style={{ marginTop: 6 }}>
-                {subscribed ? "No invoices yet — your first one will appear here." : "No billing history — you're on the free plan."}
+                {subscribed
+                  ? "No invoices yet — your first one will appear here."
+                  : compedOnly
+                    ? "No invoices — your access is complimentary, so there's nothing to bill."
+                    : "No billing history — you're on the free plan."}
               </p>
             )}
             {subscribed ? (

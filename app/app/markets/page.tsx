@@ -6,7 +6,7 @@ import { REGION_STATS } from "@/lib/ons";
 import { fmtNumber, fmtDelta } from "@/lib/format";
 import { IncorporationTrend, SectorBars } from "@/components/app/Charts";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { isSubscribed } from "@/lib/access";
+import { hasProAccess } from "@/lib/access";
 import { ProGate } from "@/components/app/ProGate";
 
 export const metadata = { title: "Markets · CompaniesIQ" };
@@ -36,7 +36,7 @@ function RankList({ items, suffix }: { items: { key: string; label: string; coun
 }
 
 export default async function MarketsPage() {
-  if (!(await isSubscribed(await getCurrentUser()))) {
+  if (!(await hasProAccess(await getCurrentUser()))) {
     return (
       <ProGate
         icon="barChart"

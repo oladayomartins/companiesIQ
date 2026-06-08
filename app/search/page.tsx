@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { search, type EnrichedResult } from "@/lib/data";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { isSubscribed } from "@/lib/access";
+import { hasProAccess } from "@/lib/access";
 import { Button, Icon, StatusPill, CompanyAvatar } from "@/components/ds";
 import { fmtDate } from "@/lib/format";
 import { PublicShell } from "@/components/public/PublicShell";
@@ -46,7 +46,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const query = (q ?? "").trim();
   const user = await getCurrentUser();
   const signedIn = !!user;
-  const subscribed = await isSubscribed(user);
+  const subscribed = await hasProAccess(user);
 
   let results: EnrichedResult[] = [];
   let total = 0;

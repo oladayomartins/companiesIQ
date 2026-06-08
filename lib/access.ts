@@ -15,6 +15,7 @@
 import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { isAdmin, isPartner } from "@/lib/admin";
 
 export const FREE_REPORTS_PER_MONTH = 1;
 
@@ -37,6 +38,21 @@ export async function getUserPlan(user: User | null): Promise<string> {
 /** True when the user has an active paid subscription (Pro features). */
 export async function isSubscribed(user: User | null): Promise<boolean> {
   return (await getUserPlan(user)) !== "free";
+}
+
+/**
+ * The gate used for all Pro-tier features (intelligence, Companies/Markets/
+ * Industries, Watchlists/Alerts, full search results, report unlock).
+ *
+ * Admins and partners (e.g. DigitWarehouse) get full access WITHOUT a paid
+ * subscription — they're complimentary internal/partner accounts. Everyone
+ * else needs an active subscription. Keep BILLING display (Settings) on
+ * isSubscribed so a comped account still reflects its true Stripe state.
+ */
+export async function hasProAccess(user: User | null): Promise<boolean> {
+  if (!user) return false;
+  if (isAdmin(user) || isPartner(user)) return true;
+  return isSubscribed(user);
 }
 
 export type ReportAccess =
