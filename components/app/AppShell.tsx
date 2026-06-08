@@ -145,6 +145,11 @@ export function AppShell({
             <TopSearch />
           </Suspense>
           <div className="topbar__right">
+            {partner ? (
+              <span className="partner-pill" title="DigitWarehouse partner account">
+                <Icon name="briefcase" size={13} /> DigitWarehouse
+              </span>
+            ) : null}
             <span className="live-pill">
               <span className="live-dot" /> Live · Companies House
             </span>
