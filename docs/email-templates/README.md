@@ -14,10 +14,11 @@ configured so these send from `noreply@companiesiq.co.uk`.)
 |---|---|---|
 | **Magic Link** | `magic-link.html` | `Your CompaniesIQ sign-in link` |
 | **Confirm signup** | `confirm-signup.html` | `Confirm your email · CompaniesIQ` |
+| **Reset password** | `reset-password.html` | `Reset your CompaniesIQ password` |
+| **Change email address** | `change-email.html` | `Confirm your new email · CompaniesIQ` |
 
-Both use the `{{ .ConfirmationURL }}` variable (the action link Supabase injects).
-The Magic Link template is what returning users get; Confirm signup is the
-first-time email (because "Confirm email" is enabled).
-
-Optional: the **Reset password** and **Change email** templates can reuse the
-same shell — swap the heading, body copy, and button label.
+All use the `{{ .ConfirmationURL }}` variable (the action link Supabase injects);
+`change-email.html` also uses `{{ .NewEmail }}`. The Magic Link template is what
+returning users get; Confirm signup is the first-time email (because "Confirm
+email" is enabled). Reset password only applies if you enable password auth
+(the app is passwordless by default).
