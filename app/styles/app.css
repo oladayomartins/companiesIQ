@@ -176,6 +176,15 @@
 .settings-row__note { color: var(--text-muted); font-size: 12px; }
 .settings-actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
 
+/* Free-tier list locks (dashboard ranked lists + tables) */
+.list-lock { position: relative; }
+.list-lock__blur { filter: blur(5px); pointer-events: none; user-select: none; opacity: 0.4; max-height: 168px; overflow: hidden; }
+.list-lock__cta { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--surface-card) 88%, transparent) 55%); }
+.list-lock__cta:hover { color: var(--accent); text-decoration: underline; }
+.lock-row td { padding: 0 !important; background: var(--surface-sunken); }
+.lock-row__cta { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; font-size: 14px; font-weight: 700; color: var(--accent); text-decoration: none; }
+.lock-row__cta:hover { text-decoration: underline; }
+
 /* ---------- Quick insights ---------- */
 .insight-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .insight-card { display: flex; gap: 12px; align-items: flex-start; }

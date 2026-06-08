@@ -35,66 +35,52 @@ function OfficerRow({ p, unlocked }: { p: Officer; unlocked: boolean }) {
   return <div className="officer">{inner}</div>;
 }
 
-// Paywall shown in place of the Intelligence tab when the report is locked.
-// "anonymous" → cold visitor (create a free account, 1 free report/mo);
-// "quota"     → free user who's spent this month's report (upgrade for unlimited).
-function UnlockGate({ number, variant }: { number: string; variant: "anonymous" | "quota" }) {
-  const locked = [
-    ["barChart", "Competitor analysis", "How you stack up against nearby firms in your SIC code"],
-    ["trendUp", "Opportunity signals", "Growth, hiring and filing signals worth acting on"],
-    ["grid", "Market density", "How crowded your market is, locally and nationally"],
-    ["pin", "Regional intelligence", "Live ONS & Nomis economic context for your area"],
-    ["search", "Keyword signals", "Demand signals derived from your sector"],
-    ["bookmark", "Watchlists, alerts & exports", "Track companies and export the full report"],
-  ] as const;
-  const quota = variant === "quota";
+// Locked Intelligence — the real report rendered BLURRED behind a centred
+// "Go Pro" card. Free/anonymous visitors get the public profile (Overview,
+// People, Filings, Charges) but never the intelligence itself.
+function LockedIntelligence({
+  report,
+  similar,
+  enrichment,
+  signedIn,
+}: {
+  report: Report;
+  similar: SimilarCompany[];
+  enrichment: CompanyEnrichment | null;
+  signedIn: boolean;
+}) {
   return (
-    <Card variant="raised" className="unlock-gate">
-      <CardBody>
-        <div className="unlock-gate__head">
-          <Badge tone="accent" dot>
-            Full intelligence
-          </Badge>
-          <h2 className="unlock-gate__title">
-            {quota ? "You've used your free report this month" : "Unlock the full intelligence report"}
-          </h2>
-          <p className="unlock-gate__sub">
-            {quota
-              ? "Free accounts include one full intelligence report each month. Upgrade for unlimited reports, exports and alerts across every UK company."
-              : "You're viewing the free public profile. Create a free account to read one full intelligence report a month — or upgrade for unlimited access."}
-          </p>
-        </div>
-        <ul className="unlock-gate__list">
-          {locked.map(([icon, title, desc]) => (
-            <li key={title}>
-              <Icon name={icon} size={18} color="var(--accent)" />
-              <div>
-                <div className="unlock-gate__item-title">{title}</div>
-                <div className="unlock-gate__item-desc">{desc}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
-        <div className="unlock-gate__cta">
-          {quota ? (
-            <Link href="/pricing">
-              <Button variant="primary" iconRight="arrowRight">
-                Upgrade for unlimited
-              </Button>
-            </Link>
-          ) : (
-            <Link href={`/sign-in?next=/company/${number}`}>
-              <Button variant="primary" iconRight="arrowRight">
-                Create a free account
-              </Button>
-            </Link>
-          )}
-          <Link href="/pricing">
-            <Button variant="secondary">See plans</Button>
-          </Link>
-        </div>
-      </CardBody>
-    </Card>
+    <div className="locked-intel">
+      <div className="locked-intel__blur" aria-hidden="true">
+        <IntelligenceReport report={report} similar={similar} enrichment={enrichment} />
+      </div>
+      <div className="locked-intel__overlay">
+        <Card variant="raised" className="locked-intel__card">
+          <CardBody>
+            <Badge tone="accent" dot>
+              Full intelligence · Pro
+            </Badge>
+            <h2 className="locked-intel__title">Go Pro to unlock the full report</h2>
+            <p className="locked-intel__sub">
+              Competitor analysis, opportunity signals, market density, regional &amp; keyword intelligence — plus CSV
+              exports, alerts and watchlists across every UK company.
+            </p>
+            <div className="locked-intel__cta">
+              <Link href="/pricing">
+                <Button variant="primary" iconRight="arrowRight">
+                  Go Pro
+                </Button>
+              </Link>
+              {!signedIn ? (
+                <Link href="/sign-in">
+                  <Button variant="secondary">Sign in</Button>
+                </Link>
+              ) : null}
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    </div>
   );
 }
 
@@ -109,9 +95,8 @@ export function CompanyProfile({
   enrichment = null,
   live,
   unlocked = false,
-  gate = "anonymous",
   partner = false,
-  subscribed = false,
+  signedIn = false,
 }: {
   company: Company;
   officers: Officer[];
@@ -123,9 +108,8 @@ export function CompanyProfile({
   enrichment?: CompanyEnrichment | null;
   live: boolean;
   unlocked?: boolean;
-  gate?: "anonymous" | "quota";
   partner?: boolean;
-  subscribed?: boolean;
+  signedIn?: boolean;
 }) {
   const c = company;
   const router = useRouter();
@@ -177,42 +161,23 @@ export function CompanyProfile({
         </div>
         <div className="profile-actions">
           {unlocked ? (
-            subscribed ? (
-              <>
-                <Button variant="secondary" iconLeft="bookmark">
-                  Watch
+            <>
+              <Button variant="secondary" iconLeft="bookmark">
+                Watch
+              </Button>
+              {partner ? (
+                <Button variant="secondary" iconLeft="trendUp" onClick={() => router.push(`/visibility-review/${c.number}`)}>
+                  Founder view
                 </Button>
-                {partner ? (
-                  <Button
-                    variant="secondary"
-                    iconLeft="trendUp"
-                    onClick={() => router.push(`/visibility-review/${c.number}`)}
-                  >
-                    Founder view
-                  </Button>
-                ) : null}
-                <Button variant="primary" iconLeft="download">
-                  Export report
-                </Button>
-              </>
-            ) : (
-              // Free account viewing their report — watch/export are Pro.
-              <Link href="/pricing">
-                <Button variant="secondary" iconRight="arrowRight">
-                  Upgrade to export &amp; track
-                </Button>
-              </Link>
-            )
-          ) : gate === "quota" ? (
+              ) : null}
+              <Button variant="primary" iconLeft="download">
+                Export report
+              </Button>
+            </>
+          ) : (
             <Link href="/pricing">
               <Button variant="primary" iconRight="arrowRight">
-                Upgrade for unlimited
-              </Button>
-            </Link>
-          ) : (
-            <Link href={`/sign-in?next=/company/${c.number}`}>
-              <Button variant="primary" iconRight="arrowRight">
-                Unlock full report
+                Go Pro
               </Button>
             </Link>
           )}
@@ -259,7 +224,7 @@ export function CompanyProfile({
         unlocked ? (
           <IntelligenceReport report={report} similar={similar} enrichment={enrichment} />
         ) : (
-          <UnlockGate number={c.number} variant={gate} />
+          <LockedIntelligence report={report} similar={similar} enrichment={enrichment} signedIn={signedIn} />
         )
       ) : null}
 

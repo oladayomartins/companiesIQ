@@ -1,22 +1,28 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Card, CardHeader, CardBody, Stat, StatusPill, Badge } from "@/components/ds";
+import { Card, CardHeader, CardBody, Stat, StatusPill, Badge, Icon } from "@/components/ds";
 import { DateRangeSelector } from "@/components/app/DateRangeSelector";
 import { TrendLine } from "@/components/app/Charts";
 import { getRegisterKpis, getRadarData, getFormationTrend, type RadarData, type RadarBucket } from "@/lib/live-stats";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { isSubscribed } from "@/lib/access";
 import { resolveRange } from "@/lib/ranges";
 import { fmtNumber, fmtDate, fmtDelta } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 
 export const metadata = { title: "Dashboard · CompaniesIQ" };
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
+
+// Free accounts see the top N of every ranked list; the rest is blurred behind
+// a Go-Pro CTA. Pro sees everything.
+const FREE_VISIBLE = 3;
 
 function todayLabel(): string {
   return new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 
 /** A compact ranked list — the dashboard's core scannable unit. */
-function RankList({ items, href }: { items: RadarBucket[]; href?: (b: RadarBucket) => string }) {
+function RankList({ items, href, locked = false }: { items: RadarBucket[]; href?: (b: RadarBucket) => string; locked?: boolean }) {
   if (!items.length) {
     return (
       <CardBody flush>
@@ -26,29 +32,42 @@ function RankList({ items, href }: { items: RadarBucket[]; href?: (b: RadarBucke
       </CardBody>
     );
   }
+  const row = (b: RadarBucket, i: number) => {
+    const inner = (
+      <>
+        <span className="hotspot__rank">{i + 1}</span>
+        <div className="alert-row__main">
+          <div className="alert-row__name">{b.label}</div>
+          {b.sub ? <div className="alert-row__rule">{b.sub}</div> : null}
+        </div>
+        <span className="hotspot__val">{fmtNumber(b.count)}</span>
+      </>
+    );
+    return href ? (
+      <Link key={b.key} href={href(b)} className="alert-row" style={{ textDecoration: "none" }}>
+        {inner}
+      </Link>
+    ) : (
+      <div key={b.key} className="alert-row">
+        {inner}
+      </div>
+    );
+  };
+  const visible = locked ? items.slice(0, FREE_VISIBLE) : items;
+  const hidden = locked ? items.slice(FREE_VISIBLE) : [];
   return (
     <CardBody flush>
-      {items.map((b, i) => {
-        const inner = (
-          <>
-            <span className="hotspot__rank">{i + 1}</span>
-            <div className="alert-row__main">
-              <div className="alert-row__name">{b.label}</div>
-              {b.sub ? <div className="alert-row__rule">{b.sub}</div> : null}
-            </div>
-            <span className="hotspot__val">{fmtNumber(b.count)}</span>
-          </>
-        );
-        return href ? (
-          <Link key={b.key} href={href(b)} className="alert-row" style={{ textDecoration: "none" }}>
-            {inner}
-          </Link>
-        ) : (
-          <div key={b.key} className="alert-row">
-            {inner}
+      {visible.map(row)}
+      {hidden.length ? (
+        <div className="list-lock">
+          <div className="list-lock__blur" aria-hidden="true">
+            {hidden.slice(0, 4).map((b, i) => row(b, i + FREE_VISIBLE))}
           </div>
-        );
-      })}
+          <Link className="list-lock__cta" href="/pricing">
+            <Icon name="shield" size={14} /> Go Pro to see all {items.length} →
+          </Link>
+        </div>
+      ) : null}
     </CardBody>
   );
 }
@@ -58,6 +77,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const win = resolveRange({ range, from, to });
   const { days, label } = win;
   const windowLabel = win.custom ? win.label : label.replace(/^Last /, "").toLowerCase(); // e.g. "30 days"
+  const subscribed = await isSubscribed(await getCurrentUser());
+  const locked = !subscribed;
 
   let kpis = null as Awaited<ReturnType<typeof getRegisterKpis>> | null;
   let radar: RadarData | null = null;
@@ -161,15 +182,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <div className="tri-cols">
             <Card>
               <CardHeader subtitle="Most active industries" title="What's growing" />
-              <RankList items={radar?.industries ?? []} href={(b) => `/app/industries/${slugify(b.key)}`} />
+              <RankList items={radar?.industries ?? []} href={(b) => `/app/industries/${slugify(b.key)}`} locked={locked} />
             </Card>
             <Card>
               <CardHeader subtitle="Where new companies register" title="Top regions" />
-              <RankList items={radar?.regions ?? []} />
+              <RankList items={radar?.regions ?? []} locked={locked} />
             </Card>
             <Card>
               <CardHeader subtitle="Most-registered SIC activities" title="Business activities" />
-              <RankList items={(radar?.activities ?? []).slice(0, 6)} />
+              <RankList items={(radar?.activities ?? []).slice(0, 6)} locked={locked} />
             </Card>
           </div>
 
@@ -196,7 +217,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 </thead>
                 <tbody>
                   {recent.length ? (
-                    recent.map((c) => (
+                    (locked ? recent.slice(0, FREE_VISIBLE) : recent).map((c) => (
                       <tr key={c.number}>
                         <td>
                           <Link href={`/company/${c.number}`} className="cell-co" style={{ textDecoration: "none" }}>
@@ -221,6 +242,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       <td colSpan={4}>No recent registrations returned.</td>
                     </tr>
                   )}
+                  {locked && recent.length > FREE_VISIBLE ? (
+                    <tr className="lock-row">
+                      <td colSpan={4}>
+                        <Link href="/pricing" className="lock-row__cta">
+                          <Icon name="shield" size={15} /> Go Pro to see every new UK company registration →
+                        </Link>
+                      </td>
+                    </tr>
+                  ) : null}
                 </tbody>
               </table></div>
             </CardBody>

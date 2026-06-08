@@ -95,6 +95,16 @@
 .unlock-gate__item-desc { color: var(--text-muted); font-size: 13px; line-height: 1.45; }
 .unlock-gate__cta { display: flex; gap: 12px; flex-wrap: wrap; }
 
+/* Locked Intelligence — blurred real report behind a Go-Pro card */
+.locked-intel { position: relative; }
+.locked-intel__blur { filter: blur(7px); pointer-events: none; user-select: none; max-height: 560px; overflow: hidden; opacity: 0.5; }
+.locked-intel__overlay { position: absolute; inset: 0; display: flex; align-items: flex-start; justify-content: center; padding: 56px 16px 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--bg-page) 25%, transparent) 0%, var(--bg-page) 70%); }
+.locked-intel__card { max-width: 480px; width: 100%; text-align: center; }
+.locked-intel__card .ciq-badge { margin: 0 auto; }
+.locked-intel__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 24px; letter-spacing: -0.02em; color: var(--text-strong); margin: 12px 0 8px; }
+.locked-intel__sub { color: var(--text-muted); line-height: 1.55; margin: 0 0 18px; }
+.locked-intel__cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
 /* Blog (public, dark) */
 .blog-card__date { color: var(--text-faint); font-size: 12px; margin-top: 12px; }
 .blog-post { max-width: 760px; }
