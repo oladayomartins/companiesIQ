@@ -53,6 +53,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   const gate = access.state === "free_quota_exceeded" ? "quota" : "anonymous";
   const signedIn = !!user;
   const partner = isPartner(user);
+  const subscribed = access.state === "subscribed";
 
   const [economicLive, similar, enrichment] = await Promise.all([
     getRegionLive(c.geo?.region),
@@ -107,6 +108,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           unlocked={unlocked}
           gate={gate}
           partner={partner}
+          subscribed={subscribed}
         />
       </PublicReportChrome>
     </>

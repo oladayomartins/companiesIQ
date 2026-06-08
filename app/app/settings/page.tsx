@@ -1,5 +1,12 @@
-import { Placeholder } from "@/components/app/Placeholder";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { getUserPlan } from "@/lib/access";
+import { SettingsScreen } from "@/components/app/SettingsScreen";
+
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Settings · CompaniesIQ" };
-export default function SettingsPage() {
-  return <Placeholder title="Settings" sub="Team, billing, API keys and alert preferences." icon="settings" />;
+
+export default async function SettingsPage() {
+  const user = await getCurrentUser();
+  const plan = await getUserPlan(user);
+  return <SettingsScreen email={user?.email ?? "—"} plan={plan} />;
 }

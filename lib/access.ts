@@ -20,6 +20,25 @@ export const FREE_REPORTS_PER_MONTH = 1;
 
 const ACTIVE_STATUSES = new Set(["active", "trialing"]);
 
+/** The user's plan ("free" if none active). */
+export async function getUserPlan(user: User | null): Promise<string> {
+  if (!user) return "free";
+  const admin = getSupabaseAdmin();
+  if (!admin) return "free";
+  try {
+    const { data } = await admin.from("subscriptions").select("plan,status").eq("user_id", user.id).maybeSingle();
+    if (data && data.plan !== "free" && ACTIVE_STATUSES.has(data.status)) return data.plan;
+    return "free";
+  } catch {
+    return "free";
+  }
+}
+
+/** True when the user has an active paid subscription (Pro features). */
+export async function isSubscribed(user: User | null): Promise<boolean> {
+  return (await getUserPlan(user)) !== "free";
+}
+
 export type ReportAccess =
   | { state: "anonymous"; unlocked: false }
   | { state: "subscribed"; unlocked: true; plan: string }

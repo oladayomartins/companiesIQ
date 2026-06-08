@@ -111,6 +111,7 @@ export function CompanyProfile({
   unlocked = false,
   gate = "anonymous",
   partner = false,
+  subscribed = false,
 }: {
   company: Company;
   officers: Officer[];
@@ -124,6 +125,7 @@ export function CompanyProfile({
   unlocked?: boolean;
   gate?: "anonymous" | "quota";
   partner?: boolean;
+  subscribed?: boolean;
 }) {
   const c = company;
   const router = useRouter();
@@ -175,23 +177,32 @@ export function CompanyProfile({
         </div>
         <div className="profile-actions">
           {unlocked ? (
-            <>
-              <Button variant="secondary" iconLeft="bookmark">
-                Watch
-              </Button>
-              {partner ? (
-                <Button
-                  variant="secondary"
-                  iconLeft="trendUp"
-                  onClick={() => router.push(`/visibility-review/${c.number}`)}
-                >
-                  Founder view
+            subscribed ? (
+              <>
+                <Button variant="secondary" iconLeft="bookmark">
+                  Watch
                 </Button>
-              ) : null}
-              <Button variant="primary" iconLeft="download">
-                Export report
-              </Button>
-            </>
+                {partner ? (
+                  <Button
+                    variant="secondary"
+                    iconLeft="trendUp"
+                    onClick={() => router.push(`/visibility-review/${c.number}`)}
+                  >
+                    Founder view
+                  </Button>
+                ) : null}
+                <Button variant="primary" iconLeft="download">
+                  Export report
+                </Button>
+              </>
+            ) : (
+              // Free account viewing their report — watch/export are Pro.
+              <Link href="/pricing">
+                <Button variant="secondary" iconRight="arrowRight">
+                  Upgrade to export &amp; track
+                </Button>
+              </Link>
+            )
           ) : gate === "quota" ? (
             <Link href="/pricing">
               <Button variant="primary" iconRight="arrowRight">

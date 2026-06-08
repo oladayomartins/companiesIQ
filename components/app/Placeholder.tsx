@@ -1,6 +1,19 @@
+import Link from "next/link";
 import { Icon, Button, type IconName } from "@/components/ds";
 
-export function Placeholder({ title, sub, icon }: { title: string; sub: string; icon: IconName }) {
+// Empty/coming-soon state. The CTA is optional — omit it rather than render a
+// dead button.
+export function Placeholder({
+  title,
+  sub,
+  icon,
+  cta,
+}: {
+  title: string;
+  sub: string;
+  icon: IconName;
+  cta?: { label: string; href: string };
+}) {
   return (
     <div className="screen">
       <div className="placeholder">
@@ -9,7 +22,11 @@ export function Placeholder({ title, sub, icon }: { title: string; sub: string; 
         </span>
         <h2 className="placeholder__title">{title}</h2>
         <p className="placeholder__sub">{sub}</p>
-        <Button variant="secondary">Set it up</Button>
+        {cta ? (
+          <Link href={cta.href}>
+            <Button variant="secondary">{cta.label}</Button>
+          </Link>
+        ) : null}
       </div>
     </div>
   );
