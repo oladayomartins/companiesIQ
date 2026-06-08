@@ -33,7 +33,7 @@ export const PARTNERS: Record<string, Partner> = {
     name: "DigitWarehouse",
     tagline: "Web, local SEO and AI visibility for newly registered UK businesses.",
     ctaHeadline: "Get found by the customers already searching for you.",
-    bookingUrl: "https://digitwarehouse.com/book", // TODO: replace with the real booking link
+    bookingUrl: "https://digitwarehouse.com/book-a-call",
     bookingLabel: "Book a Free Visibility Review",
     packages: [
       {
