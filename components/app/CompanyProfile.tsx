@@ -8,6 +8,7 @@ import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import { fmtDate, ageLabel } from "@/lib/format";
+import { slugify } from "@/lib/slug";
 
 function OfficerRow({ p, unlocked }: { p: Officer; unlocked: boolean }) {
   const inner = (
@@ -209,6 +210,21 @@ export function CompanyProfile({
         <Stat label="Nation" value={c.geo?.nation ?? "—"} sub={c.geo?.region} />
         <Stat label="Age" value={ageLabel(c.incorporated)} />
       </div>
+
+      {c.primaryClassification?.sector || (c.geo?.region && c.geo.region !== "Unknown") ? (
+        <div className="profile-related">
+          {c.primaryClassification?.sector ? (
+            <Link href={`/industry/${slugify(c.primaryClassification.sector)}`}>
+              <Icon name="barChart" size={14} /> {c.primaryClassification.sector} industry
+            </Link>
+          ) : null}
+          {c.geo?.region && c.geo.region !== "Unknown" ? (
+            <Link href={`/market/${slugify(c.geo.region)}`}>
+              <Icon name="pin" size={14} /> {c.geo.region} market
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="profile-tabs">
         <Tabs
