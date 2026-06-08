@@ -3,10 +3,16 @@
 //   /api/qr?number=00502851&format=png&download=1            → downloadable PNG
 import { NextRequest, NextResponse } from "next/server";
 import QRCode from "qrcode";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { isPartner } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  // DigitWarehouse-exclusive: QR generation is restricted to partner accounts.
+  const user = await getCurrentUser();
+  if (!isPartner(user)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const sp = req.nextUrl.searchParams;
   const number = sp.get("number");
   const source = sp.get("source") || "digitwarehouse";

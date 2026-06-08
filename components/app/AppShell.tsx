@@ -5,15 +5,19 @@ import { useState, useEffect, Suspense } from "react";
 import { Icon, IconButton, CompanyAvatar, type IconName } from "@/components/ds";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 
-const NAV: { id: string; label: string; icon: IconName; href: string; count?: number }[] = [
+type NavItem = { id: string; label: string; icon: IconName; href: string; count?: number; role?: "admin" | "partner" };
+
+const NAV: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: "grid", href: "/app" },
   { id: "companies", label: "Companies", icon: "search", href: "/app/companies" },
   { id: "markets", label: "Markets", icon: "barChart", href: "/app/markets" },
   { id: "industries", label: "Industries", icon: "building", href: "/app/industries" },
   { id: "alerts", label: "Alerts", icon: "bell", href: "/app/alerts" },
   { id: "watchlist", label: "Watchlists", icon: "bookmark", href: "/app/watchlists" },
-  { id: "campaigns", label: "Campaigns", icon: "briefcase", href: "/app/campaigns" },
-  { id: "blog", label: "Blog", icon: "file", href: "/app/blog" },
+  // DigitWarehouse-exclusive funnel tooling.
+  { id: "campaigns", label: "Campaigns", icon: "briefcase", href: "/app/campaigns", role: "partner" },
+  // Blog CMS — admins only.
+  { id: "blog", label: "Blog", icon: "file", href: "/app/blog", role: "admin" },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -44,9 +48,18 @@ function TopSearch() {
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  admin = false,
+  partner = false,
+}: {
+  children: React.ReactNode;
+  admin?: boolean;
+  partner?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
+  const nav = NAV.filter((n) => (n.role === "admin" ? admin : n.role === "partner" ? partner : true));
   const [menuOpen, setMenuOpen] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   // Resolve the signed-in user for the sidebar footer (null in dev when
@@ -90,7 +103,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </span>
         </Link>
         <nav className="side-nav">
-          {NAV.map((n) => (
+          {nav.map((n) => (
             <Link key={n.id} className={"side-item" + (isActive(pathname, n.href) ? " side-item--active" : "")} href={n.href}>
               <Icon name={n.icon} size={18} />
               <span className="side-item__label">{n.label}</span>

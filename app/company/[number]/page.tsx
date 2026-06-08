@@ -11,6 +11,7 @@ import { getSimilarCompanies } from "@/lib/similar";
 import { getRegionLive } from "@/lib/nomis";
 import { enrichCompany, type CompanyEnrichment } from "@/lib/enrichment";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { isPartner } from "@/lib/admin";
 import { resolveReportAccess } from "@/lib/access";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
@@ -51,6 +52,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   // gate; free users who've spent their monthly report get an "upgrade" gate.
   const gate = access.state === "free_quota_exceeded" ? "quota" : "anonymous";
   const signedIn = !!user;
+  const partner = isPartner(user);
 
   const [economicLive, similar, enrichment] = await Promise.all([
     getRegionLive(c.geo?.region),
@@ -104,6 +106,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           live={bundle.live}
           unlocked={unlocked}
           gate={gate}
+          partner={partner}
         />
       </PublicReportChrome>
     </>

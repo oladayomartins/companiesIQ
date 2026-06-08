@@ -1,7 +1,7 @@
-// Funnel/campaign analytics + QR generator (DigitWarehouse tooling).
-// Aggregates only — no lead PII is read or rendered (leads are RLS-locked and
-// /app is currently unauthenticated; gate this route before production use).
-import { getSupabaseAdmin } from "@/lib/supabase/server";
+// Funnel/campaign analytics + QR generator — DigitWarehouse-exclusive tooling.
+// Aggregates only (no lead PII; leads are RLS-locked). Gated to PARTNER_EMAILS.
+import { getSupabaseAdmin, getCurrentUser } from "@/lib/supabase/server";
+import { isPartner } from "@/lib/admin";
 import { CampaignsScreen, type CampaignStats } from "@/components/app/CampaignsScreen";
 
 export const metadata = { title: "Campaigns · CompaniesIQ" };
@@ -30,6 +30,18 @@ async function loadStats(): Promise<CampaignStats | null> {
 }
 
 export default async function CampaignsPage() {
+  const user = await getCurrentUser();
+  if (!isPartner(user)) {
+    return (
+      <div className="screen">
+        <h1 className="screen-title">Partner access only</h1>
+        <p className="muted" style={{ marginTop: 8 }}>
+          Campaigns, QR generation and the DigitWarehouse funnel tooling are restricted to DigitWarehouse. Ask an admin
+          to add your email to <code>PARTNER_EMAILS</code>.
+        </p>
+      </div>
+    );
+  }
   const stats = await loadStats();
   return <CampaignsScreen stats={stats} />;
 }

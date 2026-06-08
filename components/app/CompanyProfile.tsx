@@ -110,6 +110,7 @@ export function CompanyProfile({
   live,
   unlocked = false,
   gate = "anonymous",
+  partner = false,
 }: {
   company: Company;
   officers: Officer[];
@@ -122,6 +123,7 @@ export function CompanyProfile({
   live: boolean;
   unlocked?: boolean;
   gate?: "anonymous" | "quota";
+  partner?: boolean;
 }) {
   const c = company;
   const router = useRouter();
@@ -177,13 +179,15 @@ export function CompanyProfile({
               <Button variant="secondary" iconLeft="bookmark">
                 Watch
               </Button>
-              <Button
-                variant="secondary"
-                iconLeft="trendUp"
-                onClick={() => router.push(`/visibility-review/${c.number}`)}
-              >
-                Founder view
-              </Button>
+              {partner ? (
+                <Button
+                  variant="secondary"
+                  iconLeft="trendUp"
+                  onClick={() => router.push(`/visibility-review/${c.number}`)}
+                >
+                  Founder view
+                </Button>
+              ) : null}
               <Button variant="primary" iconLeft="download">
                 Export report
               </Button>
