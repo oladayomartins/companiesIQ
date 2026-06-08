@@ -15,6 +15,18 @@ import { createServerClient } from "@supabase/ssr";
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req });
 
+  // Auth-code rescue: if Supabase verified a magic link / email confirmation and
+  // redirected back to a non-callback route (e.g. the Site URL root, "/?code=…"),
+  // forward the code to /auth/callback so the session exchange actually happens.
+  // The PKCE code_verifier cookie lives on this host, so exchanging here works.
+  const code = req.nextUrl.searchParams.get("code");
+  if (code && req.nextUrl.pathname !== "/auth/callback") {
+    const cb = req.nextUrl.clone();
+    cb.pathname = "/auth/callback";
+    if (!cb.searchParams.get("next")) cb.searchParams.set("next", "/app");
+    return NextResponse.redirect(cb);
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return res; // not configured → don't gate anything
