@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardBody, Checkbox, Tag, StatusPill, Badge, CompanyAvatar, Icon, Select, IconButton, Button, Input, Tabs } from "@/components/ds";
 import { FactualTags } from "@/components/app/Tags";
 import { ExplorerGrid } from "@/components/app/ExplorerGrid";
+import { BulkAddToProspect } from "@/components/app/BulkAddToProspect";
 import { fmtNumber, ageLabel } from "@/lib/format";
 import { ALL_SECTORS } from "@/lib/sic";
 import type { EnrichedResult } from "@/lib/data";
@@ -117,6 +118,7 @@ export function SearchScreen() {
         if (cancelled) return;
         if (d.error) setError(d.error);
         setData({ total: d.total ?? 0, results: d.results ?? [], live: d.live !== false });
+        setSelected(new Set()); // clear selection when the result set changes
       })
       .catch((e) => !cancelled && setError(String(e)))
       .finally(() => !cancelled && setLoading(false));
@@ -133,6 +135,33 @@ export function SearchScreen() {
     else if (sort === "inc") r.sort((a, b) => (b.incorporated || "").localeCompare(a.incorporated || ""));
     return r;
   }, [data.results, activeRegions, sort]);
+
+  // Multi-select → bulk "Add to prospect list".
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  function toggleSel(number: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(number)) next.delete(number);
+      else next.add(number);
+      return next;
+    });
+  }
+  const allOnPage = rows.length > 0 && rows.every((r) => selected.has(r.number));
+  function toggleAll() {
+    setSelected((prev) => {
+      if (rows.every((r) => prev.has(r.number))) {
+        const next = new Set(prev);
+        rows.forEach((r) => next.delete(r.number));
+        return next;
+      }
+      const next = new Set(prev);
+      rows.forEach((r) => next.add(r.number));
+      return next;
+    });
+  }
+  const selectedCompanies = rows
+    .filter((r) => selected.has(r.number))
+    .map((r) => ({ number: r.number, name: r.name, sector: r.classification?.sector ?? null, region: r.region ?? null, score: null }));
 
   function exportCsv() {
     const csv = toCSV(
@@ -261,6 +290,18 @@ export function SearchScreen() {
           </Badge>
         </div>
 
+        {selected.size > 0 ? (
+          <div className="bulk-bar">
+            <span className="bulk-bar__count">{selected.size} selected</span>
+            <button className="bulk-bar__clear" onClick={() => setSelected(new Set())}>
+              Clear
+            </button>
+            <div className="bulk-bar__action">
+              <BulkAddToProspect companies={selectedCompanies} onDone={() => setSelected(new Set())} />
+            </div>
+          </div>
+        ) : null}
+
         {view === "grid" ? (
           loading ? (
             <div className="app-loading">Searching the register…</div>
@@ -281,6 +322,9 @@ export function SearchScreen() {
               <div className="table-scroll"><table className="data-table data-table--full">
                 <thead>
                   <tr>
+                    <th className="chk-col">
+                      <Checkbox checked={allOnPage} onChange={toggleAll} />
+                    </th>
                     <th>Company</th>
                     <th>Status</th>
                     <th>Tags</th>
@@ -293,19 +337,22 @@ export function SearchScreen() {
                 <tbody>
                   {loading ? (
                     <tr className="empty-row">
-                      <td colSpan={7}>Searching the register…</td>
+                      <td colSpan={8}>Searching the register…</td>
                     </tr>
                   ) : error ? (
                     <tr className="empty-row">
-                      <td colSpan={7}>{error}</td>
+                      <td colSpan={8}>{error}</td>
                     </tr>
                   ) : rows.length === 0 ? (
                     <tr className="empty-row">
-                      <td colSpan={7}>No companies match these filters.</td>
+                      <td colSpan={8}>No companies match these filters.</td>
                     </tr>
                   ) : (
                     rows.map((c) => (
-                      <tr key={c.number} onClick={() => router.push(`/company/${c.number}`)}>
+                      <tr key={c.number} onClick={() => router.push(`/company/${c.number}`)} className={selected.has(c.number) ? "is-selected" : ""}>
+                        <td className="chk-col" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox checked={selected.has(c.number)} onChange={() => toggleSel(c.number)} />
+                        </td>
                         <td>
                           <div className="cell-co">
                             <CompanyAvatar name={c.name} size="md" />

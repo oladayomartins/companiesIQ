@@ -141,6 +141,45 @@ export async function addProspect(input: {
   return { ok: !error, listId };
 }
 
+/**
+ * Add many companies to one list in a single call (the search → bulk-save
+ * workflow). Resolves/creates the target list once, then upserts all rows.
+ */
+export async function addProspectsBulk(input: {
+  listId?: string;
+  listName?: string;
+  companies: ProspectCompany[];
+}): Promise<{ ok: boolean; listId?: string; added: number }> {
+  const sb = await getSupabaseServer();
+  const user = await getCurrentUser();
+  const companies = (input.companies || []).filter((c) => c?.number).slice(0, 500);
+  if (!sb || !user || !companies.length) return { ok: false, added: 0 };
+
+  // Resolve the list once (explicit id → by name → create → most-recent → new).
+  let listId = input.listId;
+  if (!listId && input.listName) {
+    const name = input.listName.trim();
+    const { data: existing } = await sb.from("prospect_lists").select("id").eq("user_id", user.id).ilike("name", name).maybeSingle();
+    listId = (existing?.id as string) ?? (await createProspectList(name))?.id;
+  }
+  if (!listId) {
+    const { data: recent } = await sb.from("prospect_lists").select("id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    listId = (recent?.id as string) ?? (await createProspectList("My prospects"))?.id;
+  }
+  if (!listId) return { ok: false, added: 0 };
+
+  const rows = companies.map((c) => ({
+    list_id: listId,
+    company_number: c.number,
+    company_name: c.name ?? null,
+    sector: c.sector ?? null,
+    region: c.region ?? null,
+    score: c.score ?? null,
+  }));
+  const { error } = await sb.from("prospect_list_items").upsert(rows, { onConflict: "list_id,company_number" });
+  return { ok: !error, listId, added: error ? 0 : rows.length };
+}
+
 export async function removeProspect(listId: string, companyNumber: string): Promise<boolean> {
   const sb = await getSupabaseServer();
   const user = await getCurrentUser();

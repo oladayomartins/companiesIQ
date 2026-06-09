@@ -473,3 +473,15 @@
   .prospect-row > span:nth-child(2), .prospect-row > span:nth-child(3), .prospect-row > span:nth-child(5),
   .prospect-row--head > span:nth-child(2), .prospect-row--head > span:nth-child(3), .prospect-row--head > span:nth-child(5) { display: none; }
 }
+
+/* ── Bulk select (search results → prospect list) ───────────────── */
+.bulk-bar { display: flex; align-items: center; gap: 14px; padding: 10px 14px; margin-bottom: 12px;
+  background: var(--accent-tint); border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  border-radius: var(--radius-lg, 12px); }
+.bulk-bar__count { font-weight: 700; font-size: 13px; color: var(--accent); }
+.bulk-bar__clear { background: transparent; border: 0; color: var(--text-muted); cursor: pointer; font-size: 12.5px; text-decoration: underline; }
+.bulk-bar__clear:hover { color: var(--text-strong); }
+.bulk-bar__action { margin-left: auto; }
+.atp-pop--right { left: auto; right: 0; }
+.data-table .chk-col { width: 34px; padding-right: 0; }
+.data-table tr.is-selected { background: var(--accent-tint); }
