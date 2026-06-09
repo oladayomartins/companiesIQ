@@ -237,7 +237,19 @@ export function CompanyProfile({
 
       {tab === "intelligence" ? (
         unlocked ? (
-          <IntelligenceReport report={report} similar={similar} enrichment={enrichment} opportunity={opportunity} />
+          <IntelligenceReport
+            report={report}
+            similar={similar}
+            enrichment={enrichment}
+            opportunity={opportunity}
+            prospect={{
+              number: c.number,
+              name: c.name,
+              sector: c.primaryClassification?.sector ?? null,
+              region: c.geo?.region ?? null,
+              score: opportunity.score,
+            }}
+          />
         ) : (
           <LockedIntelligence report={report} similar={similar} enrichment={enrichment} opportunity={opportunity} signedIn={signedIn} />
         )

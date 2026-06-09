@@ -59,6 +59,33 @@ create table if not exists public.watchlist_companies (
   primary key (watchlist_id, company_number)
 );
 
+-- --- Prospect lists (lead-qualification workflow) ----------------
+create table if not exists public.prospect_lists (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  name        text not null,
+  created_at  timestamptz default now()
+);
+create table if not exists public.prospect_list_items (
+  list_id        uuid not null references public.prospect_lists (id) on delete cascade,
+  company_number text not null,
+  company_name   text,
+  sector         text,
+  region         text,
+  score          integer,
+  note           text,
+  added_at       timestamptz default now(),
+  primary key (list_id, company_number)
+);
+alter table public.prospect_lists enable row level security;
+alter table public.prospect_list_items enable row level security;
+create policy "own prospect lists" on public.prospect_lists
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own prospect items" on public.prospect_list_items
+  for all
+  using (exists (select 1 from public.prospect_lists pl where pl.id = list_id and pl.user_id = auth.uid()))
+  with check (exists (select 1 from public.prospect_lists pl where pl.id = list_id and pl.user_id = auth.uid()));
+
 -- --- Saved searches ----------------------------------------------
 create table if not exists public.saved_searches (
   id          uuid primary key default gen_random_uuid(),

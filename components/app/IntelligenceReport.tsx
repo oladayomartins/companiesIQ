@@ -3,6 +3,7 @@ import { Card, CardHeader, CardBody, Stat, Badge, Icon } from "@/components/ds";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import type { OpportunityIntel, DigitalFact } from "@/lib/opportunity";
+import { AddToProspect, type ProspectTarget } from "@/components/app/AddToProspect";
 import { fmtNumber, fmtPercent, fmtDelta, fmtDate } from "@/lib/format";
 
 function Source({ children }: { children: React.ReactNode }) {
@@ -72,6 +73,7 @@ export function IntelligenceReport({
   report,
   similar = [],
   opportunity = null,
+  prospect = null,
 }: {
   report: Report;
   similar?: SimilarCompany[];
@@ -79,6 +81,8 @@ export function IntelligenceReport({
   // encapsulates the enrichment-derived facts shown in the report.
   enrichment?: CompanyEnrichment | null;
   opportunity?: OpportunityIntel | null;
+  // When set (unlocked, in-app), shows the "Add to prospect list" action.
+  prospect?: ProspectTarget | null;
 }) {
   const r = report;
   return (
@@ -120,6 +124,12 @@ export function IntelligenceReport({
                 )}
               </div>
             </div>
+
+            {prospect ? (
+              <div className="opp-cta">
+                <AddToProspect company={prospect} />
+              </div>
+            ) : null}
 
             {/* Digital presence — verified facts */}
             <div className="opp-block">
