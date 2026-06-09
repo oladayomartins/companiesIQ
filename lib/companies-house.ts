@@ -191,8 +191,13 @@ interface CHProfile {
     postal_code?: string;
     country?: string;
   };
-  accounts?: { next_due?: string; last_accounts?: { made_up_to?: string } };
-  confirmation_statement?: { next_due?: string };
+  accounts?: {
+    next_due?: string;
+    overdue?: boolean;
+    next_accounts?: { due_on?: string; overdue?: boolean };
+    last_accounts?: { made_up_to?: string };
+  };
+  confirmation_statement?: { next_due?: string; overdue?: boolean; last_made_up_to?: string };
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -231,11 +236,34 @@ export async function getCompany(number: string): Promise<Company> {
         }
       : undefined,
     geo,
+    accounts: p.accounts
+      ? {
+          nextDue: p.accounts.next_accounts?.due_on ?? p.accounts.next_due,
+          lastMadeUpTo: p.accounts.last_accounts?.made_up_to,
+          // Prefer CH's own overdue flag; fall back to comparing the due date.
+          overdue:
+            p.accounts.next_accounts?.overdue ??
+            p.accounts.overdue ??
+            isPastDue(p.accounts.next_accounts?.due_on ?? p.accounts.next_due),
+        }
+      : undefined,
+    confirmationStatement: p.confirmation_statement
+      ? {
+          nextDue: p.confirmation_statement.next_due,
+          lastMadeUpTo: p.confirmation_statement.last_made_up_to,
+          overdue: p.confirmation_statement.overdue ?? isPastDue(p.confirmation_statement.next_due),
+        }
+      : undefined,
     employees: null,
     revenue: null,
-    // attach raw account dates for the report via a side channel
-    ...( { _accounts: p.accounts, _confirmation: p.confirmation_statement } as object ),
-  } as Company & { _accounts?: unknown; _confirmation?: unknown };
+  };
+}
+
+/** True when an ISO due-date is strictly in the past (UTC). undefined → false. */
+function isPastDue(due?: string): boolean {
+  if (!due) return false;
+  const t = Date.parse(due);
+  return Number.isFinite(t) && t < Date.now();
 }
 
 // ---------------------------------------------------------------

@@ -47,6 +47,10 @@ export interface Company {
     country?: string;
   };
   geo?: GeoLocation;
+  // Compliance / filing facts from the Companies House profile (Category 1 —
+  // verifiable). Dates are ISO; `overdue` mirrors CH's own flag where present.
+  accounts?: { nextDue?: string; lastMadeUpTo?: string; overdue?: boolean };
+  confirmationStatement?: { nextDue?: string; lastMadeUpTo?: string; overdue?: boolean };
   // illustrative / enrichable fields (not from CH free API)
   employees?: number | null;
   revenue?: string | null;

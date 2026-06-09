@@ -47,6 +47,8 @@ export async function enrichCompany(input: {
         reviewCount: data.review_count,
         reviewRating: data.review_rating != null ? Number(data.review_rating) : null,
         websiteUrl: data.website_url,
+        // Phone lives in the cached raw lookup (no dedicated column).
+        phone: (data.raw as { phone?: string } | null)?.phone ?? null,
         matchConfidence: data.match_confidence,
         matchScore: data.match_score != null ? Number(data.match_score) : null,
         placesSource: data.places_source,
@@ -89,6 +91,7 @@ export async function enrichCompany(input: {
     reviewCount: places.reviewCount,
     reviewRating: places.reviewRating,
     websiteUrl: places.website,
+    phone: places.phone,
     matchConfidence: places.confidence,
     matchScore: places.best?.matchScore ?? null,
     placesSource: places.source,

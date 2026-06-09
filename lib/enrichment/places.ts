@@ -29,6 +29,7 @@ const FIELD_MASK = [
   "places.websiteUri",
   "places.googleMapsUri",
   "places.businessStatus",
+  "places.nationalPhoneNumber",
 ].join(",");
 
 // Minimum name-similarity to trust a match (0..1). Below this → Not Assessed.
@@ -43,6 +44,7 @@ interface RawPlace {
   websiteUri?: string;
   googleMapsUri?: string;
   businessStatus?: string;
+  nationalPhoneNumber?: string;
 }
 
 export interface PlaceMatch {
@@ -52,6 +54,7 @@ export interface PlaceMatch {
   rating?: number;
   reviewCount?: number;
   website?: string;
+  phone?: string;
   mapsUrl?: string;
   businessStatus?: string;
   matchScore: number; // 0..1 similarity to the company name
@@ -69,6 +72,7 @@ export interface PlacesLookup {
   reviewCount: number | null;
   reviewRating: number | null;
   website: string | null;
+  phone: string | null;
   source: string | null; // Google Maps URL of the trusted match (the citation)
   checkedAt: string;
 }
@@ -116,6 +120,7 @@ function mapPlace(p: RawPlace, company: string): PlaceMatch {
     rating: p.rating,
     reviewCount: p.userRatingCount,
     website: p.websiteUri,
+    phone: p.nationalPhoneNumber,
     mapsUrl: p.googleMapsUri,
     businessStatus: p.businessStatus,
     matchScore: Number(nameScore(company, name).toFixed(2)),
@@ -170,6 +175,7 @@ export async function lookupPlace(input: { name: string; locality?: string; post
     reviewCount: trusted?.reviewCount ?? null,
     reviewRating: trusted?.rating ?? null,
     website: trusted?.website ?? null,
+    phone: trusted?.phone ?? null,
     source: trusted?.mapsUrl ?? null,
     checkedAt: new Date().toISOString(),
   };

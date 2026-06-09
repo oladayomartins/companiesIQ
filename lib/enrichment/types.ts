@@ -11,6 +11,7 @@ export interface CompanyEnrichment {
   reviewCount: number | null;
   reviewRating: number | null;
   websiteUrl: string | null;
+  phone: string | null;
   matchConfidence: MatchConfidence | null;
   matchScore: number | null;
   placesSource: string | null;

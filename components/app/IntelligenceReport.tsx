@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Card, CardHeader, CardBody, Stat, Badge, Icon } from "@/components/ds";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
-import { aiReadiness, type CompanyEnrichment } from "@/lib/enrichment/types";
+import type { CompanyEnrichment } from "@/lib/enrichment/types";
+import type { OpportunityIntel, DigitalFact } from "@/lib/opportunity";
 import { fmtNumber, fmtPercent, fmtDelta, fmtDate } from "@/lib/format";
 
 function Source({ children }: { children: React.ReactNode }) {
@@ -36,25 +37,49 @@ function ReadinessList({ items, status }: { items: string[]; status: string }) {
   );
 }
 
-// One digital-presence signal row — a link when present, else a status badge.
-function PresenceRow({ label, value, href, tone = "neutral" }: { label: string; value: string; href?: string; tone?: "pos" | "neutral" | "warn" }) {
+// One digital-presence fact row — a confident, sourced statement. Detected →
+// the value (a link where it is one); not detected → an explicit "Not detected";
+// not assessed → "Not assessed" (we never guess).
+function FactRow({ fact }: { fact: DigitalFact }) {
+  const tone = fact.state === "detected" ? "pos" : fact.state === "not_detected" ? "warn" : "neutral";
+  const text = fact.state === "detected" ? fact.value ?? "Detected" : fact.state === "not_detected" ? fact.value ?? "Not detected" : "Not assessed";
   return (
     <div className="readiness__row">
-      <span className="readiness__label">{label}</span>
-      {href ? (
-        <a className="link-btn" href={href} target="_blank" rel="noopener noreferrer">
-          {value}
+      <span className="readiness__label">{fact.label}</span>
+      {fact.state === "detected" && fact.href ? (
+        <a className="link-btn" href={fact.href} target="_blank" rel="noopener noreferrer">
+          {text}
         </a>
       ) : (
-        <Badge tone={tone}>{value}</Badge>
+        <Badge tone={tone}>{text}</Badge>
       )}
     </div>
   );
 }
 
-const READINESS_LABEL: Record<string, string> = { high: "High readiness", moderate: "Moderate readiness", low: "Low readiness", unknown: "Not Assessed" };
+function OppRow({ tone, children }: { tone: "good" | "watch" | "neutral"; children: React.ReactNode }) {
+  return (
+    <div className={`opp-row opp-row--${tone}`}>
+      <span className="opp-row__mark" aria-hidden="true">
+        {tone === "good" ? "✓" : tone === "watch" ? "!" : "•"}
+      </span>
+      <span>{children}</span>
+    </div>
+  );
+}
 
-export function IntelligenceReport({ report, similar = [], enrichment = null }: { report: Report; similar?: SimilarCompany[]; enrichment?: CompanyEnrichment | null }) {
+export function IntelligenceReport({
+  report,
+  similar = [],
+  opportunity = null,
+}: {
+  report: Report;
+  similar?: SimilarCompany[];
+  // Accepted for call-site compatibility; the opportunity object already
+  // encapsulates the enrichment-derived facts shown in the report.
+  enrichment?: CompanyEnrichment | null;
+  opportunity?: OpportunityIntel | null;
+}) {
   const r = report;
   return (
     <div className="report">
@@ -63,9 +88,118 @@ export function IntelligenceReport({ report, similar = [], enrichment = null }: 
         figure below is sourced and dated — educational, not promotional.
       </p>
 
-      {/* 1 · Market summary */}
+      {/* 1 · Opportunity intelligence — the lead-qualification view */}
+      {opportunity ? (
+        <Card>
+          <CardHeader children={<SectionHead n={1} title="Opportunity intelligence" />} action={<Badge tone="accent">Lead view</Badge>} />
+          <CardBody>
+            <p className="rsec__note">
+              A lead-qualification view of {r.overview.name}. Facts are verified from the public record and Google
+              Places. Sector and provider notes are labelled as common patterns — not claims about this company.
+            </p>
+
+            {/* Score + headline signals */}
+            <div className="opp-top">
+              <div className="opp-score">
+                <div className="opp-score__num">
+                  {opportunity.score}
+                  <span className="opp-score__den">/100</span>
+                </div>
+                <div className="opp-score__label">Opportunity signal score</div>
+              </div>
+              <div className="opp-signals">
+                {opportunity.signals.length ? (
+                  opportunity.signals.map((s, i) => (
+                    <span key={i} className={`opp-chip opp-chip--${s.tone}`}>
+                      {s.tone === "good" ? "✓" : s.tone === "watch" ? "⚠" : "•"} {s.label}
+                      {s.detail ? ` · ${s.detail}` : ""}
+                    </span>
+                  ))
+                ) : (
+                  <span className="rsec__note">No notable signals on the public record.</span>
+                )}
+              </div>
+            </div>
+
+            {/* Digital presence — verified facts */}
+            <div className="opp-block">
+              <div className="opp-block__title">
+                Digital presence
+                <Badge tone={opportunity.digitalMeasured ? "pos" : "neutral"}>
+                  {opportunity.digitalMeasured ? "Measured" : "Not assessed"}
+                </Badge>
+              </div>
+              <div className="readiness">
+                <FactRow fact={opportunity.digital.website} />
+                <FactRow fact={opportunity.digital.gbp} />
+                <FactRow fact={opportunity.digital.reviews} />
+                <FactRow fact={opportunity.digital.phone} />
+              </div>
+              {opportunity.digitalMeasured ? (
+                <Source>Google Places · public business listing</Source>
+              ) : (
+                <p className="rsec__note">Measured from Google Places when a confident match exists; otherwise shown as Not assessed (never assumed).</p>
+              )}
+            </div>
+
+            {/* Compliance & register — verified facts */}
+            <div className="opp-block">
+              <div className="opp-block__title">Compliance &amp; register signals</div>
+              <div className="opp-list">
+                {opportunity.compliance.map((s, i) => (
+                  <OppRow key={i} tone={s.tone}>
+                    {s.label}
+                    {s.detail ? ` — ${s.detail}` : ""}
+                  </OppRow>
+                ))}
+              </div>
+              <Source>Companies House · public filing record</Source>
+            </div>
+
+            {/* Category 2 — sector norms (clearly labelled) */}
+            <div className="opp-cols">
+              <div className="opp-block">
+                <div className="opp-block__title">Likely relevant · sector norms</div>
+                <p className="rsec__note">
+                  Businesses in {opportunity.sector} commonly invest in the following. A general pattern for the sector —
+                  not an assessment of this company&apos;s needs.
+                </p>
+                <div className="opp-tags">
+                  {opportunity.commonlyInvests.map((x) => (
+                    <span className="opp-tag" key={x}>{x}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="opp-block">
+                <div className="opp-block__title">Commonly relevant to</div>
+                <p className="rsec__note">Provider types that typically serve a company with this profile.</p>
+                <div className="opp-tags">
+                  {opportunity.relevantFor.map((x) => (
+                    <span className="opp-tag opp-tag--prov" key={x}>{x}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Transparent score basis */}
+            {opportunity.scoreBasis.length ? (
+              <details className="opp-basis">
+                <summary>How this score is calculated</summary>
+                <ul>
+                  {opportunity.scoreBasis.map((b, i) => (
+                    <li key={i}>{b}</li>
+                  ))}
+                </ul>
+                <p className="rsec__note">Composite of verified public signals only. Indicative — not a recommendation.</p>
+              </details>
+            ) : null}
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {/* 2 · Market summary */}
       <Card>
-        <CardHeader children={<SectionHead n={1} title="Market summary" />} />
+        <CardHeader children={<SectionHead n={2} title="Market summary" />} />
         <CardBody>
           <div className="metric-row metric-row--5">
             <Stat size="sm" label="Industry" value={r.overview.sector} />
@@ -78,9 +212,9 @@ export function IntelligenceReport({ report, similar = [], enrichment = null }: 
         </CardBody>
       </Card>
 
-      {/* 2 · Business overview */}
+      {/* 3 · Business overview */}
       <Card>
-        <CardHeader children={<SectionHead n={2} title="Business overview" />} />
+        <CardHeader children={<SectionHead n={3} title="Business overview" />} />
         <CardBody>
           <dl className="detail-list">
             <div>
@@ -113,9 +247,9 @@ export function IntelligenceReport({ report, similar = [], enrichment = null }: 
         </CardBody>
       </Card>
 
-      {/* 3 · Industry snapshot */}
+      {/* 4 · Industry snapshot */}
       <Card>
-        <CardHeader children={<SectionHead n={3} title="Industry snapshot" />} />
+        <CardHeader children={<SectionHead n={4} title="Industry snapshot" />} />
         <CardBody>
           <div className="metric-row">
             <Stat size="sm" label={`Businesses · ${r.industry.sector}`} value={fmtNumber(r.industry.businesses)} />
@@ -126,9 +260,9 @@ export function IntelligenceReport({ report, similar = [], enrichment = null }: 
         </CardBody>
       </Card>
 
-      {/* 4 · Competition snapshot */}
+      {/* 5 · Competition snapshot */}
       <Card>
-        <CardHeader children={<SectionHead n={4} title="Competition snapshot" />} />
+        <CardHeader children={<SectionHead n={5} title="Competition snapshot" />} />
         <CardBody>
           <div className="metric-row metric-row--4">
             <Stat size="sm" label={`Similar companies · ${r.local.region}`} value={fmtNumber(r.local.inSameIndustry)} />
@@ -140,9 +274,9 @@ export function IntelligenceReport({ report, similar = [], enrichment = null }: 
         </CardBody>
       </Card>
 
-      {/* 5 · Growth & survival (merged) */}
+      {/* 6 · Growth & survival (merged) */}
       <Card>
-        <CardHeader children={<SectionHead n={5} title="Growth & survival" />} />
+        <CardHeader children={<SectionHead n={6} title="Growth & survival" />} />
         <CardBody>
           <div className="metric-row metric-row--2">
             <Stat size="sm" label="National sector growth" value={fmtDelta(r.regional.nationalGrowth)} />
@@ -173,9 +307,9 @@ export function IntelligenceReport({ report, similar = [], enrichment = null }: 
         </CardBody>
       </Card>
 
-      {/* 6 · Local economic indicators */}
+      {/* 7 · Local economic indicators */}
       <Card>
-        <CardHeader children={<SectionHead n={6} title="Local economic indicators" />} />
+        <CardHeader children={<SectionHead n={7} title="Local economic indicators" />} />
         <CardBody>
           <div className="metric-row metric-row--4">
             <Stat size="sm" label="Population" value={fmtNumber(r.economic.population)} />
@@ -187,9 +321,9 @@ export function IntelligenceReport({ report, similar = [], enrichment = null }: 
         </CardBody>
       </Card>
 
-      {/* 7 · Industry trends */}
+      {/* 8 · Industry trends */}
       <Card>
-        <CardHeader children={<SectionHead n={7} title="Industry trends" />} />
+        <CardHeader children={<SectionHead n={8} title="Industry trends" />} />
         <CardBody>
           <dl className="detail-list">
             <div>
@@ -213,9 +347,9 @@ export function IntelligenceReport({ report, similar = [], enrichment = null }: 
         </CardBody>
       </Card>
 
-      {/* 8 · Market outlook */}
+      {/* 9 · Market outlook */}
       <Card>
-        <CardHeader children={<SectionHead n={8} title="Market outlook" />} action={<Badge tone="accent">Evidence-based</Badge>} />
+        <CardHeader children={<SectionHead n={9} title="Market outlook" />} action={<Badge tone="accent">Evidence-based</Badge>} />
         <CardBody>
           <ul className="recs">
             {r.outlook.items.map((item, i) => (
@@ -229,66 +363,14 @@ export function IntelligenceReport({ report, similar = [], enrichment = null }: 
         </CardBody>
       </Card>
 
-      {/* 9 · Startup readiness (educational) */}
+      {/* 10 · Startup readiness (educational) */}
       <Card>
-        <CardHeader children={<SectionHead n={9} title="Startup readiness" />} action={<Badge tone="neutral">Educational</Badge>} />
+        <CardHeader children={<SectionHead n={10} title="Startup readiness" />} action={<Badge tone="neutral">Educational</Badge>} />
         <CardBody>
           <p className="rsec__note">Common foundations for a newly incorporated business. Not assessed for this company.</p>
           <ReadinessList items={STARTUP_FOUNDATIONS} status="Not Assessed" />
         </CardBody>
       </Card>
-
-      {/* 10 · Digital presence readiness (measured where available) */}
-      {(() => {
-        const e = enrichment;
-        const measured = !!(e && e.matchConfidence === "high");
-        const website = e?.websiteUrl ?? null;
-        const gbp = e?.gbpPresent;
-        const reviews = e?.reviewCount;
-        const ai = aiReadiness(e);
-        return (
-          <Card>
-            <CardHeader
-              children={<SectionHead n={10} title="Digital presence readiness" />}
-              action={<Badge tone={measured ? "pos" : "neutral"}>{measured ? "Measured" : "Not Assessed"}</Badge>}
-            />
-            <CardBody>
-              <p className="rsec__note">
-                Public online-visibility signals. Measured from Google Places when a confident match exists; otherwise
-                shown as Not Assessed (never assumed).
-              </p>
-              <div className="readiness">
-                <PresenceRow
-                  label="Website"
-                  value={website ? "Present" : "Not Assessed"}
-                  href={website ?? undefined}
-                  tone={website ? "pos" : "neutral"}
-                />
-                <PresenceRow
-                  label="Google Business Profile"
-                  value={gbp === true ? "Present" : gbp === false ? "Not found" : "Not Assessed"}
-                  tone={gbp === true ? "pos" : "neutral"}
-                />
-                <PresenceRow
-                  label="Reviews"
-                  value={reviews != null ? `${fmtNumber(reviews)}${e?.reviewRating ? ` · ${e.reviewRating}★` : ""}` : "Not Assessed"}
-                  tone={reviews ? "pos" : "neutral"}
-                />
-                <PresenceRow label="Professional email" value="Not Assessed" />
-                <PresenceRow label="Social presence" value="Not Assessed" />
-                <PresenceRow
-                  label="AI-visibility readiness"
-                  value={READINESS_LABEL[ai.level]}
-                  tone={ai.level === "high" ? "pos" : ai.level === "moderate" ? "warn" : "neutral"}
-                />
-              </div>
-              {e?.placesSource ? (
-                <Source>Google Places · measured {fmtDate(e.checkedAt)}</Source>
-              ) : null}
-            </CardBody>
-          </Card>
-        );
-      })()}
 
       {/* 11 · Similar companies */}
       <Card>

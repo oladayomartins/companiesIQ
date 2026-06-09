@@ -7,6 +7,7 @@ import { IntelligenceReport } from "@/components/app/IntelligenceReport";
 import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
+import { buildOpportunity, type OpportunityIntel } from "@/lib/opportunity";
 import { fmtDate, ageLabel } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 
@@ -42,17 +43,19 @@ function LockedIntelligence({
   report,
   similar,
   enrichment,
+  opportunity,
   signedIn,
 }: {
   report: Report;
   similar: SimilarCompany[];
   enrichment: CompanyEnrichment | null;
+  opportunity: OpportunityIntel | null;
   signedIn: boolean;
 }) {
   return (
     <div className="locked-intel">
       <div className="locked-intel__blur" aria-hidden="true">
-        <IntelligenceReport report={report} similar={similar} enrichment={enrichment} />
+        <IntelligenceReport report={report} similar={similar} enrichment={enrichment} opportunity={opportunity} />
       </div>
       <div className="locked-intel__overlay">
         <Card variant="raised" className="locked-intel__card">
@@ -116,6 +119,18 @@ export function CompanyProfile({
   // Logged-out visitors land on the free public profile (Overview first);
   // unlocked users open straight into the Intelligence report.
   const [tab, setTab] = useState(unlocked ? "intelligence" : "overview");
+
+  // Lead-qualification view (facts + cautious inferences). Counts come from the
+  // live register data already in scope; enrichment is null until unlocked.
+  const opportunity = buildOpportunity(
+    c,
+    {
+      directors: officers.filter((o) => o.status === "active").length,
+      pscs: pscs.filter((p) => p.active).length,
+      charges: charges.length,
+    },
+    enrichment
+  );
 
   const tags = c.classifications.slice(0, 3).map((cl) => cl.category);
   const addressParts = c.address
@@ -222,9 +237,9 @@ export function CompanyProfile({
 
       {tab === "intelligence" ? (
         unlocked ? (
-          <IntelligenceReport report={report} similar={similar} enrichment={enrichment} />
+          <IntelligenceReport report={report} similar={similar} enrichment={enrichment} opportunity={opportunity} />
         ) : (
-          <LockedIntelligence report={report} similar={similar} enrichment={enrichment} signedIn={signedIn} />
+          <LockedIntelligence report={report} similar={similar} enrichment={enrichment} opportunity={opportunity} signedIn={signedIn} />
         )
       ) : null}
 
