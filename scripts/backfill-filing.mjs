@@ -15,9 +15,10 @@
 //   node scripts/backfill-filing.mjs --all           # re-check every row
 //   node scripts/backfill-filing.mjs --stale 30      # re-check rows older than 30 days
 //
-// Reads NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and
+// Talks to Supabase via its REST (PostgREST) API with fetch — no SDK, so it
+// runs on any Node without the realtime/WebSocket dependency. Reads
+// NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and
 // COMPANIES_HOUSE_API_KEY from the environment or .env.local.
-import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 
 function env(name) {
@@ -25,7 +26,7 @@ function env(name) {
   try {
     const file = readFileSync(new URL("../.env.local", import.meta.url), "utf8");
     const line = file.split("\n").find((l) => l.startsWith(name + "="));
-    if (line) return line.slice(name.length + 1).trim();
+    if (line) return line.slice(name.length + 1).trim().replace(/^["']|["']$/g, "");
   } catch {
     /* no .env.local */
   }
@@ -49,10 +50,15 @@ const args = process.argv.slice(2);
 const LIMIT = Number(args[args.indexOf("--limit") + 1]) || 2000;
 const ALL = args.includes("--all");
 const STALE_DAYS = args.includes("--stale") ? Number(args[args.indexOf("--stale") + 1]) || 30 : null;
-const CONCURRENCY = 5; // ~ stays well under 600 req / 5 min
+const CONCURRENCY = 5; // stays well under 600 req / 5 min
 const PAGE = 500;
 
-const supabase = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+const REST = `${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/companies`;
+const sbHeaders = {
+  apikey: SERVICE_KEY,
+  Authorization: `Bearer ${SERVICE_KEY}`,
+  "Content-Type": "application/json",
+};
 const chAuth = "Basic " + Buffer.from(`${CH_KEY}:`).toString("base64");
 
 function isPastDue(due) {
@@ -61,13 +67,29 @@ function isPastDue(due) {
   return Number.isFinite(t) && t < Date.now();
 }
 
+function selectFilter() {
+  if (ALL) return "";
+  if (STALE_DAYS) {
+    const cutoff = new Date(Date.now() - STALE_DAYS * 86400000).toISOString();
+    return `&or=(filing_checked_at.is.null,filing_checked_at.lt.${cutoff})`;
+  }
+  return "&filing_checked_at=is.null";
+}
+
+async function selectBatch() {
+  const url = `${REST}?select=number&order=number.asc&limit=${PAGE}${selectFilter()}`;
+  const res = await fetch(url, { headers: sbHeaders });
+  if (!res.ok) throw new Error(`select ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  return res.json();
+}
+
 async function fetchFiling(number) {
   const res = await fetch(`https://api.company-information.service.gov.uk/company/${encodeURIComponent(number)}`, {
     headers: { Authorization: chAuth },
   });
   if (res.status === 429) return { retry: true };
   if (res.status === 404) return { gone: true };
-  if (!res.ok) throw new Error(`CH ${res.status} for ${number}`);
+  if (!res.ok) throw new Error(`CH ${res.status}`);
   const p = await res.json();
   const acc = p.accounts || {};
   const cs = p.confirmation_statement || {};
@@ -82,27 +104,24 @@ async function fetchFiling(number) {
   };
 }
 
+async function updateRow(number, filing) {
+  const res = await fetch(`${REST}?number=eq.${encodeURIComponent(number)}`, {
+    method: "PATCH",
+    headers: { ...sbHeaders, Prefer: "return=minimal" },
+    body: JSON.stringify(filing),
+  });
+  return res.ok;
+}
+
 async function main() {
   console.log(`Backfilling filing data — limit ${LIMIT}, ${ALL ? "ALL rows" : STALE_DAYS ? `stale > ${STALE_DAYS}d` : "un-checked only"}`);
   let processed = 0;
   let updated = 0;
-  let offset = 0;
 
   while (processed < LIMIT) {
-    let q = supabase.from("companies").select("number").order("number", { ascending: true }).range(offset, offset + PAGE - 1);
-    if (!ALL && !STALE_DAYS) q = q.is("filing_checked_at", null);
-    if (STALE_DAYS) {
-      const cutoff = new Date(Date.now() - STALE_DAYS * 86400000).toISOString();
-      q = q.or(`filing_checked_at.is.null,filing_checked_at.lt.${cutoff}`);
-    }
-    const { data, error } = await q;
-    if (error) {
-      console.error("✗ select error:", error.message);
-      break;
-    }
+    const data = await selectBatch();
     if (!data || data.length === 0) break;
 
-    // Process this page with a small concurrency pool.
     let i = 0;
     async function worker() {
       while (i < data.length && processed < LIMIT) {
@@ -114,26 +133,23 @@ async function main() {
           if (filing.retry) {
             await new Promise((r) => setTimeout(r, 5000));
             i = idx; // retry this index
+            processed--;
             continue;
           }
           if (filing.gone) continue;
-          const { error: upErr } = await supabase.from("companies").update(filing).eq("number", number);
-          if (!upErr) updated++;
+          if (await updateRow(number, filing)) updated++;
         } catch (e) {
           console.warn(`  ! ${number}: ${e.message}`);
         }
       }
     }
     await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-
     console.log(`  …${processed} processed, ${updated} updated`);
-    if (!ALL && !STALE_DAYS) {
-      // We filtered to un-checked rows, which shrink as we update — keep offset 0.
-      offset = 0;
-    } else {
-      offset += PAGE;
-    }
-    if (data.length < PAGE && (ALL || STALE_DAYS)) break;
+
+    // Un-checked mode: updated rows leave the filter, so the next page is fresh.
+    // ALL/stale mode without a moving cursor would loop — stop after one page set.
+    if ((ALL || STALE_DAYS) && data.length < PAGE) break;
+    if (data.length < PAGE) break;
   }
 
   console.log(`✓ Done. ${updated}/${processed} rows updated with filing data.`);
