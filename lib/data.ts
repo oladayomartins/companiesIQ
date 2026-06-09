@@ -8,6 +8,8 @@
 import "server-only";
 import type { Company, SearchResult, Officer, Filing, Charge, OfficerProfile, PSC } from "./types";
 import * as ch from "./companies-house";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { classifySic } from "@/lib/sic";
 
 export const LIVE = true;
 
@@ -47,6 +49,126 @@ export async function explore(params: ExploreParams): Promise<{ total: number; r
     total = results.length;
   }
   return { total, results, live: true };
+}
+
+// ============================================================
+// Register-cache search (the filing-status filters)
+// ------------------------------------------------------------
+// Companies House's search API can't filter by filing status, so the
+// accountant filters (overdue accounts, accounts due soon, confirmation
+// statement due) query CompaniesIQ's own `companies` cache instead — the
+// only place filing dates are stored. Coverage grows with the ingest job
+// and the backfill script; callers should surface that to the user.
+// ============================================================
+export interface FilingFilters {
+  accountsOverdue?: boolean;
+  accountsDueDays?: number; // upcoming accounts due within N days
+  confirmationDue?: boolean; // confirmation statement overdue or due within 30 days
+}
+
+export interface LocalExploreParams extends FilingFilters {
+  q?: string;
+  status?: string[];
+  sicCodes?: string[];
+  sector?: string;
+  region?: string;
+  incorporatedFrom?: string;
+  size?: number;
+  startIndex?: number;
+}
+
+export function hasFilingFilter(f: FilingFilters): boolean {
+  return !!(f.accountsOverdue || f.accountsDueDays || f.confirmationDue);
+}
+
+function isoToday(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+function addDays(iso: string, days: number): string {
+  const d = new Date(iso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+interface CompanyRow {
+  number: string;
+  name: string;
+  status: string | null;
+  type: string | null;
+  incorporated: string | null;
+  sic_codes: string[] | null;
+  primary_sector: string | null;
+  region: string | null;
+  postcode: string | null;
+  accounts_next_due: string | null;
+  accounts_overdue: boolean | null;
+  confirmation_next_due: string | null;
+  confirmation_overdue: boolean | null;
+}
+
+function mapRow(row: CompanyRow): EnrichedResult {
+  const sic = row.sic_codes ?? [];
+  return {
+    number: row.number,
+    name: row.name,
+    status: row.status ?? "active",
+    incorporated: row.incorporated ?? undefined,
+    sicCodes: sic,
+    classification: sic[0] ? classifySic(sic[0]) : undefined,
+    region: row.region ?? undefined,
+    postcode: row.postcode ?? undefined,
+    companyType: row.type ?? undefined,
+    accountsNextDue: row.accounts_next_due ?? undefined,
+    accountsOverdue: row.accounts_overdue ?? undefined,
+    confirmationNextDue: row.confirmation_next_due ?? undefined,
+    confirmationOverdue: row.confirmation_overdue ?? undefined,
+  };
+}
+
+export async function exploreLocal(
+  params: LocalExploreParams
+): Promise<{ total: number; results: EnrichedResult[]; live: boolean; cache: true }> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return { total: 0, results: [], live: false, cache: true };
+
+  const size = params.size ?? 40;
+  const start = params.startIndex ?? 0;
+  const today = isoToday();
+
+  let query = admin
+    .from("companies")
+    .select(
+      "number,name,status,type,incorporated,sic_codes,primary_sector,region,postcode,accounts_next_due,accounts_overdue,confirmation_next_due,confirmation_overdue",
+      { count: "exact" }
+    );
+
+  if (params.q) query = query.ilike("name", `%${params.q}%`);
+  if (params.status?.length) query = query.in("status", params.status);
+  if (params.sector) query = query.eq("primary_sector", params.sector);
+  if (params.region) query = query.eq("region", params.region);
+  if (params.sicCodes?.length) query = query.overlaps("sic_codes", params.sicCodes);
+  if (params.incorporatedFrom) query = query.gte("incorporated", params.incorporatedFrom);
+
+  // Filing filters (the whole point of this path).
+  if (params.accountsOverdue) query = query.eq("accounts_overdue", true);
+  if (params.accountsDueDays) {
+    // Upcoming: due date between today and today+N (overdue ones sit in the past).
+    query = query.gte("accounts_next_due", today).lte("accounts_next_due", addDays(today, params.accountsDueDays));
+  }
+  if (params.confirmationDue) {
+    query = query.or(
+      `confirmation_overdue.eq.true,and(confirmation_next_due.gte.${today},confirmation_next_due.lte.${addDays(today, 30)})`
+    );
+  }
+
+  query = hasFilingFilter(params)
+    ? query.order("accounts_next_due", { ascending: true, nullsFirst: false })
+    : query.order("incorporated", { ascending: false, nullsFirst: false });
+
+  const { data, count, error } = await query.range(start, start + size - 1);
+  if (error || !data) return { total: 0, results: [], live: false, cache: true };
+
+  return { total: count ?? data.length, results: (data as CompanyRow[]).map(mapRow), live: false, cache: true };
 }
 
 export async function getOfficerProfile(officerId: string): Promise<OfficerProfile | null> {

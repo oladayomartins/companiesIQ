@@ -128,4 +128,9 @@ export interface SearchResult {
   locality?: string; // registered-office town / city
   postcode?: string;
   companyType?: string; // legal structure, e.g. "ltd", "llp"
+  // Filing-status facts (only present on register-cache results).
+  accountsNextDue?: string;
+  accountsOverdue?: boolean;
+  confirmationNextDue?: string;
+  confirmationOverdue?: boolean;
 }

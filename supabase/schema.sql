@@ -18,12 +18,23 @@ create table if not exists public.companies (
   region          text,
   nation          text,
   postcode        text,
+  -- Filing-status cache (powers the accountant filters). Populated by the
+  -- ingest job + scripts/backfill-filing.mjs from Companies House profiles.
+  accounts_next_due     date,
+  accounts_overdue      boolean,
+  accounts_last_made_up date,
+  confirmation_next_due date,
+  confirmation_overdue  boolean,
+  filing_checked_at     timestamptz,
   ingested_at     timestamptz default now(),
   updated_at      timestamptz default now()
 );
 create index if not exists companies_sector_idx on public.companies (primary_sector);
 create index if not exists companies_region_idx on public.companies (region);
 create index if not exists companies_incorporated_idx on public.companies (incorporated);
+create index if not exists companies_accounts_due_idx on public.companies (accounts_next_due);
+create index if not exists companies_accounts_overdue_idx on public.companies (accounts_overdue) where accounts_overdue = true;
+create index if not exists companies_confirmation_due_idx on public.companies (confirmation_next_due);
 
 -- --- Daily sector/region aggregates (the analytics layer) ---------
 create table if not exists public.formation_stats (

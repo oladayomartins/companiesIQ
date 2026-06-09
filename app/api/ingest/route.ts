@@ -9,7 +9,7 @@
 //        https://app.companiesiq.co.uk/api/ingest
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
-import { advancedSearch, hasApiKey } from "@/lib/companies-house";
+import { advancedSearch, getCompany, hasApiKey } from "@/lib/companies-house";
 import { classifySic } from "@/lib/sic";
 import { resolveGeo } from "@/lib/geography";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/server";
@@ -20,6 +20,18 @@ function isoDaysAgo(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);
   return d.toISOString().slice(0, 10);
+}
+
+/** Run an async fn over items with a fixed concurrency cap. */
+async function mapPool<T>(items: T[], concurrency: number, fn: (t: T) => Promise<void>): Promise<void> {
+  let i = 0;
+  async function worker() {
+    while (i < items.length) {
+      const idx = i++;
+      await fn(items[idx]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
 }
 
 export async function GET(req: NextRequest) {
@@ -64,6 +76,26 @@ export async function GET(req: NextRequest) {
       region: r.region ?? geo.region,
       updated_at: new Date().toISOString(),
     };
+  });
+
+  // Best-effort filing-date enrichment for this batch (capped + fault-tolerant
+  // so it can never break the core ingest). The backfill script populates the
+  // rest of the register; CH advanced-search doesn't return filing dates.
+  const FILING_CAP = 40;
+  await mapPool(rows.slice(0, FILING_CAP), 6, async (row) => {
+    try {
+      const c = await getCompany(row.number);
+      Object.assign(row, {
+        accounts_next_due: c.accounts?.nextDue ?? null,
+        accounts_overdue: c.accounts?.overdue ?? null,
+        accounts_last_made_up: c.accounts?.lastMadeUpTo ?? null,
+        confirmation_next_due: c.confirmationStatement?.nextDue ?? null,
+        confirmation_overdue: c.confirmationStatement?.overdue ?? null,
+        filing_checked_at: new Date().toISOString(),
+      });
+    } catch {
+      /* leave filing columns unset — backfill will fill them later */
+    }
   });
 
   if (!isSupabaseConfigured()) {

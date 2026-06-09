@@ -59,7 +59,12 @@ export function SearchScreen() {
   const [ctype, setCtype] = useState("");
   const [sort, setSort] = useState("inc");
   const [view, setView] = useState("table");
-  const [data, setData] = useState<{ total: number; results: EnrichedResult[]; live: boolean }>({ total: 0, results: [], live: true });
+  // Filing-status filters (the accountant queries) — answered by the register cache.
+  const [accountsOverdue, setAccountsOverdue] = useState(false);
+  const [accountsDueSoon, setAccountsDueSoon] = useState(false);
+  const [confirmationDue, setConfirmationDue] = useState(false);
+  const [data, setData] = useState<{ total: number; results: EnrichedResult[]; live: boolean; cache?: boolean }>({ total: 0, results: [], live: true });
+  const filingMode = accountsOverdue || accountsDueSoon || confirmationDue;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nl, setNl] = useState("");
@@ -112,12 +117,15 @@ export function SearchScreen() {
     if (sicKey) sp.append("sic", sicKey);
     if (ctype) sp.append("type", ctype);
     if (sector) sp.set("sector", sector);
+    if (accountsOverdue) sp.set("accountsOverdue", "1");
+    if (accountsDueSoon) sp.set("accountsDue", "60");
+    if (confirmationDue) sp.set("confirmationDue", "1");
     fetch(`/api/search?${sp.toString()}`)
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
         if (d.error) setError(d.error);
-        setData({ total: d.total ?? 0, results: d.results ?? [], live: d.live !== false });
+        setData({ total: d.total ?? 0, results: d.results ?? [], live: d.live !== false, cache: !!d.cache });
         setSelected(new Set()); // clear selection when the result set changes
       })
       .catch((e) => !cancelled && setError(String(e)))
@@ -125,7 +133,7 @@ export function SearchScreen() {
     return () => {
       cancelled = true;
     };
-  }, [query, activeStatuses, incWindow, sicKey, ctype, sector]);
+  }, [query, activeStatuses, incWindow, sicKey, ctype, sector, accountsOverdue, accountsDueSoon, confirmationDue]);
 
   const rows = useMemo(() => {
     let r = data.results;
@@ -178,6 +186,9 @@ export function SearchScreen() {
     setSector("");
     setSic("");
     setCtype("");
+    setAccountsOverdue(false);
+    setAccountsDueSoon(false);
+    setConfirmationDue(false);
     setChips([]);
     router.push("/app/companies");
   }
@@ -213,6 +224,11 @@ export function SearchScreen() {
         </FilterGroup>
         <FilterGroup title="Incorporated">
           <Select size="sm" value={incWindow} onChange={(e) => setIncWindow(e.target.value)} options={INC_WINDOWS} />
+        </FilterGroup>
+        <FilterGroup title="Filing signals">
+          <Checkbox label="Accounts overdue" checked={accountsOverdue} onChange={(e) => setAccountsOverdue(e.target.checked)} />
+          <Checkbox label="Accounts due ≤ 60 days" checked={accountsDueSoon} onChange={(e) => setAccountsDueSoon(e.target.checked)} />
+          <Checkbox label="Confirmation statement due" checked={confirmationDue} onChange={(e) => setConfirmationDue(e.target.checked)} />
         </FilterGroup>
       </aside>
 
@@ -285,10 +301,20 @@ export function SearchScreen() {
           ))}
           {sector ? <Tag onRemove={() => setSector("")}>{sector}</Tag> : null}
           {sicKey ? <Tag onRemove={() => setSic("")}>SIC {sicKey}</Tag> : null}
-          <Badge tone="pos" dot>
-            Live register
+          <Badge tone={filingMode ? "neutral" : "pos"} dot>
+            {filingMode ? "Register cache" : "Live register"}
           </Badge>
         </div>
+
+        {filingMode ? (
+          <div className="cache-note">
+            <Icon name="clock" size={14} />
+            <span>
+              Filing-status filters search CompaniesIQ&apos;s register cache (companies indexed so far), not the full
+              live register — coverage grows as the register syncs. Facts shown are from Companies House.
+            </span>
+          </div>
+        ) : null}
 
         {selected.size > 0 ? (
           <div className="bulk-bar">
@@ -369,7 +395,12 @@ export function SearchScreen() {
                           <StatusPill status={c.status} />
                         </td>
                         <td>
-                          <FactualTags incorporated={c.incorporated} sector={c.classification?.sector} sicCodes={c.sicCodes} status={c.status} />
+                          <div className="cell-tags">
+                            <FactualTags incorporated={c.incorporated} sector={c.classification?.sector} sicCodes={c.sicCodes} status={c.status} />
+                            {c.accountsOverdue ? <Badge tone="warn">Accounts overdue</Badge> : null}
+                            {!c.accountsOverdue && c.accountsNextDue ? <Badge tone="neutral">Accounts due {c.accountsNextDue.slice(0, 10)}</Badge> : null}
+                            {c.confirmationOverdue ? <Badge tone="warn">Conf. stmt overdue</Badge> : null}
+                          </div>
                         </td>
                         <td>{c.sicCodes[0] ? <Badge tone="neutral">{c.sicCodes[0]}</Badge> : <span className="muted">—</span>}</td>
                         <td className="muted">{c.region ?? "—"}</td>

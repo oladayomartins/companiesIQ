@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { search, explore } from "@/lib/data";
+import { search, explore, exploreLocal } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +24,32 @@ export async function GET(req: NextRequest) {
   const incorporatedFrom = isoFromWindow(sp.get("incorporated"));
   const startIndex = Number(sp.get("start") || 0) || 0;
 
+  // Filing-status filters (accountant queries) — only the register cache can
+  // answer these, since Companies House search can't filter on filing status.
+  const accountsOverdue = sp.get("accountsOverdue") === "1";
+  const accountsDueDays = Number(sp.get("accountsDue") || 0) || 0;
+  const confirmationDue = sp.get("confirmationDue") === "1";
+  const hasFilingFilter = accountsOverdue || accountsDueDays > 0 || confirmationDue;
+
   const hasFacets = statuses.length > 0 || sics.length > 0 || types.length > 0 || !!sector || !!region || !!incorporatedFrom || startIndex > 0;
 
   try {
+    if (hasFilingFilter) {
+      const r = await exploreLocal({
+        q: q || undefined,
+        status: statuses.length ? statuses : undefined,
+        sicCodes: sics.length ? sics : undefined,
+        sector,
+        region,
+        incorporatedFrom,
+        accountsOverdue: accountsOverdue || undefined,
+        accountsDueDays: accountsDueDays || undefined,
+        confirmationDue: confirmationDue || undefined,
+        size: 40,
+        startIndex,
+      });
+      return NextResponse.json(r);
+    }
     if (q && !hasFacets) {
       const r = await search(q);
       return NextResponse.json(r);
