@@ -96,7 +96,7 @@
 .signal__detail { font-size: 13px; color: var(--text-muted); }
 
 /* ---------- Search ---------- */
-.search-screen { display: grid; grid-template-columns: 232px 1fr; gap: 26px; max-width: 1180px; }
+.search-screen { display: grid; grid-template-columns: 240px 1fr; gap: 26px; max-width: 1480px; }
 .filters { display: flex; flex-direction: column; gap: 20px; }
 .filters__head { display: flex; align-items: center; justify-content: space-between; }
 .filter-group__head { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 11px; }

@@ -28,8 +28,21 @@ export type EnrichedResult = SearchResult;
 
 export interface ExploreParams extends ch.AdvancedSearchParams {
   region?: string; // post-filter on resolved region
+  regions?: string[]; // multiple selected regions (UI)
   sector?: string; // post-filter on classified sector
 }
+
+// Region (ONS) isn't a Companies House search field, so we approximate it with
+// a registered-office `location` text search, then refine to the selected
+// region(s) from our resolved geo. Works well for nations + named places;
+// best-effort for abstract English regions (the register cache is the precise
+// path once populated).
+const REGION_TO_LOCATION: Record<string, string> = {
+  London: "London",
+  Scotland: "Scotland",
+  Wales: "Wales",
+  "Northern Ireland": "Northern Ireland",
+};
 
 export async function search(q: string): Promise<{ total: number; results: EnrichedResult[]; live: boolean }> {
   const r = q.trim() ? await ch.searchCompanies(q, { perPage: 40 }) : await ch.advancedSearch({ size: 40 });
@@ -37,18 +50,32 @@ export async function search(q: string): Promise<{ total: number; results: Enric
 }
 
 export async function explore(params: ExploreParams): Promise<{ total: number; results: EnrichedResult[]; live: boolean }> {
-  const r = await ch.advancedSearch(params);
+  const regions = params.regions?.length ? params.regions : params.region ? [params.region] : [];
+
+  // Narrow at Companies House with a location text search when one region is
+  // selected (so results aren't dominated by CH's default ordering), then
+  // post-filter to the resolved region(s). Fetch a wider page when filtering by
+  // region/sector so enough candidates survive the refine.
+  const chParams: ch.AdvancedSearchParams = { ...params };
+  if (regions.length === 1 && !chParams.location) {
+    chParams.location = REGION_TO_LOCATION[regions[0]] ?? regions[0];
+  }
+  if ((regions.length || params.sector) && (chParams.size ?? 0) < 100) {
+    chParams.size = 100;
+  }
+
+  const r = await ch.advancedSearch(chParams);
   let results = r.results;
   let total = r.total;
-  if (params.region) {
-    results = results.filter((x) => x.region === params.region);
+  if (regions.length) {
+    results = results.filter((x) => x.region && regions.includes(x.region));
     total = results.length;
   }
   if (params.sector) {
     results = results.filter((x) => x.classification?.sector === params.sector);
     total = results.length;
   }
-  return { total, results, live: true };
+  return { total, results: results.slice(0, params.size ?? 40), live: true };
 }
 
 // ============================================================
@@ -72,6 +99,7 @@ export interface LocalExploreParams extends FilingFilters {
   sicCodes?: string[];
   sector?: string;
   region?: string;
+  regions?: string[];
   incorporatedFrom?: string;
   size?: number;
   startIndex?: number;
@@ -145,7 +173,9 @@ export async function exploreLocal(
   if (params.q) query = query.ilike("name", `%${params.q}%`);
   if (params.status?.length) query = query.in("status", params.status);
   if (params.sector) query = query.eq("primary_sector", params.sector);
-  if (params.region) query = query.eq("region", params.region);
+  const regions = params.regions?.length ? params.regions : params.region ? [params.region] : [];
+  if (regions.length === 1) query = query.eq("region", regions[0]);
+  else if (regions.length > 1) query = query.in("region", regions);
   if (params.sicCodes?.length) query = query.overlaps("sic_codes", params.sicCodes);
   if (params.incorporatedFrom) query = query.gte("incorporated", params.incorporatedFrom);
 

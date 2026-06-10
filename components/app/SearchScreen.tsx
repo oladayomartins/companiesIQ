@@ -117,6 +117,7 @@ export function SearchScreen() {
     if (sicKey) sp.append("sic", sicKey);
     if (ctype) sp.append("type", ctype);
     if (sector) sp.set("sector", sector);
+    activeRegions.forEach((rg) => sp.append("region", rg));
     if (accountsOverdue) sp.set("accountsOverdue", "1");
     if (accountsDueSoon) sp.set("accountsDue", "60");
     if (confirmationDue) sp.set("confirmationDue", "1");
@@ -133,16 +134,15 @@ export function SearchScreen() {
     return () => {
       cancelled = true;
     };
-  }, [query, activeStatuses, incWindow, sicKey, ctype, sector, accountsOverdue, accountsDueSoon, confirmationDue]);
+  }, [query, activeStatuses, incWindow, sicKey, ctype, sector, activeRegions, accountsOverdue, accountsDueSoon, confirmationDue]);
 
+  // Region is filtered server-side now; just sort the returned rows.
   const rows = useMemo(() => {
-    let r = data.results;
-    if (activeRegions.length) r = r.filter((x) => x.region && activeRegions.includes(x.region));
-    r = [...r];
+    const r = [...data.results];
     if (sort === "name") r.sort((a, b) => a.name.localeCompare(b.name));
     else if (sort === "inc") r.sort((a, b) => (b.incorporated || "").localeCompare(a.incorporated || ""));
     return r;
-  }, [data.results, activeRegions, sort]);
+  }, [data.results, sort]);
 
   // Multi-select → bulk "Add to prospect list".
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -274,7 +274,7 @@ export function SearchScreen() {
 
         <div className="results__bar">
           <div className="results__count">
-            <span className="results__num mono">{fmtNumber(activeRegions.length ? rows.length : data.total)}</span> companies
+            <span className="results__num mono">{fmtNumber(data.total)}</span> companies
             {query ? <span className="results__q"> for “{query}”</span> : null}
           </div>
           <div className="results__sort">

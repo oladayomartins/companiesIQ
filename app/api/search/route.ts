@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
   const sics = sp.getAll("sic");
   const types = sp.getAll("type");
   const sector = sp.get("sector") || undefined;
-  const region = sp.get("region") || undefined;
+  const regions = sp.getAll("region");
+  const region = regions[0] || undefined;
   const incorporatedFrom = isoFromWindow(sp.get("incorporated"));
   const startIndex = Number(sp.get("start") || 0) || 0;
 
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
         sicCodes: sics.length ? sics : undefined,
         sector,
         region,
+        regions: regions.length ? regions : undefined,
         incorporatedFrom,
         accountsOverdue: accountsOverdue || undefined,
         accountsDueDays: accountsDueDays || undefined,
@@ -61,6 +63,7 @@ export async function GET(req: NextRequest) {
       companyType: types.length ? types : undefined,
       sector,
       region,
+      regions: regions.length ? regions : undefined,
       incorporatedFrom,
       size: 40,
       startIndex,
