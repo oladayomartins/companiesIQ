@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button, Icon } from "@/components/ds";
+import { toast } from "@/lib/toast";
 
 export interface ProspectTarget {
   number: string;
@@ -64,10 +65,12 @@ export function AddToProspect({ company }: { company: ProspectTarget }) {
       });
       if (!r.ok) {
         setError("Could not add — try again.");
+        toast("Couldn't add to list — try again.", { tone: "error" });
         return;
       }
       const label = opts.listName ?? lists?.find((l) => l.id === opts.listId)?.name ?? "your list";
       setAdded(label);
+      toast(`Added ${company.name ?? "company"} to ${label}`);
       setOpen(false);
       setNewName("");
       // Refresh counts on next open.

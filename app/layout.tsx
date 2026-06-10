@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Analytics } from "@/components/Analytics";
 import { JsonLd } from "@/components/JsonLd";
+import { Toaster } from "@/components/ui/Toaster";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_KEYWORDS } from "@/lib/site";
 
 const DEFAULT_TITLE = "CompaniesIQ — UK company intelligence platform";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
+        <Toaster />
         <Analytics />
         <JsonLd data={[ORG_SCHEMA, SITE_SCHEMA]} />
       </body>

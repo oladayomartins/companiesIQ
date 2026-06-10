@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button, Icon } from "@/components/ds";
+import { toast } from "@/lib/toast";
 import type { ProspectTarget } from "@/components/app/AddToProspect";
 
 interface ListLite {
@@ -52,9 +53,13 @@ export function BulkAddToProspect({ companies, onDone }: { companies: ProspectTa
       const d = (await r.json().catch(() => ({}))) as { added?: number };
       if (!r.ok) {
         setError("Could not add — try again.");
+        toast("Couldn't add to list — try again.", { tone: "error" });
         return;
       }
-      setAdded(d.added ?? n);
+      const count = d.added ?? n;
+      const label = opts.listName ?? lists?.find((l) => l.id === opts.listId)?.name ?? "your list";
+      setAdded(count);
+      toast(`Added ${count} compan${count === 1 ? "y" : "ies"} to ${label}`);
       setOpen(false);
       setNewName("");
       setLists(null);

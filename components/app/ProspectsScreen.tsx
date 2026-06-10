@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Card, CardBody, Button, Badge, Icon, StatusPill } from "@/components/ds";
 import { fmtDate } from "@/lib/format";
+import { toast } from "@/lib/toast";
 import type { ProspectList, ProspectItem } from "@/lib/prospects";
 
 export function ProspectsScreen({
@@ -28,9 +29,11 @@ export function ProspectsScreen({
         body: JSON.stringify({ name: newName.trim() }),
       });
       const d = (await r.json().catch(() => ({}))) as { list?: { id: string } };
+      const name = newName.trim();
       setNewName("");
       if (d.list?.id) router.push(`/app/prospects?list=${d.list.id}`);
       router.refresh();
+      toast(`Created list “${name}”`);
     } finally {
       setBusy(false);
     }
@@ -42,6 +45,7 @@ export function ProspectsScreen({
     try {
       await fetch(`/api/prospects/items?listId=${selected.list.id}&number=${companyNumber}`, { method: "DELETE" });
       router.refresh();
+      toast("Removed from list", { tone: "info" });
     } finally {
       setBusy(false);
     }
@@ -55,6 +59,7 @@ export function ProspectsScreen({
       await fetch(`/api/prospects/lists/${selected.list.id}`, { method: "DELETE" }).catch(() => {});
       router.push("/app/prospects");
       router.refresh();
+      toast("List deleted", { tone: "info" });
     } finally {
       setBusy(false);
     }
@@ -110,7 +115,11 @@ export function ProspectsScreen({
                     </span>
                   </div>
                   <div className="prospects__actions">
-                    <a className="ciq-btn ciq-btn--secondary ciq-btn--sm" href={`/api/prospects/export?listId=${selected.list.id}`}>
+                    <a
+                      className="ciq-btn ciq-btn--secondary ciq-btn--sm"
+                      href={`/api/prospects/export?listId=${selected.list.id}`}
+                      onClick={() => toast(`Exporting ${selected.items.length} compan${selected.items.length === 1 ? "y" : "ies"} to CSV`, { tone: "info" })}
+                    >
                       <Icon name="download" size={15} />
                       <span>Export CSV</span>
                     </a>

@@ -494,3 +494,33 @@
   background: var(--surface-sunken); border: 1px solid var(--border-hair); border-radius: var(--radius-md); }
 .cache-note svg { flex-shrink: 0; margin-top: 1px; color: var(--text-faint); }
 .cell-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+
+/* ── Toasts (global action feedback) ────────────────────────────── */
+.toaster { position: fixed; right: 20px; bottom: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; max-width: min(380px, calc(100vw - 40px)); }
+.toast {
+  pointer-events: auto; display: flex; align-items: center; gap: 11px; padding: 12px 14px;
+  background: var(--surface-card, #fff); color: var(--text-strong); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg, 12px); box-shadow: 0 14px 40px rgba(0,0,0,0.16);
+  font-size: 13.5px; font-weight: 500; animation: toast-in 0.24s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.toast--leaving { animation: toast-out 0.2s ease-in forwards; }
+.toast__icon { flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+.toast--success .toast__icon { background: var(--pos); }
+.toast--error .toast__icon { background: var(--neg, #d9444f); }
+.toast--info .toast__icon { background: var(--accent); }
+.toast--pending .toast__icon { background: var(--text-faint); animation: spin 1.1s linear infinite; }
+.toast__msg { flex: 1; min-width: 0; line-height: 1.35; }
+.toast__close { flex-shrink: 0; background: transparent; border: 0; color: var(--text-faint); cursor: pointer; padding: 2px; border-radius: 6px; display: inline-flex; }
+.toast__close:hover { color: var(--text-strong); background: var(--surface-sunken); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toast-out { to { opacity: 0; transform: translateX(20px); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Branded route-loading (Next loading.tsx) ───────────────────── */
+.route-loading { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 60px 24px; }
+.route-loading__mark { animation: rl-pulse 1.4s ease-in-out infinite; }
+.route-loading__bar { width: 160px; height: 3px; border-radius: 3px; background: var(--surface-sunken); overflow: hidden; }
+.route-loading__bar span { display: block; height: 100%; width: 40%; border-radius: 3px; background: var(--accent); animation: rl-slide 1.1s ease-in-out infinite; }
+.route-loading__label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; color: var(--text-muted); text-transform: uppercase; }
+@keyframes rl-pulse { 0%, 100% { opacity: 0.55; transform: scale(0.92); } 50% { opacity: 1; transform: scale(1.04); } }
+@keyframes rl-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }

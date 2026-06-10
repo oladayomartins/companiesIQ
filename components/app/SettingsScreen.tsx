@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button, Badge, Input, Icon } from "@/components/ds";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { fmtDate } from "@/lib/format";
+import { toast } from "@/lib/toast";
 import type { BillingSummary } from "@/lib/billing";
 
 const PLAN_LABEL: Record<string, string> = { free: "Free", analyst: "Analyst", team: "Team", enterprise: "Enterprise" };
@@ -29,7 +30,12 @@ export function SettingsScreen({ email, fullName, billing, comped = false }: { e
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ full_name: name }),
       });
-      if (r.ok) setNameSaved(true);
+      if (r.ok) {
+        setNameSaved(true);
+        toast("Profile saved");
+      } else {
+        toast("Couldn't save profile", { tone: "error" });
+      }
     } finally {
       setSavingName(false);
     }

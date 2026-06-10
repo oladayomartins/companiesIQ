@@ -6,6 +6,7 @@ import { FactualTags } from "@/components/app/Tags";
 import { ExplorerGrid } from "@/components/app/ExplorerGrid";
 import { BulkAddToProspect } from "@/components/app/BulkAddToProspect";
 import { fmtNumber, ageLabel } from "@/lib/format";
+import { toast } from "@/lib/toast";
 import { ALL_SECTORS } from "@/lib/sic";
 import type { EnrichedResult } from "@/lib/data";
 import { toCSV, downloadCSV } from "@/lib/csv";
@@ -180,6 +181,7 @@ export function SearchScreen() {
       rows.map((c) => [c.name, c.number, c.incorporated ?? "", c.status, c.region ?? "", c.sicCodes[0] ?? "", c.classification?.sector ?? ""])
     );
     downloadCSV(`companiesiq-companies-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+    toast(`Exported ${fmtNumber(rows.length)} compan${rows.length === 1 ? "y" : "ies"} to CSV`, { tone: "info" });
   }
 
   function reset() {
