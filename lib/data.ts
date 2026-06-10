@@ -43,8 +43,8 @@ const REGION_TO_LOCATION: Record<string, string> = {
   "Northern Ireland": "Northern Ireland",
 };
 
-export async function search(q: string): Promise<{ total: number; results: EnrichedResult[]; live: boolean }> {
-  const r = q.trim() ? await ch.searchCompanies(q, { perPage: 40 }) : await ch.advancedSearch({ size: 40 });
+export async function search(q: string, startIndex = 0): Promise<{ total: number; results: EnrichedResult[]; live: boolean }> {
+  const r = q.trim() ? await ch.searchCompanies(q, { perPage: 40, startIndex }) : await ch.advancedSearch({ size: 40, startIndex });
   return { total: r.total, results: r.results, live: true };
 }
 
@@ -80,7 +80,9 @@ export async function explore(params: ExploreParams): Promise<{ total: number; r
   if (regions.length) results = results.filter((x) => x.region && regions.includes(x.region));
   if (params.sector) results = results.filter((x) => x.classification?.sector === params.sector);
 
-  return { total: results.length, results: results.slice(0, params.size ?? 40), live: true };
+  const start = params.startIndex ?? 0;
+  const size = params.size ?? 40;
+  return { total: results.length, results: results.slice(start, start + size), live: true };
 }
 
 // ============================================================
@@ -225,7 +227,9 @@ export async function exploreWithFiling(
   }
 
   const matches = enriched.filter((r) => matchesFiling(r, filing, today));
-  return { total: matches.length, results: matches.slice(0, params.size ?? 40), live: false, cache: true };
+  const start = params.startIndex ?? 0;
+  const size = params.size ?? 40;
+  return { total: matches.length, results: matches.slice(start, start + size), live: false, cache: true };
 }
 
 export async function getOfficerProfile(officerId: string): Promise<OfficerProfile | null> {

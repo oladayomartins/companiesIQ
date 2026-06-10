@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardBody, Checkbox, Tag, StatusPill, Badge, CompanyAvatar, Icon, Select, IconButton, Button, Input, Tabs } from "@/components/ds";
 import { FactualTags } from "@/components/app/Tags";
@@ -28,6 +28,8 @@ const TYPES = [
 ];
 
 const NL_EXAMPLES = ["AI companies in London", "care companies in Scotland", "new construction firms", "fintech in the South East"];
+const PAGE_SIZE = 40;
+const LOAD_MORE_CAP = 1000; // Companies House caps deep paging; stop here.
 
 interface Parsed {
   keywords: string[];
@@ -110,10 +112,11 @@ export function SearchScreen() {
 
   // server-side filters that re-fetch
   const sicKey = sic.trim();
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
+  const [page, setPage] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // The query string for the current filters (shared by the search + load-more).
+  const buildParams = useCallback(() => {
     const sp = new URLSearchParams();
     if (query) sp.set("q", query);
     activeStatuses.forEach((s) => sp.append("status", s));
@@ -125,20 +128,46 @@ export function SearchScreen() {
     if (accountsOverdue) sp.set("accountsOverdue", "1");
     if (accountsDueSoon) sp.set("accountsDue", "60");
     if (confirmationDue) sp.set("confirmationDue", "1");
-    fetch(`/api/search?${sp.toString()}`)
+    return sp;
+  }, [query, activeStatuses, incWindow, sicKey, ctype, sector, activeRegions, accountsOverdue, accountsDueSoon, confirmationDue]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/search?${buildParams().toString()}`)
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
         if (d.error) setError(d.error);
         setData({ total: d.total ?? 0, results: d.results ?? [], live: d.live !== false, cache: !!d.cache });
-        setSelected(new Set()); // clear selection when the result set changes
+        setSelected(new Set()); // new search → reset selection + paging
+        setPage(0);
       })
       .catch((e) => !cancelled && setError(String(e)))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [query, activeStatuses, incWindow, sicKey, ctype, sector, activeRegions, accountsOverdue, accountsDueSoon, confirmationDue]);
+  }, [buildParams]);
+
+  // Append the next page of results (selection + loaded rows are preserved).
+  async function loadMore() {
+    setLoadingMore(true);
+    const next = page + 1;
+    const sp = buildParams();
+    sp.set("start", String(next * PAGE_SIZE));
+    try {
+      const r = await fetch(`/api/search?${sp.toString()}`);
+      const d = await r.json();
+      if (!d.error && Array.isArray(d.results)) {
+        setData((prev) => ({ ...prev, results: [...prev.results, ...d.results], total: d.total ?? prev.total }));
+        setPage(next);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   // Region is filtered server-side now; just sort the returned rows.
   const rows = useMemo(() => {
@@ -425,6 +454,13 @@ export function SearchScreen() {
 
         {!loading && rows.length > 0 ? (
           <div className="load-more">
+            {data.results.length < data.total && data.results.length < LOAD_MORE_CAP ? (
+              <Button variant="secondary" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore
+                  ? "Loading…"
+                  : `Load more · showing ${fmtNumber(data.results.length)} of ${fmtNumber(data.total)}`}
+              </Button>
+            ) : null}
             <Button variant="secondary" onClick={exportCsv} iconLeft="download">
               Export {fmtNumber(rows.length)} companies to CSV
             </Button>

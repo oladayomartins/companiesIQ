@@ -32,7 +32,9 @@ export async function GET(req: NextRequest) {
   const confirmationDue = sp.get("confirmationDue") === "1";
   const hasFilingFilter = accountsOverdue || accountsDueDays > 0 || confirmationDue;
 
-  const hasFacets = statuses.length > 0 || sics.length > 0 || types.length > 0 || !!sector || !!region || !!incorporatedFrom || startIndex > 0;
+  // Note: startIndex is NOT a facet — a paginated plain query should stay on the
+  // same (name-search) endpoint across pages, not switch to advanced search.
+  const hasFacets = statuses.length > 0 || sics.length > 0 || types.length > 0 || !!sector || !!region || !!incorporatedFrom;
 
   try {
     if (hasFilingFilter) {
@@ -60,7 +62,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(r);
     }
     if (q && !hasFacets) {
-      const r = await search(q);
+      const r = await search(q, startIndex);
       return NextResponse.json(r);
     }
     const r = await explore({
