@@ -65,6 +65,9 @@ export function SearchScreen() {
   const [confirmationDue, setConfirmationDue] = useState(false);
   const [data, setData] = useState<{ total: number; results: EnrichedResult[]; live: boolean; cache?: boolean }>({ total: 0, results: [], live: true });
   const filingMode = accountsOverdue || accountsDueSoon || confirmationDue;
+  // Filing filters enrich live (can take a couple of seconds on a cold set), so
+  // say what's happening rather than just spinning.
+  const loadingMsg = filingMode ? "Checking filing status for the matching companies…" : "Searching the register…";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nl, setNl] = useState("");
@@ -331,7 +334,7 @@ export function SearchScreen() {
 
         {view === "grid" ? (
           loading ? (
-            <div className="app-loading">Searching the register…</div>
+            <div className="app-loading"><span className="load-pulse" />{loadingMsg}</div>
           ) : error ? (
             <div className="app-error">{error}</div>
           ) : rows.length === 0 ? (
@@ -364,7 +367,7 @@ export function SearchScreen() {
                 <tbody>
                   {loading ? (
                     <tr className="empty-row">
-                      <td colSpan={8}>Searching the register…</td>
+                      <td colSpan={8}><span className="load-pulse" />{loadingMsg}</td>
                     </tr>
                   ) : error ? (
                     <tr className="empty-row">

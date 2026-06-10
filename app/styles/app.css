@@ -289,6 +289,8 @@
 
 /* ---------- States ---------- */
 .app-loading, .app-error { padding: 60px 32px; font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
+.load-pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 9px; vertical-align: middle; animation: load-pulse 1s ease-in-out infinite; }
+@keyframes load-pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.1); } }
 .app-error { color: var(--neg); }
 
 /* ---- Campaigns: QR generator ---- */
