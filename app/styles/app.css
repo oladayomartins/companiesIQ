@@ -44,9 +44,14 @@
 .nav-scrim { display: none; }
 
 /* ---------- Screens ---------- */
-/* One consistent content width across every app page (matches the marketing
-   --container-xl). Data pages, forms and the report all share the same box. */
+/* Default reading width — used by the public report/SEO pages (matches the
+   marketing --container-xl). */
 .screen { padding: 28px 32px 48px; max-width: var(--container-xl); }
+/* In-app pages are a data canvas: fill the available width (left edge aligned
+   with the topbar, no right-hand gutter), capped only on very wide displays.
+   Applies to every /app page since they all render inside .app-root. */
+.app-root .screen,
+.app-root .search-screen { max-width: 1680px; }
 .screen-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
 .app-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
 .screen-title { font-family: var(--font-grotesk); font-weight: 800; font-size: 30px; letter-spacing: -0.03em; color: var(--text-strong); margin: 0; }
