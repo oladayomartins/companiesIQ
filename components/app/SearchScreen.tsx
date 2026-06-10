@@ -310,8 +310,9 @@ export function SearchScreen() {
           <div className="cache-note">
             <Icon name="clock" size={14} />
             <span>
-              Filing-status filters search CompaniesIQ&apos;s register cache (companies indexed so far), not the full
-              live register — coverage grows as the register syncs. Facts shown are from Companies House.
+              Filing status is checked live (and cached) for the companies matching your search. Narrow by region,
+              sector or name first to surface overdue / due-soon companies <em>within</em> that set. Facts are from
+              Companies House.
             </span>
           </div>
         ) : null}

@@ -201,6 +201,127 @@ export async function exploreLocal(
   return { total: count ?? data.length, results: (data as CompanyRow[]).map(mapRow), live: false, cache: true };
 }
 
+// ============================================================
+// Request-driven filing search
+// ------------------------------------------------------------
+// Filing-status filters without a pre-loaded register: run the live Companies
+// House search for the current context (region/sector/name/etc.), enrich those
+// candidates' filing dates on demand (cached write-through, so repeats are
+// instant), then filter by the filing predicate. Finds overdue / due-soon /
+// confirmation-due companies WITHIN a search — the realistic accountant flow.
+// ============================================================
+const FILING_TTL_DAYS = 7;
+
+function isFreshDays(iso: string | null, days: number): boolean {
+  if (!iso) return false;
+  return Date.now() - Date.parse(iso) < days * 86_400_000;
+}
+
+async function mapPoolR<T, R>(items: T[], concurrency: number, fn: (t: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let i = 0;
+  async function worker() {
+    while (i < items.length) {
+      const idx = i++;
+      out[idx] = await fn(items[idx]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return out;
+}
+
+function matchesFiling(r: EnrichedResult, f: FilingFilters, today: string): boolean {
+  if (f.accountsOverdue && !r.accountsOverdue) return false;
+  if (f.accountsDueDays) {
+    const d = r.accountsNextDue;
+    if (!d || d < today || d > addDays(today, f.accountsDueDays)) return false;
+  }
+  if (f.confirmationDue) {
+    const dueSoon = !!r.confirmationNextDue && r.confirmationNextDue >= today && r.confirmationNextDue <= addDays(today, 30);
+    if (!r.confirmationOverdue && !dueSoon) return false;
+  }
+  return true;
+}
+
+export async function exploreWithFiling(
+  params: ExploreParams,
+  filing: FilingFilters
+): Promise<{ total: number; results: EnrichedResult[]; live: boolean; cache: true }> {
+  // 1. Live candidates for the current search context.
+  const base = await explore({ ...params, size: 60 });
+  const admin = getSupabaseAdmin();
+  const today = isoToday();
+  const numbers = base.results.map((r) => r.number);
+
+  // 2. Reuse fresh cached filing data; only fetch the rest live.
+  const cached = new Map<string, Record<string, unknown>>();
+  if (admin && numbers.length) {
+    const { data } = await admin
+      .from("companies")
+      .select("number,accounts_next_due,accounts_overdue,confirmation_next_due,confirmation_overdue,filing_checked_at")
+      .in("number", numbers);
+    for (const row of data ?? []) {
+      if (isFreshDays(row.filing_checked_at as string, FILING_TTL_DAYS)) cached.set(row.number as string, row);
+    }
+  }
+
+  const cacheRows: Record<string, unknown>[] = [];
+  const enriched = await mapPoolR(base.results, 10, async (r): Promise<EnrichedResult> => {
+    const hit = cached.get(r.number);
+    if (hit) {
+      return {
+        ...r,
+        accountsNextDue: (hit.accounts_next_due as string) ?? undefined,
+        accountsOverdue: (hit.accounts_overdue as boolean) ?? undefined,
+        confirmationNextDue: (hit.confirmation_next_due as string) ?? undefined,
+        confirmationOverdue: (hit.confirmation_overdue as boolean) ?? undefined,
+      };
+    }
+    try {
+      const c = await ch.getCompany(r.number);
+      cacheRows.push({
+        number: r.number,
+        name: r.name,
+        status: r.status,
+        incorporated: r.incorporated ?? null,
+        sic_codes: r.sicCodes,
+        primary_sector: r.classification?.sector ?? null,
+        primary_category: r.classification?.category ?? null,
+        region: r.region ?? null,
+        postcode: r.postcode ?? null,
+        accounts_next_due: c.accounts?.nextDue ?? null,
+        accounts_overdue: c.accounts?.overdue ?? null,
+        accounts_last_made_up: c.accounts?.lastMadeUpTo ?? null,
+        confirmation_next_due: c.confirmationStatement?.nextDue ?? null,
+        confirmation_overdue: c.confirmationStatement?.overdue ?? null,
+        filing_checked_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+      return {
+        ...r,
+        accountsNextDue: c.accounts?.nextDue,
+        accountsOverdue: c.accounts?.overdue ?? false,
+        confirmationNextDue: c.confirmationStatement?.nextDue,
+        confirmationOverdue: c.confirmationStatement?.overdue ?? false,
+      };
+    } catch {
+      return r; // un-enriched → filtered out below
+    }
+  });
+
+  // 3. Write-through cache (one batch) so repeat searches are instant.
+  if (admin && cacheRows.length) {
+    try {
+      await admin.from("companies").upsert(cacheRows, { onConflict: "number" });
+    } catch {
+      /* best-effort */
+    }
+  }
+
+  const matches = enriched.filter((r) => matchesFiling(r, filing, today));
+  return { total: matches.length, results: matches.slice(0, params.size ?? 40), live: false, cache: true };
+}
+
 export async function getOfficerProfile(officerId: string): Promise<OfficerProfile | null> {
   try {
     return await ch.getOfficerAppointments(officerId);

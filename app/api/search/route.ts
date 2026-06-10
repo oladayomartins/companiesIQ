@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { search, explore, exploreLocal } from "@/lib/data";
+import { search, explore, exploreWithFiling } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -36,20 +36,27 @@ export async function GET(req: NextRequest) {
 
   try {
     if (hasFilingFilter) {
-      const r = await exploreLocal({
-        q: q || undefined,
-        status: statuses.length ? statuses : undefined,
-        sicCodes: sics.length ? sics : undefined,
-        sector,
-        region,
-        regions: regions.length ? regions : undefined,
-        incorporatedFrom,
-        accountsOverdue: accountsOverdue || undefined,
-        accountsDueDays: accountsDueDays || undefined,
-        confirmationDue: confirmationDue || undefined,
-        size: 40,
-        startIndex,
-      });
+      // Request-driven: enrich the live search candidates' filing status on
+      // demand (cached), then filter — no pre-loaded register needed.
+      const r = await exploreWithFiling(
+        {
+          q: q || undefined,
+          status: statuses.length ? statuses : undefined,
+          sicCodes: sics.length ? sics : undefined,
+          companyType: types.length ? types : undefined,
+          sector,
+          region,
+          regions: regions.length ? regions : undefined,
+          incorporatedFrom,
+          size: 40,
+          startIndex,
+        },
+        {
+          accountsOverdue: accountsOverdue || undefined,
+          accountsDueDays: accountsDueDays || undefined,
+          confirmationDue: confirmationDue || undefined,
+        }
+      );
       return NextResponse.json(r);
     }
     if (q && !hasFacets) {
