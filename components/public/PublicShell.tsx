@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ds";
+import { PublicHeaderCta, PublicCtaBody } from "@/components/public/PublicAuthCtas";
 
 // Generic dark chrome for the public, indexable SEO pages (industry, market,
 // etc.). Reuses the .report-public / .rep-head / .rep-foot styles so the public
@@ -16,14 +16,7 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
           </span>
         </Link>
         <div className="rep-head__cta">
-          <Link className="rep-head__link" href="/sign-in">
-            Sign in
-          </Link>
-          <Link href="/pricing">
-            <Button variant="primary" iconRight="arrowRight">
-              Get full access
-            </Button>
-          </Link>
+          <PublicHeaderCta />
         </div>
       </header>
 
@@ -54,17 +47,7 @@ export function PublicCta({ title, sub }: { title: string; sub: string }) {
   return (
     <div className="public-cta">
       <h2 className="public-cta__title">{title}</h2>
-      <p className="public-cta__sub">{sub}</p>
-      <div className="public-cta__row">
-        <Link href="/sign-in">
-          <Button variant="primary" iconRight="arrowRight">
-            Create a free account
-          </Button>
-        </Link>
-        <Link href="/pricing">
-          <Button variant="secondary">See plans</Button>
-        </Link>
-      </div>
+      <PublicCtaBody sub={sub} />
     </div>
   );
 }
