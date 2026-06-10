@@ -44,7 +44,9 @@
 .nav-scrim { display: none; }
 
 /* ---------- Screens ---------- */
-.screen { padding: 28px 32px 48px; max-width: 1180px; }
+/* One consistent content width across every app page (matches the marketing
+   --container-xl). Data pages, forms and the report all share the same box. */
+.screen { padding: 28px 32px 48px; max-width: var(--container-xl); }
 .screen-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
 .app-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
 .screen-title { font-family: var(--font-grotesk); font-weight: 800; font-size: 30px; letter-spacing: -0.03em; color: var(--text-strong); margin: 0; }
@@ -96,7 +98,7 @@
 .signal__detail { font-size: 13px; color: var(--text-muted); }
 
 /* ---------- Search ---------- */
-.search-screen { display: grid; grid-template-columns: 240px 1fr; gap: 26px; max-width: 1480px; }
+.search-screen { display: grid; grid-template-columns: 240px 1fr; gap: 26px; max-width: var(--container-xl); }
 .filters { display: flex; flex-direction: column; gap: 20px; }
 .filters__head { display: flex; align-items: center; justify-content: space-between; }
 .filter-group__head { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 11px; }
