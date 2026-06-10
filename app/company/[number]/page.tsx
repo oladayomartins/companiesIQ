@@ -13,6 +13,7 @@ import { enrichCompany, type CompanyEnrichment } from "@/lib/enrichment";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { isPartner } from "@/lib/admin";
 import { hasProAccess } from "@/lib/access";
+import { isWatched } from "@/lib/watchlist";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
 import { JsonLd } from "@/components/JsonLd";
@@ -68,6 +69,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
       : Promise.resolve(null as CompanyEnrichment | null),
   ]);
   const report = buildIntelligenceReport(c, economicLive);
+  const watched = unlocked ? await isWatched(c.number).catch(() => false) : false;
 
   const orgSchema = {
     "@context": "https://schema.org",
@@ -106,6 +108,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           unlocked={unlocked}
           partner={partner}
           signedIn={signedIn}
+          watched={watched}
         />
       </PublicReportChrome>
     </>

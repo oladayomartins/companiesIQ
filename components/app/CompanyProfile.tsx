@@ -8,6 +8,7 @@ import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import { buildOpportunity, type OpportunityIntel } from "@/lib/opportunity";
+import { WatchButton } from "@/components/app/WatchButton";
 import { fmtDate, ageLabel } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 
@@ -100,6 +101,7 @@ export function CompanyProfile({
   unlocked = false,
   partner = false,
   signedIn = false,
+  watched = false,
 }: {
   company: Company;
   officers: Officer[];
@@ -113,6 +115,7 @@ export function CompanyProfile({
   unlocked?: boolean;
   partner?: boolean;
   signedIn?: boolean;
+  watched?: boolean;
 }) {
   const c = company;
   const router = useRouter();
@@ -177,9 +180,7 @@ export function CompanyProfile({
         <div className="profile-actions">
           {unlocked ? (
             <>
-              <Button variant="secondary" iconLeft="bookmark">
-                Watch
-              </Button>
+              <WatchButton companyNumber={c.number} initialWatched={watched} />
               {partner ? (
                 <Button variant="secondary" iconLeft="trendUp" onClick={() => router.push(`/visibility-review/${c.number}`)}>
                   Founder view

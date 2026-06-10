@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button, Input, Badge } from "@/components/ds";
 import { getSupabaseBrowser, isSupabaseConfigured } from "@/lib/supabase/client";
+import { toast } from "@/lib/toast";
 
 export function SignIn() {
   const configured = isSupabaseConfigured();
@@ -28,8 +29,13 @@ export function SignIn() {
       options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
     setBusy(false);
-    if (error) setError(error.message);
-    else setSent(true);
+    if (error) {
+      setError(error.message);
+      toast("Couldn't send the link — check the email and try again.", { tone: "error" });
+    } else {
+      setSent(true);
+      toast(`Magic link sent to ${email} — check your inbox`, { tone: "info" });
+    }
   }
 
   return (

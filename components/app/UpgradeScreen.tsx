@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button, Badge, Icon, Switch } from "@/components/ds";
 import { MARKETING_TIERS, type Plan } from "@/lib/subscription";
+import { toast } from "@/lib/toast";
 
 // In-app plan picker. Subscribes directly via Stripe (no free trial) and the
 // user comes straight back into the app with Pro unlocked.
@@ -29,12 +30,15 @@ export function UpgradeScreen() {
       }
       const d = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
       if (d.url) {
+        toast("Redirecting to secure checkout…", { tone: "pending", duration: 6000 });
         window.location.href = d.url;
         return;
       }
       setError(d.error || "Subscriptions aren't available yet — check back shortly.");
+      toast(d.error || "Subscriptions aren't available yet — check back shortly.", { tone: "error" });
     } catch {
       setError("Something went wrong starting checkout.");
+      toast("Something went wrong starting checkout.", { tone: "error" });
     } finally {
       setBusy(null);
     }
