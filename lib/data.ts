@@ -52,30 +52,36 @@ export async function search(q: string): Promise<{ total: number; results: Enric
 export async function explore(params: ExploreParams): Promise<{ total: number; results: EnrichedResult[]; live: boolean }> {
   const regions = params.regions?.length ? params.regions : params.region ? [params.region] : [];
 
-  // Narrow at Companies House with a location text search when one region is
-  // selected (so results aren't dominated by CH's default ordering), then
-  // post-filter to the resolved region(s). Fetch a wider page when filtering by
-  // region/sector so enough candidates survive the refine.
-  const chParams: ch.AdvancedSearchParams = { ...params };
-  if (regions.length === 1 && !chParams.location) {
-    chParams.location = REGION_TO_LOCATION[regions[0]] ?? regions[0];
-  }
-  if ((regions.length || params.sector) && (chParams.size ?? 0) < 100) {
-    chParams.size = 100;
+  const filtering = regions.length > 0 || !!params.sector;
+
+  // No region/sector refine → one query, keep Companies House's true total.
+  if (!filtering) {
+    const r = await ch.advancedSearch({ ...params, size: params.size ?? 40 });
+    return { total: r.total, results: r.results, live: true };
   }
 
-  const r = await ch.advancedSearch(chParams);
-  let results = r.results;
-  let total = r.total;
-  if (regions.length) {
-    results = results.filter((x) => x.region && regions.includes(x.region));
-    total = results.length;
+  // Region (ONS) isn't a Companies House field — we narrow with a `location`
+  // text search, then refine to the resolved region. With multiple regions
+  // selected, run one location query PER region and merge (a single location
+  // can't cover two regions).
+  const base: ch.AdvancedSearchParams = { ...params, size: 100 };
+  let results: EnrichedResult[];
+  if (regions.length && !base.location) {
+    const perRegion = await Promise.all(
+      regions.map((rg) => ch.advancedSearch({ ...base, location: REGION_TO_LOCATION[rg] ?? rg }))
+    );
+    const seen = new Set<string>();
+    results = perRegion
+      .flatMap((r) => r.results)
+      .filter((x) => (seen.has(x.number) ? false : (seen.add(x.number), true)));
+  } else {
+    results = (await ch.advancedSearch(base)).results;
   }
-  if (params.sector) {
-    results = results.filter((x) => x.classification?.sector === params.sector);
-    total = results.length;
-  }
-  return { total, results: results.slice(0, params.size ?? 40), live: true };
+
+  if (regions.length) results = results.filter((x) => x.region && regions.includes(x.region));
+  if (params.sector) results = results.filter((x) => x.classification?.sector === params.sector);
+
+  return { total: results.length, results: results.slice(0, params.size ?? 40), live: true };
 }
 
 // ============================================================
