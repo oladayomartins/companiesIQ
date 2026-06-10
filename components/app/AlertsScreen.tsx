@@ -4,6 +4,7 @@ import { Card, CardHeader, CardBody, Button, Input, Select, Badge, Icon } from "
 import { ALL_SECTORS } from "@/lib/sic";
 import { ALL_REGIONS } from "@/lib/geography";
 import { ruleSummary, type AlertRule, type AlertChannel } from "@/lib/alerts";
+import { toast } from "@/lib/toast";
 
 const LS_KEY = "ciq.alerts.demo";
 
@@ -77,9 +78,15 @@ export function AlertsScreen() {
     if (configured && authed) {
       const res = await fetch("/api/alerts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rule) });
       const d = await res.json();
-      if (d.alert) setAlerts((a) => [{ ...rule, id: d.alert.id }, ...a]);
+      if (d.alert) {
+        setAlerts((a) => [{ ...rule, id: d.alert.id }, ...a]);
+        toast(`Alert “${rule.name}” created`);
+      } else {
+        toast("Couldn't create the alert — try again.", { tone: "error" });
+      }
     } else {
       persistLocal([rule, ...alerts]);
+      toast(`Alert “${rule.name}” created`);
     }
   }
 
@@ -90,6 +97,7 @@ export function AlertsScreen() {
     } else {
       persistLocal(alerts.filter((x) => x.id !== id));
     }
+    toast("Alert deleted", { tone: "info" });
   }
 
   async function testRun() {

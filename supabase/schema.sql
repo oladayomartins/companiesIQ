@@ -31,6 +31,7 @@ create table if not exists public.companies (
 );
 create index if not exists companies_sector_idx on public.companies (primary_sector);
 create index if not exists companies_region_idx on public.companies (region);
+create index if not exists companies_status_idx on public.companies (status);
 create index if not exists companies_incorporated_idx on public.companies (incorporated);
 create index if not exists companies_accounts_due_idx on public.companies (accounts_next_due);
 create index if not exists companies_accounts_overdue_idx on public.companies (accounts_overdue) where accounts_overdue = true;

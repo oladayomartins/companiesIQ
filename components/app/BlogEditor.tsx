@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Input, Badge, Icon } from "@/components/ds";
 import { slugify } from "@/lib/slug";
+import { toast } from "@/lib/toast";
 import type { Post, FaqItem, RelatedLink } from "@/lib/posts";
 
 interface FormState {
@@ -101,8 +102,10 @@ export function BlogEditor({ initial }: { initial: Post | null }) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error || "Save failed.");
+        toast(data.error || "Couldn't save the post.", { tone: "error" });
         return;
       }
+      toast(status === "published" ? "Post published" : "Draft saved");
       router.push("/app/blog");
       router.refresh();
     } catch {

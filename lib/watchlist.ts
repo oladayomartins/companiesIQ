@@ -2,8 +2,16 @@
 // client, so every query is automatically limited to the signed-in user's own
 // lists. A user's first watchlist ("Watchlist") is created on demand.
 import "server-only";
-import { getSupabaseServer, getCurrentUser } from "@/lib/supabase/server";
+import { getSupabaseServer, getSupabaseAdmin, getCurrentUser } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+export interface WatchedCompany {
+  number: string;
+  name: string | null;
+  sector: string | null;
+  region: string | null;
+  addedAt: string;
+}
 
 async function defaultListId(sb: SupabaseClient, userId: string): Promise<string | null> {
   const { data: existing } = await sb
@@ -26,6 +34,37 @@ export async function isWatched(companyNumber: string): Promise<boolean> {
   // RLS scopes watchlist_companies to the user's own lists.
   const { data } = await sb.from("watchlist_companies").select("company_number").eq("company_number", companyNumber).limit(1);
   return (data?.length ?? 0) > 0;
+}
+
+/** The signed-in user's watched companies, newest first, with names/sector/
+ *  region resolved from the register cache where available. */
+export async function getWatchedCompanies(): Promise<WatchedCompany[]> {
+  const sb = await getSupabaseServer();
+  const user = await getCurrentUser();
+  if (!sb || !user) return [];
+  const { data: rows } = await sb
+    .from("watchlist_companies")
+    .select("company_number,added_at")
+    .order("added_at", { ascending: false });
+  const numbers = (rows ?? []).map((r) => r.company_number as string);
+  if (!numbers.length) return [];
+
+  const meta = new Map<string, { name: string | null; primary_sector: string | null; region: string | null }>();
+  const admin = getSupabaseAdmin();
+  if (admin) {
+    const { data } = await admin.from("companies").select("number,name,primary_sector,region").in("number", numbers);
+    for (const c of data ?? []) meta.set(c.number as string, c);
+  }
+  return (rows ?? []).map((r) => {
+    const m = meta.get(r.company_number as string);
+    return {
+      number: r.company_number as string,
+      name: m?.name ?? null,
+      sector: m?.primary_sector ?? null,
+      region: m?.region ?? null,
+      addedAt: r.added_at as string,
+    };
+  });
 }
 
 export async function addWatch(companyNumber: string): Promise<boolean> {

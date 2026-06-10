@@ -9,6 +9,8 @@ import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analyti
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import { buildOpportunity, type OpportunityIntel } from "@/lib/opportunity";
 import { WatchButton } from "@/components/app/WatchButton";
+import { toCSV, downloadCSV } from "@/lib/csv";
+import { toast } from "@/lib/toast";
 import { fmtDate, ageLabel } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 
@@ -135,6 +137,38 @@ export function CompanyProfile({
     enrichment
   );
 
+  // Export the report's key facts (overview + opportunity + filing signals).
+  function exportReport() {
+    const rows: (string | number | null | undefined)[][] = [
+      ["Company", c.name],
+      ["Company number", c.number],
+      ["Status", c.status],
+      ["Incorporated", c.incorporated ?? ""],
+      ["Type", c.type ?? ""],
+      ["Sector", c.primaryClassification?.sector ?? ""],
+      ["Region", c.geo?.region ?? ""],
+      ["Opportunity score", opportunity.score],
+      ["Website", opportunity.digital.website.value ?? opportunity.digital.website.state],
+      ["Google Business Profile", opportunity.digital.gbp.state],
+      ["Phone", opportunity.digital.phone.value ?? opportunity.digital.phone.state],
+      ["Accounts next due", c.accounts?.nextDue ?? ""],
+      ["Accounts overdue", c.accounts?.overdue ? "yes" : "no"],
+      ["Confirmation statement next due", c.confirmationStatement?.nextDue ?? ""],
+      ["Active directors", officers.filter((o) => o.status === "active").length],
+      ["PSCs", pscs.filter((p) => p.active).length],
+      ["Charges registered", charges.length],
+    ];
+    downloadCSV(`companiesiq-${c.number}.csv`, toCSV(["Field", "Value"], rows));
+    toast("Report exported to CSV", { tone: "info" });
+  }
+  function exportFilings() {
+    downloadCSV(
+      `companiesiq-${c.number}-filings.csv`,
+      toCSV(["Date", "Type", "Description"], filings.map((f) => [f.date, f.type, f.label]))
+    );
+    toast(`Exported ${filings.length} filing${filings.length === 1 ? "" : "s"} to CSV`, { tone: "info" });
+  }
+
   const tags = c.classifications.slice(0, 3).map((cl) => cl.category);
   const addressParts = c.address
     ? [c.address.line1, c.address.line2, c.address.locality, c.address.postcode].filter(Boolean).join(", ")
@@ -186,7 +220,7 @@ export function CompanyProfile({
                   Founder view
                 </Button>
               ) : null}
-              <Button variant="primary" iconLeft="download">
+              <Button variant="primary" iconLeft="download" onClick={exportReport}>
                 Export report
               </Button>
             </>
@@ -361,7 +395,7 @@ export function CompanyProfile({
 
       {tab === "filings" ? (
         <Card>
-          <CardHeader subtitle="Companies House" title="Filing history" action={<IconButton icon="download" variant="solid" label="Export" />} />
+          <CardHeader subtitle="Companies House" title="Filing history" action={<IconButton icon="download" variant="solid" label="Export filings" onClick={exportFilings} />} />
           <CardBody flush>
             <div className="table-scroll"><table className="data-table data-table--full">
               <thead>

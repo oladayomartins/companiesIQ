@@ -6,6 +6,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCompanyBundle } from "@/lib/data";
+import { getCompany, CompaniesHouseError } from "@/lib/companies-house";
 import { buildIntelligenceReport } from "@/lib/analytics";
 import { getSimilarCompanies } from "@/lib/similar";
 import { getRegionLive } from "@/lib/nomis";
@@ -24,9 +25,13 @@ export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ number: string }> }): Promise<Metadata> {
   const { number } = await params;
-  const bundle = await getCompanyBundle(number);
-  if (!bundle) return { title: "Company" };
-  const c = bundle.company;
+  // Metadata only needs the company profile (1 call) — not the full 5-call
+  // bundle. The call dedupes with the page render's getCompany within the request.
+  const c = await getCompany(number).catch((e) => {
+    if (e instanceof CompaniesHouseError && e.status === 404) return null;
+    throw e;
+  });
+  if (!c) return { title: "Company" };
   const sector = c.primaryClassification?.sector;
   const region = c.geo?.region && c.geo.region !== "Unknown" ? c.geo.region : undefined;
   const desc = `${c.name} (company ${c.number})${c.incorporated ? `, incorporated ${fmtDate(c.incorporated)}` : ""}${

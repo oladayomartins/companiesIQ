@@ -160,7 +160,7 @@ export function AppShell({
               className={pathname.startsWith("/app/alerts") ? "is-active" : ""}
               onClick={() => router.push("/app/alerts")}
             />
-            <IconButton icon="download" label="Export" onClick={() => router.push("/app/companies")} />
+            <IconButton icon="download" label="Search &amp; export companies" onClick={() => router.push("/app/companies")} />
           </div>
         </header>
         <div className="app-scroll">{children}</div>

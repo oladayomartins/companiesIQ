@@ -199,7 +199,10 @@ export function itemsToCsv(listName: string, items: ProspectItem[]): string {
   const lines = items.map((i) =>
     [i.companyName, i.companyNumber, i.sector, i.region, i.score, i.addedAt?.slice(0, 10)].map(esc).join(",")
   );
-  return [`# ${listName}`, header.join(","), ...lines].join("\n");
+  // No comment/preamble line — RFC-4180 has no comments and Excel shows it as a
+  // stray row. The list name lives in the download filename instead.
+  void listName;
+  return [header.join(","), ...lines].join("\n");
 }
 
 function countOf(rel: unknown): number {

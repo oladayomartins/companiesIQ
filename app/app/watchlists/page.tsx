@@ -1,7 +1,8 @@
 import { getCurrentUser } from "@/lib/supabase/server";
 import { hasProAccess } from "@/lib/access";
+import { getWatchedCompanies } from "@/lib/watchlist";
 import { ProGate } from "@/components/app/ProGate";
-import { Placeholder } from "@/components/app/Placeholder";
+import { WatchlistsScreen } from "@/components/app/WatchlistsScreen";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Watchlists · CompaniesIQ" };
@@ -13,9 +14,10 @@ export default async function WatchlistsPage() {
       <ProGate
         icon="bookmark"
         title="Watchlists"
-        features={["Group companies into watchlists", "Daily digest of every change", "Unlimited saved searches"]}
+        features={["Track companies you care about", "Jump back into any report", "One place for every saved company"]}
       />
     );
   }
-  return <Placeholder title="Watchlists" sub="Group companies and get a daily digest of every change across the set. Coming soon to your plan." icon="bookmark" />;
+  const companies = await getWatchedCompanies();
+  return <WatchlistsScreen companies={companies} />;
 }

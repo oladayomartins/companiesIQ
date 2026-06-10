@@ -1,4 +1,4 @@
-import { getCurrentUser, getSupabaseAdmin } from "@/lib/supabase/server";
+import { getCurrentUser, getSupabaseServer } from "@/lib/supabase/server";
 import { getBillingSummary } from "@/lib/billing";
 import { isAdmin, isPartner } from "@/lib/admin";
 import { SettingsScreen } from "@/components/app/SettingsScreen";
@@ -9,10 +9,11 @@ export const metadata = { title: "Settings · CompaniesIQ" };
 export default async function SettingsPage() {
   const user = await getCurrentUser();
   let fullName = "";
-  const admin = getSupabaseAdmin();
-  if (admin && user) {
+  // RLS-scoped read (own row only) — no service-role needed for own profile.
+  const sb = await getSupabaseServer();
+  if (sb && user) {
     try {
-      const { data } = await admin.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+      const { data } = await sb.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
       fullName = data?.full_name ?? "";
     } catch {
       /* ignore */
