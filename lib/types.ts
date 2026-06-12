@@ -133,4 +133,5 @@ export interface SearchResult {
   accountsOverdue?: boolean;
   confirmationNextDue?: string;
   confirmationOverdue?: boolean;
+  pscNationalities?: string[]; // owner (PSC) nationalities, when the nationality filter is active
 }

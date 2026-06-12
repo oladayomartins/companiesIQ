@@ -30,16 +30,19 @@ export async function GET(req: NextRequest) {
   const accountsOverdue = sp.get("accountsOverdue") === "1";
   const accountsDueDays = Number(sp.get("accountsDue") || 0) || 0;
   const confirmationDue = sp.get("confirmationDue") === "1";
-  const hasFilingFilter = accountsOverdue || accountsDueDays > 0 || confirmationDue;
+  const ownerNationality = sp.get("nationality") || undefined;
+  // Both filing status and owner nationality need per-company enrichment (CH
+  // search can't filter on either) — handled by the request-driven path.
+  const needsEnrichment = accountsOverdue || accountsDueDays > 0 || confirmationDue || !!ownerNationality;
 
   // Note: startIndex is NOT a facet — a paginated plain query should stay on the
   // same (name-search) endpoint across pages, not switch to advanced search.
   const hasFacets = statuses.length > 0 || sics.length > 0 || types.length > 0 || !!sector || !!region || !!incorporatedFrom;
 
   try {
-    if (hasFilingFilter) {
-      // Request-driven: enrich the live search candidates' filing status on
-      // demand (cached), then filter — no pre-loaded register needed.
+    if (needsEnrichment) {
+      // Request-driven: enrich the live search candidates (filing status and/or
+      // owner nationality) on demand, cached, then filter — no pre-loaded register.
       const r = await exploreWithFiling(
         {
           q: q || undefined,
@@ -57,7 +60,8 @@ export async function GET(req: NextRequest) {
           accountsOverdue: accountsOverdue || undefined,
           accountsDueDays: accountsDueDays || undefined,
           confirmationDue: confirmationDue || undefined,
-        }
+        },
+        ownerNationality
       );
       return NextResponse.json(r);
     }

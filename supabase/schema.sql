@@ -26,6 +26,9 @@ create table if not exists public.companies (
   confirmation_next_due date,
   confirmation_overdue  boolean,
   filing_checked_at     timestamptz,
+  -- Owner (PSC) nationalities, cached from the request-driven nationality filter.
+  psc_nationalities text[],
+  psc_checked_at    timestamptz,
   ingested_at     timestamptz default now(),
   updated_at      timestamptz default now()
 );
@@ -33,6 +36,7 @@ create index if not exists companies_sector_idx on public.companies (primary_sec
 create index if not exists companies_region_idx on public.companies (region);
 create index if not exists companies_status_idx on public.companies (status);
 create index if not exists companies_incorporated_idx on public.companies (incorporated);
+create index if not exists companies_psc_nat_idx on public.companies using gin (psc_nationalities);
 create index if not exists companies_accounts_due_idx on public.companies (accounts_next_due);
 create index if not exists companies_accounts_overdue_idx on public.companies (accounts_overdue) where accounts_overdue = true;
 create index if not exists companies_confirmation_due_idx on public.companies (confirmation_next_due);

@@ -153,40 +153,88 @@ function matchesFiling(r: EnrichedResult, f: FilingFilters, today: string): bool
 
 export async function exploreWithFiling(
   params: ExploreParams,
-  filing: FilingFilters
+  filing: FilingFilters,
+  ownerNationality?: string
 ): Promise<{ total: number; results: EnrichedResult[]; live: boolean; cache: true }> {
   // 1. Live candidates for the current search context.
   const base = await explore({ ...params, size: 60 });
   const admin = getSupabaseAdmin();
   const today = isoToday();
   const numbers = base.results.map((r) => r.number);
+  const needFiling = !!(filing.accountsOverdue || filing.accountsDueDays || filing.confirmationDue);
+  const needPsc = !!ownerNationality;
+  const natLc = ownerNationality?.toLowerCase();
 
-  // 2. Reuse fresh cached filing data; only fetch the rest live.
-  const cached = new Map<string, Record<string, unknown>>();
+  // 2. Reuse fresh cached data; only fetch what's stale/missing.
+  const filingCache = new Map<string, Record<string, unknown>>();
+  const pscCache = new Map<string, string[]>();
   if (admin && numbers.length) {
     const { data } = await admin
       .from("companies")
-      .select("number,accounts_next_due,accounts_overdue,confirmation_next_due,confirmation_overdue,filing_checked_at")
+      .select(
+        "number,accounts_next_due,accounts_overdue,confirmation_next_due,confirmation_overdue,filing_checked_at,psc_nationalities,psc_checked_at"
+      )
       .in("number", numbers);
     for (const row of data ?? []) {
-      if (isFreshDays(row.filing_checked_at as string, FILING_TTL_DAYS)) cached.set(row.number as string, row);
+      const num = row.number as string;
+      if (needFiling && isFreshDays(row.filing_checked_at as string, FILING_TTL_DAYS)) filingCache.set(num, row);
+      if (needPsc && isFreshDays(row.psc_checked_at as string, FILING_TTL_DAYS) && Array.isArray(row.psc_nationalities))
+        pscCache.set(num, row.psc_nationalities as string[]);
     }
   }
 
   const cacheRows: Record<string, unknown>[] = [];
   const enriched = await mapPoolR(base.results, 10, async (r): Promise<EnrichedResult> => {
-    const hit = cached.get(r.number);
-    if (hit) {
-      return {
-        ...r,
-        accountsNextDue: (hit.accounts_next_due as string) ?? undefined,
-        accountsOverdue: (hit.accounts_overdue as boolean) ?? undefined,
-        confirmationNextDue: (hit.confirmation_next_due as string) ?? undefined,
-        confirmationOverdue: (hit.confirmation_overdue as boolean) ?? undefined,
-      };
+    const out: EnrichedResult = { ...r };
+    const write: Record<string, unknown> = {};
+
+    if (needFiling) {
+      const hit = filingCache.get(r.number);
+      if (hit) {
+        out.accountsNextDue = (hit.accounts_next_due as string) ?? undefined;
+        out.accountsOverdue = (hit.accounts_overdue as boolean) ?? undefined;
+        out.confirmationNextDue = (hit.confirmation_next_due as string) ?? undefined;
+        out.confirmationOverdue = (hit.confirmation_overdue as boolean) ?? undefined;
+      } else {
+        try {
+          const c = await ch.getCompany(r.number);
+          out.accountsNextDue = c.accounts?.nextDue;
+          out.accountsOverdue = c.accounts?.overdue ?? false;
+          out.confirmationNextDue = c.confirmationStatement?.nextDue;
+          out.confirmationOverdue = c.confirmationStatement?.overdue ?? false;
+          Object.assign(write, {
+            accounts_next_due: c.accounts?.nextDue ?? null,
+            accounts_overdue: c.accounts?.overdue ?? null,
+            accounts_last_made_up: c.accounts?.lastMadeUpTo ?? null,
+            confirmation_next_due: c.confirmationStatement?.nextDue ?? null,
+            confirmation_overdue: c.confirmationStatement?.overdue ?? null,
+            filing_checked_at: new Date().toISOString(),
+          });
+        } catch {
+          /* leave un-enriched */
+        }
+      }
     }
-    try {
-      const c = await ch.getCompany(r.number);
+
+    if (needPsc) {
+      const hit = pscCache.get(r.number);
+      if (hit) {
+        out.pscNationalities = hit;
+      } else {
+        try {
+          const pscs = await ch.getPSCs(r.number);
+          const nats = Array.from(
+            new Set(pscs.filter((p) => p.active && p.nationality).map((p) => p.nationality as string))
+          );
+          out.pscNationalities = nats;
+          Object.assign(write, { psc_nationalities: nats, psc_checked_at: new Date().toISOString() });
+        } catch {
+          out.pscNationalities = [];
+        }
+      }
+    }
+
+    if (Object.keys(write).length) {
       cacheRows.push({
         number: r.number,
         name: r.name,
@@ -197,24 +245,11 @@ export async function exploreWithFiling(
         primary_category: r.classification?.category ?? null,
         region: r.region ?? null,
         postcode: r.postcode ?? null,
-        accounts_next_due: c.accounts?.nextDue ?? null,
-        accounts_overdue: c.accounts?.overdue ?? null,
-        accounts_last_made_up: c.accounts?.lastMadeUpTo ?? null,
-        confirmation_next_due: c.confirmationStatement?.nextDue ?? null,
-        confirmation_overdue: c.confirmationStatement?.overdue ?? null,
-        filing_checked_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        ...write,
       });
-      return {
-        ...r,
-        accountsNextDue: c.accounts?.nextDue,
-        accountsOverdue: c.accounts?.overdue ?? false,
-        confirmationNextDue: c.confirmationStatement?.nextDue,
-        confirmationOverdue: c.confirmationStatement?.overdue ?? false,
-      };
-    } catch {
-      return r; // un-enriched → filtered out below
     }
+    return out;
   });
 
   // 3. Write-through cache (one batch) so repeat searches are instant.
@@ -226,7 +261,10 @@ export async function exploreWithFiling(
     }
   }
 
-  const matches = enriched.filter((r) => matchesFiling(r, filing, today));
+  let matches = enriched;
+  if (needFiling) matches = matches.filter((r) => matchesFiling(r, filing, today));
+  if (needPsc && natLc) matches = matches.filter((r) => (r.pscNationalities ?? []).some((n) => n.toLowerCase() === natLc));
+
   const start = params.startIndex ?? 0;
   const size = params.size ?? 40;
   return { total: matches.length, results: matches.slice(start, start + size), live: false, cache: true };

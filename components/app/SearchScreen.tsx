@@ -8,6 +8,7 @@ import { BulkAddToProspect } from "@/components/app/BulkAddToProspect";
 import { fmtNumber, ageLabel } from "@/lib/format";
 import { toast } from "@/lib/toast";
 import { ALL_SECTORS } from "@/lib/sic";
+import { COMMON_NATIONALITIES } from "@/lib/nationalities";
 import type { EnrichedResult } from "@/lib/data";
 import { toCSV, downloadCSV } from "@/lib/csv";
 
@@ -66,11 +67,12 @@ export function SearchScreen() {
   const [accountsOverdue, setAccountsOverdue] = useState(false);
   const [accountsDueSoon, setAccountsDueSoon] = useState(false);
   const [confirmationDue, setConfirmationDue] = useState(false);
+  const [ownerNationality, setOwnerNationality] = useState("");
   const [data, setData] = useState<{ total: number; results: EnrichedResult[]; live: boolean; cache?: boolean }>({ total: 0, results: [], live: true });
-  const filingMode = accountsOverdue || accountsDueSoon || confirmationDue;
-  // Filing filters enrich live (can take a couple of seconds on a cold set), so
-  // say what's happening rather than just spinning.
-  const loadingMsg = filingMode ? "Checking filing status for the matching companies…" : "Searching the register…";
+  // "Deep" filters (filing status, owner nationality) enrich each candidate
+  // live — answered by the register cache, not Companies House search directly.
+  const deepMode = accountsOverdue || accountsDueSoon || confirmationDue || !!ownerNationality;
+  const loadingMsg = deepMode ? "Checking the matching companies live…" : "Searching the register…";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nl, setNl] = useState("");
@@ -128,8 +130,9 @@ export function SearchScreen() {
     if (accountsOverdue) sp.set("accountsOverdue", "1");
     if (accountsDueSoon) sp.set("accountsDue", "60");
     if (confirmationDue) sp.set("confirmationDue", "1");
+    if (ownerNationality) sp.set("nationality", ownerNationality);
     return sp;
-  }, [query, activeStatuses, incWindow, sicKey, ctype, sector, activeRegions, accountsOverdue, accountsDueSoon, confirmationDue]);
+  }, [query, activeStatuses, incWindow, sicKey, ctype, sector, activeRegions, accountsOverdue, accountsDueSoon, confirmationDue, ownerNationality]);
 
   useEffect(() => {
     let cancelled = false;
@@ -223,6 +226,7 @@ export function SearchScreen() {
     setAccountsOverdue(false);
     setAccountsDueSoon(false);
     setConfirmationDue(false);
+    setOwnerNationality("");
     setChips([]);
     router.push("/app/companies");
   }
@@ -263,6 +267,14 @@ export function SearchScreen() {
           <Checkbox label="Accounts overdue" checked={accountsOverdue} onChange={(e) => setAccountsOverdue(e.target.checked)} />
           <Checkbox label="Accounts due ≤ 60 days" checked={accountsDueSoon} onChange={(e) => setAccountsDueSoon(e.target.checked)} />
           <Checkbox label="Confirmation statement due" checked={confirmationDue} onChange={(e) => setConfirmationDue(e.target.checked)} />
+        </FilterGroup>
+        <FilterGroup title="Owner nationality">
+          <Select
+            size="sm"
+            value={ownerNationality}
+            onChange={(e) => setOwnerNationality(e.target.value)}
+            options={[{ value: "", label: "Any nationality" }, ...COMMON_NATIONALITIES.map((n) => ({ value: n, label: n }))]}
+          />
         </FilterGroup>
       </aside>
 
@@ -335,17 +347,17 @@ export function SearchScreen() {
           ))}
           {sector ? <Tag onRemove={() => setSector("")}>{sector}</Tag> : null}
           {sicKey ? <Tag onRemove={() => setSic("")}>SIC {sicKey}</Tag> : null}
-          <Badge tone={filingMode ? "neutral" : "pos"} dot>
-            {filingMode ? "Register cache" : "Live register"}
+          <Badge tone={deepMode ? "neutral" : "pos"} dot>
+            {deepMode ? "Register cache" : "Live register"}
           </Badge>
         </div>
 
-        {filingMode ? (
+        {deepMode ? (
           <div className="cache-note">
             <Icon name="clock" size={14} />
             <span>
-              Filing status is checked live (and cached) for the companies matching your search. Narrow by region,
-              sector or name first to surface overdue / due-soon companies <em>within</em> that set. Facts are from
+              Filing status and owner nationality are checked live (and cached) for the companies matching your
+              search. Narrow by region, sector or name first to refine <em>within</em> that set. Facts are from
               Companies House.
             </span>
           </div>
@@ -435,6 +447,9 @@ export function SearchScreen() {
                             {c.accountsOverdue ? <Badge tone="warn">Accounts overdue</Badge> : null}
                             {!c.accountsOverdue && c.accountsNextDue ? <Badge tone="neutral">Accounts due {c.accountsNextDue.slice(0, 10)}</Badge> : null}
                             {c.confirmationOverdue ? <Badge tone="warn">Conf. stmt overdue</Badge> : null}
+                            {ownerNationality && c.pscNationalities?.length ? (
+                              <Badge tone="accent">Owner: {c.pscNationalities.join(", ")}</Badge>
+                            ) : null}
                           </div>
                         </td>
                         <td>{c.sicCodes[0] ? <Badge tone="neutral">{c.sicCodes[0]}</Badge> : <span className="muted">—</span>}</td>
