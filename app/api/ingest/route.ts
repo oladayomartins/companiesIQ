@@ -10,6 +10,7 @@
 // ============================================================
 import { NextRequest, NextResponse } from "next/server";
 import { advancedSearch, getCompany, hasApiKey } from "@/lib/companies-house";
+import { cronAuth } from "@/lib/cron-auth";
 import { classifySic } from "@/lib/sic";
 import { resolveGeo } from "@/lib/geography";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/server";
@@ -35,13 +36,12 @@ async function mapPool<T>(items: T[], concurrency: number, fn: (t: T) => Promise
 }
 
 export async function GET(req: NextRequest) {
-  const secret = process.env.INGEST_SECRET;
-  const auth = req.headers.get("authorization");
-  // Fail closed: in production a secret is required, and it must match.
-  if (process.env.NODE_ENV === "production" && !secret) {
-    return NextResponse.json({ error: "INGEST_SECRET must be set in production" }, { status: 503 });
+  // Accept INGEST_SECRET (manual) or CRON_SECRET (Vercel Cron). Fail closed in prod.
+  const { ok, configured } = cronAuth(req.headers.get("authorization"));
+  if (process.env.NODE_ENV === "production" && !configured) {
+    return NextResponse.json({ error: "INGEST_SECRET or CRON_SECRET must be set in production" }, { status: 503 });
   }
-  if (secret && auth !== `Bearer ${secret}`) {
+  if (configured && !ok) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
   if (!hasApiKey()) {
