@@ -15,6 +15,12 @@ import { keywordsForResult, aggregateKeywords } from "./keywords";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+// The formation trend is the same for every viewer of a given window, but costs
+// one Companies House call per bucket (~30 for the daily 30-day view). Cache it
+// in-process so warm dashboard loads cost zero CH calls.
+const TREND_TTL_MS = 60 * 60 * 1000; // 1 hour
+const trendCache = new Map<string, { at: number; data: { month: string; value: number }[] }>();
+
 /** ISO date `days` before the given ISO anchor (UTC). */
 function isoBefore(anchorIso: string, days: number): string {
   const d = new Date(anchorIso + "T00:00:00Z");
@@ -88,6 +94,9 @@ const DAY_MS = 86400000;
  */
 export async function getFormationTrend(days = 30, toAnchor?: string): Promise<{ month: string; value: number }[]> {
   const endIso = toAnchor ?? isoDaysAgo(0);
+  const cacheKey = `${days}:${endIso}`;
+  const hit = trendCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < TREND_TTL_MS) return hit.data;
   const end = new Date(endIso + "T00:00:00Z");
   const iso = (d: Date) => d.toISOString().slice(0, 10);
   const buckets: { label: string; from: string; to: string }[] = [];
@@ -117,8 +126,20 @@ export async function getFormationTrend(days = 30, toAnchor?: string): Promise<{
     }
   }
 
-  const counts = await Promise.all(buckets.map((b) => countCompanies({ incorporatedFrom: b.from, incorporatedTo: b.to })));
-  return buckets.map((b, i) => ({ month: b.label, value: counts[i] }));
+  // allSettled so a single rate-limited bucket doesn't blank the whole chart —
+  // failed buckets are dropped; the line still renders with the points we got.
+  const settled = await Promise.allSettled(
+    buckets.map((b) => countCompanies({ incorporatedFrom: b.from, incorporatedTo: b.to }))
+  );
+  const data = buckets
+    .map((b, i) => ({ b, r: settled[i] }))
+    .filter((x) => x.r.status === "fulfilled")
+    .map((x) => ({ month: x.b.label, value: (x.r as PromiseFulfilledResult<number>).value }));
+
+  // Only cache a reasonably complete result, so a mostly-rate-limited run
+  // doesn't poison the cache for an hour.
+  if (data.length >= Math.ceil(buckets.length / 2)) trendCache.set(cacheKey, { at: Date.now(), data });
+  return data;
 }
 
 // ---------------------------------------------------------------

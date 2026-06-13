@@ -174,7 +174,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               action={<Badge tone="pos" dot>Companies House</Badge>}
             />
             <CardBody>
-              {trend.length ? <TrendLine data={trend} /> : <div className="app-loading">Loading trend…</div>}
+              {trend.length ? (
+                <TrendLine data={trend} />
+              ) : (
+                <div className="app-loading">Trend temporarily unavailable — the register is busy. Refresh shortly.</div>
+              )}
             </CardBody>
           </Card>
 
