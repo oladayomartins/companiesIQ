@@ -3,6 +3,7 @@ import { Card, CardHeader, CardBody, Stat, Badge, Icon } from "@/components/ds";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import type { OpportunityIntel, DigitalFact } from "@/lib/opportunity";
+import type { DirectorNetwork } from "@/lib/network";
 import { AddToProspect, type ProspectTarget } from "@/components/app/AddToProspect";
 import { fmtNumber, fmtPercent, fmtDelta, fmtDate } from "@/lib/format";
 
@@ -74,6 +75,7 @@ export function IntelligenceReport({
   similar = [],
   opportunity = null,
   prospect = null,
+  network = null,
 }: {
   report: Report;
   similar?: SimilarCompany[];
@@ -83,6 +85,7 @@ export function IntelligenceReport({
   opportunity?: OpportunityIntel | null;
   // When set (unlocked, in-app), shows the "Add to prospect list" action.
   prospect?: ProspectTarget | null;
+  network?: DirectorNetwork | null;
 }) {
   const r = report;
   return (
@@ -408,6 +411,38 @@ export function IntelligenceReport({
           <Source>Companies House · same SIC code (same-region first)</Source>
         </CardBody>
       </Card>
+
+      {/* 12 · Connected companies (shared directors) */}
+      {network && network.connections.length ? (
+        <Card>
+          <CardHeader
+            children={<SectionHead n={12} title="Connected companies" />}
+            action={<Badge tone="accent">Director network</Badge>}
+          />
+          <CardBody>
+            <p className="rsec__note">
+              Other active companies that share a director with {r.overview.name} — checked across{" "}
+              {network.directorsChecked} director{network.directorsChecked === 1 ? "" : "s"}. A factual map of connected
+              entities from the officer-appointments register.
+            </p>
+            <div className="sim-list">
+              {network.connections.map((conn) => (
+                <Link key={conn.number} href={`/company/${conn.number}`} className="sim-row">
+                  <div className="sim-row__main">
+                    <div className="sim-row__name">{conn.name}</div>
+                    <div className="sim-row__meta mono">
+                      {conn.number}
+                      {conn.sector ? ` · ${conn.sector}` : ""} · via {conn.viaDirectors.join(", ")}
+                    </div>
+                  </div>
+                  <Icon name="chevronRight" size={15} className="sim-row__chev" />
+                </Link>
+              ))}
+            </div>
+            <Source>Companies House · officer appointments</Source>
+          </CardBody>
+        </Card>
+      ) : null}
 
       <p className="report__disclaimer">
         CompaniesIQ presents evidence drawn from Companies House, ONS and Nomis. Figures marked &ldquo;derived&rdquo; are

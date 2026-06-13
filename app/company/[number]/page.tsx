@@ -15,6 +15,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { isPartner } from "@/lib/admin";
 import { hasProAccess } from "@/lib/access";
 import { isWatched } from "@/lib/watchlist";
+import { getDirectorNetwork } from "@/lib/network";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
 import { JsonLd } from "@/components/JsonLd";
@@ -59,7 +60,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   const unlocked = subscribed;
   const partner = isPartner(user);
 
-  const [economicLive, similar, enrichment] = await Promise.all([
+  const [economicLive, similar, enrichment, network] = await Promise.all([
     getRegionLive(c.geo?.region),
     getSimilarCompanies(c.number, c.sicCodes[0], c.geo?.region),
     // Digital-presence enrichment hits the paid Places API — only run it for
@@ -72,6 +73,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           postcode: c.address?.postcode ?? c.geo?.postcode,
         }).catch(() => null as CompanyEnrichment | null)
       : Promise.resolve(null as CompanyEnrichment | null),
+    // Director network (shared-director connections) — gated, costs officer-
+    // appointment calls, so unlocked-only.
+    unlocked ? getDirectorNetwork(bundle.officers, c.number).catch(() => null) : Promise.resolve(null),
   ]);
   const report = buildIntelligenceReport(c, economicLive);
   const watched = unlocked ? await isWatched(c.number).catch(() => false) : false;
@@ -114,6 +118,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           partner={partner}
           signedIn={signedIn}
           watched={watched}
+          network={network}
         />
       </PublicReportChrome>
     </>

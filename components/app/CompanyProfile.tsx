@@ -9,6 +9,7 @@ import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analyti
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import { buildOpportunity, type OpportunityIntel } from "@/lib/opportunity";
 import { WatchButton } from "@/components/app/WatchButton";
+import type { DirectorNetwork } from "@/lib/network";
 import { toCSV, downloadCSV } from "@/lib/csv";
 import { toast } from "@/lib/toast";
 import { fmtDate, ageLabel } from "@/lib/format";
@@ -104,6 +105,7 @@ export function CompanyProfile({
   partner = false,
   signedIn = false,
   watched = false,
+  network = null,
 }: {
   company: Company;
   officers: Officer[];
@@ -118,6 +120,7 @@ export function CompanyProfile({
   partner?: boolean;
   signedIn?: boolean;
   watched?: boolean;
+  network?: DirectorNetwork | null;
 }) {
   const c = company;
   const router = useRouter();
@@ -277,6 +280,7 @@ export function CompanyProfile({
             similar={similar}
             enrichment={enrichment}
             opportunity={opportunity}
+            network={network}
             prospect={{
               number: c.number,
               name: c.name,
