@@ -18,6 +18,7 @@ import { isWatched } from "@/lib/watchlist";
 import { getDirectorNetwork } from "@/lib/network";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
+import { PublicShell } from "@/components/public/PublicShell";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/site";
 import { fmtDate } from "@/lib/format";
@@ -28,10 +29,8 @@ export async function generateMetadata({ params }: { params: Promise<{ number: s
   const { number } = await params;
   // Metadata only needs the company profile (1 call) — not the full 5-call
   // bundle. The call dedupes with the page render's getCompany within the request.
-  const c = await getCompany(number).catch((e) => {
-    if (e instanceof CompaniesHouseError && e.status === 404) return null;
-    throw e;
-  });
+  // Never throw from metadata — a CH error (404, 429, …) just yields a fallback title.
+  const c = await getCompany(number).catch(() => null);
   if (!c) return { title: "Company" };
   const sector = c.primaryClassification?.sector;
   const region = c.geo?.region && c.geo.region !== "Unknown" ? c.geo.region : undefined;
@@ -48,7 +47,27 @@ export async function generateMetadata({ params }: { params: Promise<{ number: s
 
 export default async function CompanyPage({ params }: { params: Promise<{ number: string }> }) {
   const { number } = await params;
-  const bundle = await getCompanyBundle(number);
+  // getCompanyBundle returns null on 404; other Companies House errors (e.g. a
+  // 429 rate-limit) throw — catch them and show a graceful "register busy" page
+  // instead of a 500.
+  let bundle;
+  try {
+    bundle = await getCompanyBundle(number);
+  } catch (e) {
+    if (e instanceof CompaniesHouseError && e.status === 404) notFound();
+    return (
+      <PublicShell>
+        <div className="screen" style={{ textAlign: "center", paddingTop: 80 }}>
+          <div className="app-eyebrow">Companies House</div>
+          <h1 className="screen-title" style={{ marginBottom: 10 }}>The register is busy right now</h1>
+          <p className="public-lede" style={{ maxWidth: 520, margin: "0 auto" }}>
+            We couldn&apos;t reach Companies House for this company just now (it briefly rate-limits high traffic).
+            Please refresh in a moment.
+          </p>
+        </div>
+      </PublicShell>
+    );
+  }
   if (!bundle) notFound();
 
   const c = bundle.company;

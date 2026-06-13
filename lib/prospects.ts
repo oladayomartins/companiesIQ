@@ -37,18 +37,22 @@ export async function getProspectLists(): Promise<ProspectList[]> {
   const sb = await getSupabaseServer();
   const user = await getCurrentUser();
   if (!sb || !user) return [];
-  const { data, error } = await sb
-    .from("prospect_lists")
-    .select("id,name,created_at,prospect_list_items(count)")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
-  if (error || !data) return [];
-  return data.map((l) => ({
-    id: l.id as string,
-    name: l.name as string,
-    createdAt: l.created_at as string,
-    count: countOf(l.prospect_list_items),
-  }));
+  try {
+    const { data, error } = await sb
+      .from("prospect_lists")
+      .select("id,name,created_at,prospect_list_items(count)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    if (error || !data) return [];
+    return data.map((l) => ({
+      id: l.id as string,
+      name: l.name as string,
+      createdAt: l.created_at as string,
+      count: countOf(l.prospect_list_items),
+    }));
+  } catch {
+    return []; // never break the page on a transient DB error
+  }
 }
 
 /** One list plus its items (RLS guarantees ownership). */
@@ -56,19 +60,20 @@ export async function getProspectList(id: string): Promise<{ list: ProspectList;
   const sb = await getSupabaseServer();
   const user = await getCurrentUser();
   if (!sb || !user) return null;
-  const { data: list } = await sb
-    .from("prospect_lists")
-    .select("id,name,created_at")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (!list) return null;
-  const { data: rows } = await sb
-    .from("prospect_list_items")
-    .select("company_number,company_name,sector,region,score,note,added_at")
-    .eq("list_id", id)
-    .order("added_at", { ascending: false });
-  const items: ProspectItem[] = (rows ?? []).map((r) => ({
+  try {
+    const { data: list } = await sb
+      .from("prospect_lists")
+      .select("id,name,created_at")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!list) return null;
+    const { data: rows } = await sb
+      .from("prospect_list_items")
+      .select("company_number,company_name,sector,region,score,note,added_at")
+      .eq("list_id", id)
+      .order("added_at", { ascending: false });
+    const items: ProspectItem[] = (rows ?? []).map((r) => ({
     companyNumber: r.company_number as string,
     companyName: (r.company_name as string) ?? null,
     sector: (r.sector as string) ?? null,
@@ -76,8 +81,11 @@ export async function getProspectList(id: string): Promise<{ list: ProspectList;
     score: (r.score as number) ?? null,
     note: (r.note as string) ?? null,
     addedAt: r.added_at as string,
-  }));
-  return { list: { id: list.id as string, name: list.name as string, createdAt: list.created_at as string, count: items.length }, items };
+    }));
+    return { list: { id: list.id as string, name: list.name as string, createdAt: list.created_at as string, count: items.length }, items };
+  } catch {
+    return null;
+  }
 }
 
 export async function createProspectList(name: string): Promise<ProspectList | null> {
