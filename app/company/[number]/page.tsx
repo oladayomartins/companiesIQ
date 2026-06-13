@@ -94,7 +94,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
       : Promise.resolve(null as CompanyEnrichment | null),
     // Director network (shared-director connections) — gated, costs officer-
     // appointment calls, so unlocked-only.
-    unlocked ? getDirectorNetwork(bundle.officers, c.number).catch(() => null) : Promise.resolve(null),
+    unlocked ? getDirectorNetwork(bundle.officers, c.number, c.name).catch(() => null) : Promise.resolve(null),
   ]);
   const report = buildIntelligenceReport(c, economicLive);
   const watched = unlocked ? await isWatched(c.number).catch(() => false) : false;

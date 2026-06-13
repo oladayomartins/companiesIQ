@@ -29,6 +29,9 @@ create table if not exists public.companies (
   -- Owner (PSC) nationalities, cached from the request-driven nationality filter.
   psc_nationalities text[],
   psc_checked_at    timestamptz,
+  -- Director network (connected companies via shared directors), cached.
+  director_network   jsonb,
+  network_checked_at timestamptz,
   ingested_at     timestamptz default now(),
   updated_at      timestamptz default now()
 );
