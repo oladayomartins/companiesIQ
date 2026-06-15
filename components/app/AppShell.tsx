@@ -13,6 +13,7 @@ const NAV: NavItem[] = [
   { id: "markets", label: "Markets", icon: "barChart", href: "/app/markets" },
   { id: "industries", label: "Industries", icon: "building", href: "/app/industries" },
   { id: "prospects", label: "Prospects", icon: "bookmark", href: "/app/prospects" },
+  { id: "enrich", label: "Enrich a list", icon: "file", href: "/app/enrich" },
   { id: "alerts", label: "Alerts", icon: "bell", href: "/app/alerts" },
   { id: "watchlist", label: "Watchlists", icon: "list", href: "/app/watchlists" },
   // DigitWarehouse-exclusive funnel tooling.

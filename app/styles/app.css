@@ -539,3 +539,12 @@
 .app-error-state__sub { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin: 0; }
 .app-error-state__actions { margin-top: 6px; }
 .app-error-state__ref { font-size: 11px; color: var(--text-faint); margin-top: 8px; }
+
+/* ── Enrich a list ──────────────────────────────────────────────── */
+.enrich-input { width: 100%; min-height: 120px; resize: vertical; border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--bg-page); color: var(--text-strong); padding: 12px 14px; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; margin: 6px 0 12px; }
+.enrich-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--focus-ring); }
+.enrich-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.enrich-count { font-size: 12.5px; color: var(--text-muted); }
+.enrich-error { color: var(--neg); font-size: 13px; margin-top: 10px; }
+.enrich-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.enrich-toolbar__actions { display: flex; align-items: center; gap: 8px; }
