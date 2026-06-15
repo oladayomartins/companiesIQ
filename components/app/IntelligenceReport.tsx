@@ -4,6 +4,8 @@ import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analyti
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import type { OpportunityIntel, DigitalFact } from "@/lib/opportunity";
 import type { DirectorNetwork } from "@/lib/network";
+import type { Filing } from "@/lib/types";
+import { toTimeline } from "@/lib/changes";
 import { AddToProspect, type ProspectTarget } from "@/components/app/AddToProspect";
 import { fmtNumber, fmtPercent, fmtDelta, fmtDate } from "@/lib/format";
 
@@ -76,6 +78,7 @@ export function IntelligenceReport({
   opportunity = null,
   prospect = null,
   network = null,
+  filings = [],
 }: {
   report: Report;
   similar?: SimilarCompany[];
@@ -86,8 +89,10 @@ export function IntelligenceReport({
   // When set (unlocked, in-app), shows the "Add to prospect list" action.
   prospect?: ProspectTarget | null;
   network?: DirectorNetwork | null;
+  filings?: Filing[];
 }) {
   const r = report;
+  const changes = toTimeline(filings);
   return (
     <div className="report">
       <p className="report__intro">
@@ -210,9 +215,36 @@ export function IntelligenceReport({
         </Card>
       ) : null}
 
-      {/* 2 · Market summary */}
+      {/* 2 · Recent changes — the "what changed" timeline */}
+      {changes.length ? (
+        <Card>
+          <CardHeader children={<SectionHead n={2} title="Recent changes" />} action={<Badge tone="accent">Timeline</Badge>} />
+          <CardBody>
+            <p className="rsec__note">
+              What&apos;s changed at {r.overview.name} lately — directly from its Companies House filing history.
+            </p>
+            <ol className="timeline">
+              {changes.map((ev, i) => (
+                <li className={`tl-row tl-row--${ev.tone}`} key={i}>
+                  <span className="tl-row__icon" aria-hidden="true">
+                    <Icon name={ev.icon} size={15} />
+                  </span>
+                  <span className="tl-row__body">
+                    <span className="tl-row__label">{ev.label}</span>
+                    {ev.detail ? <span className="tl-row__detail">{ev.detail}</span> : null}
+                  </span>
+                  <span className="tl-row__date mono">{fmtDate(ev.date)}</span>
+                </li>
+              ))}
+            </ol>
+            <Source>Companies House · filing history</Source>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {/* 3 · Market summary */}
       <Card>
-        <CardHeader children={<SectionHead n={2} title="Market summary" />} />
+        <CardHeader children={<SectionHead n={3} title="Market summary" />} />
         <CardBody>
           <div className="metric-row metric-row--5">
             <Stat size="sm" label="Industry" value={r.overview.sector} />
@@ -227,7 +259,7 @@ export function IntelligenceReport({
 
       {/* 3 · Business overview */}
       <Card>
-        <CardHeader children={<SectionHead n={3} title="Business overview" />} />
+        <CardHeader children={<SectionHead n={4} title="Business overview" />} />
         <CardBody>
           <dl className="detail-list">
             <div>
@@ -262,7 +294,7 @@ export function IntelligenceReport({
 
       {/* 4 · Industry snapshot */}
       <Card>
-        <CardHeader children={<SectionHead n={4} title="Industry snapshot" />} />
+        <CardHeader children={<SectionHead n={5} title="Industry snapshot" />} />
         <CardBody>
           <div className="metric-row">
             <Stat size="sm" label={`Businesses · ${r.industry.sector}`} value={fmtNumber(r.industry.businesses)} />
@@ -275,7 +307,7 @@ export function IntelligenceReport({
 
       {/* 5 · Competition snapshot */}
       <Card>
-        <CardHeader children={<SectionHead n={5} title="Competition snapshot" />} />
+        <CardHeader children={<SectionHead n={6} title="Competition snapshot" />} />
         <CardBody>
           <div className="metric-row metric-row--4">
             <Stat size="sm" label={`Similar companies · ${r.local.region}`} value={fmtNumber(r.local.inSameIndustry)} />
@@ -289,7 +321,7 @@ export function IntelligenceReport({
 
       {/* 6 · Growth & survival (merged) */}
       <Card>
-        <CardHeader children={<SectionHead n={6} title="Growth & survival" />} />
+        <CardHeader children={<SectionHead n={7} title="Growth & survival" />} />
         <CardBody>
           <div className="metric-row metric-row--2">
             <Stat size="sm" label="National sector growth" value={fmtDelta(r.regional.nationalGrowth)} />
@@ -322,7 +354,7 @@ export function IntelligenceReport({
 
       {/* 7 · Local economic indicators */}
       <Card>
-        <CardHeader children={<SectionHead n={7} title="Local economic indicators" />} />
+        <CardHeader children={<SectionHead n={8} title="Local economic indicators" />} />
         <CardBody>
           <div className="metric-row metric-row--4">
             <Stat size="sm" label="Population" value={fmtNumber(r.economic.population)} />
@@ -336,7 +368,7 @@ export function IntelligenceReport({
 
       {/* 8 · Industry trends */}
       <Card>
-        <CardHeader children={<SectionHead n={8} title="Industry trends" />} />
+        <CardHeader children={<SectionHead n={9} title="Industry trends" />} />
         <CardBody>
           <dl className="detail-list">
             <div>
@@ -362,7 +394,7 @@ export function IntelligenceReport({
 
       {/* 9 · Market outlook */}
       <Card>
-        <CardHeader children={<SectionHead n={9} title="Market outlook" />} action={<Badge tone="accent">Evidence-based</Badge>} />
+        <CardHeader children={<SectionHead n={10} title="Market outlook" />} action={<Badge tone="accent">Evidence-based</Badge>} />
         <CardBody>
           <ul className="recs">
             {r.outlook.items.map((item, i) => (
@@ -378,7 +410,7 @@ export function IntelligenceReport({
 
       {/* 10 · Startup readiness (educational) */}
       <Card>
-        <CardHeader children={<SectionHead n={10} title="Startup readiness" />} action={<Badge tone="neutral">Educational</Badge>} />
+        <CardHeader children={<SectionHead n={11} title="Startup readiness" />} action={<Badge tone="neutral">Educational</Badge>} />
         <CardBody>
           <p className="rsec__note">Common foundations for a newly incorporated business. Not assessed for this company.</p>
           <ReadinessList items={STARTUP_FOUNDATIONS} status="Not Assessed" />
@@ -387,7 +419,7 @@ export function IntelligenceReport({
 
       {/* 11 · Similar companies */}
       <Card>
-        <CardHeader children={<SectionHead n={11} title="Similar companies" />} action={<Badge tone="neutral">{similar.length}</Badge>} />
+        <CardHeader children={<SectionHead n={12} title="Similar companies" />} action={<Badge tone="neutral">{similar.length}</Badge>} />
         <CardBody>
           {similar.length ? (
             <div className="sim-list">
@@ -416,7 +448,7 @@ export function IntelligenceReport({
       {network && network.connections.length ? (
         <Card>
           <CardHeader
-            children={<SectionHead n={12} title="Connected companies" />}
+            children={<SectionHead n={13} title="Connected companies" />}
             action={<Badge tone="accent">Director network</Badge>}
           />
           <CardBody>

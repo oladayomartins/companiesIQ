@@ -48,18 +48,20 @@ function LockedIntelligence({
   similar,
   enrichment,
   opportunity,
+  filings,
   signedIn,
 }: {
   report: Report;
   similar: SimilarCompany[];
   enrichment: CompanyEnrichment | null;
   opportunity: OpportunityIntel | null;
+  filings: Filing[];
   signedIn: boolean;
 }) {
   return (
     <div className="locked-intel">
       <div className="locked-intel__blur" aria-hidden="true">
-        <IntelligenceReport report={report} similar={similar} enrichment={enrichment} opportunity={opportunity} />
+        <IntelligenceReport report={report} similar={similar} enrichment={enrichment} opportunity={opportunity} filings={filings} />
       </div>
       <div className="locked-intel__overlay">
         <Card variant="raised" className="locked-intel__card">
@@ -281,6 +283,7 @@ export function CompanyProfile({
             enrichment={enrichment}
             opportunity={opportunity}
             network={network}
+            filings={filings}
             prospect={{
               number: c.number,
               name: c.name,
@@ -290,7 +293,7 @@ export function CompanyProfile({
             }}
           />
         ) : (
-          <LockedIntelligence report={report} similar={similar} enrichment={enrichment} opportunity={opportunity} signedIn={signedIn} />
+          <LockedIntelligence report={report} similar={similar} enrichment={enrichment} opportunity={opportunity} filings={filings} signedIn={signedIn} />
         )
       ) : null}
 
