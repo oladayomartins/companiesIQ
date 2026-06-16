@@ -28,6 +28,34 @@ function isoBefore(anchorIso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Companies House publishes new incorporations a few days in arrears, so any
+// window ending "today" sits partly (or wholly) in the unpublished tail and
+// reads as empty. Find the most recent date that actually has published
+// incorporations, so the dashboard's live windows anchor to real data instead
+// of the blank tail. Cached in-process for an hour.
+const ASOF_TTL_MS = 60 * 60 * 1000;
+let asOfCache: { at: number; date: string } | null = null;
+
+/** Latest register date with published incorporations (the "data as of" date). */
+export async function getRegisterAsOf(maxLagDays = 10): Promise<string> {
+  if (asOfCache && Date.now() - asOfCache.at < ASOF_TTL_MS) return asOfCache.date;
+  const today = isoDaysAgo(0);
+  const days = Array.from({ length: maxLagDays + 1 }, (_, i) => isoBefore(today, i));
+  const counts = await Promise.allSettled(
+    days.map((d) => countCompanies({ incorporatedFrom: d, incorporatedTo: d, status: ["active"] }))
+  );
+  let date = today; // fall back to today if the whole window is somehow empty
+  for (let i = 0; i < days.length; i++) {
+    const r = counts[i];
+    if (r.status === "fulfilled" && r.value > 0) {
+      date = days[i];
+      break;
+    }
+  }
+  asOfCache = { at: Date.now(), date };
+  return date;
+}
+
 export interface RegisterKpis {
   active: number;
   incorporations: number;

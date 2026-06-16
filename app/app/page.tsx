@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Card, CardHeader, CardBody, Stat, StatusPill, Badge, Icon } from "@/components/ds";
 import { DateRangeSelector } from "@/components/app/DateRangeSelector";
 import { TrendLine } from "@/components/app/Charts";
-import { getRegisterKpis, getRadarData, getFormationTrend, type RadarData, type RadarBucket } from "@/lib/live-stats";
+import { getRegisterKpis, getRadarData, getFormationTrend, getRegisterAsOf, type RadarData, type RadarBucket } from "@/lib/live-stats";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { hasProAccess } from "@/lib/access";
 import { resolveRange } from "@/lib/ranges";
@@ -84,11 +84,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   let radar: RadarData | null = null;
   let trend: { month: string; value: number }[] = [];
   let error: string | null = null;
+  let asOf: string | undefined;
   try {
+    // Companies House publishes incorporations a few days late. For preset
+    // windows, end the window at the latest published date so it always lands
+    // on real data; custom ranges honour the user's explicit dates.
+    asOf = await getRegisterAsOf();
+    const anchor = win.custom ? win.to : asOf;
     [kpis, radar, trend] = await Promise.all([
-      getRegisterKpis(days, win.to),
-      getRadarData(days, win.to),
-      getFormationTrend(days, win.to).catch(() => []),
+      getRegisterKpis(days, anchor),
+      getRadarData(days, anchor),
+      getFormationTrend(days, anchor).catch(() => []),
     ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Companies House unavailable";
@@ -125,6 +131,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </Badge>
         </div>
       </div>
+      {asOf ? (
+        <div className="app-eyebrow" style={{ marginTop: -6, marginBottom: 14, opacity: 0.7 }}>
+          Incorporations published to {fmtDate(asOf)} · Companies House updates the register a few days in arrears
+        </div>
+      ) : null}
 
       {error ? (
         <div className="app-error">{error}</div>
