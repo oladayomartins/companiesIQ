@@ -140,7 +140,18 @@ export async function advancedSearch(params: AdvancedSearchParams): Promise<{ to
   qs.set("size", String(params.size ?? 40));
   if (params.startIndex) qs.set("start_index", String(params.startIndex));
 
-  const data = await chFetch<CHAdvancedResponse>(`/advanced-search/companies?${qs.toString()}`);
+  // The advanced-search endpoint returns 404 (not an empty 200) when a filter
+  // matches zero companies — which happens routinely for narrow recent windows,
+  // since the register lags real-world incorporations by a few days. Treat that
+  // as an empty result set rather than an error, so the dashboard renders a real
+  // zero instead of a "Not found" page.
+  let data: CHAdvancedResponse;
+  try {
+    data = await chFetch<CHAdvancedResponse>(`/advanced-search/companies?${qs.toString()}`);
+  } catch (e) {
+    if (e instanceof CompaniesHouseError && e.status === 404) return { total: 0, results: [] };
+    throw e;
+  }
   const results: SearchResult[] = (data.items || []).map((it) => {
     const geo = resolveGeo({ postcode: it.registered_office_address?.postal_code, locality: it.registered_office_address?.locality });
     const primary = it.sic_codes?.[0];
