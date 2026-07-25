@@ -6,7 +6,7 @@ import { Button, Input, Badge } from "@/components/ds";
 import { getSupabaseBrowser, isSupabaseConfigured } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 
-// Passwordless sign-in via a 6-digit email CODE (not a magic link). A code
+// Passwordless sign-in via a one-time email CODE (not a magic link). A code
 // can't be consumed by an email scanner / browser prefetch the way a single-use
 // magic-link URL can, which is what was silently burning the token before the
 // user's click (see the auth debugging in the git history). Flow:
@@ -31,7 +31,7 @@ export function SignIn() {
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     if (hash.get("error") || hash.get("error_code") || params.get("auth_error")) {
-      setNotice("That sign-in link couldn’t be used. Enter your email below and we’ll send a 6-digit code instead.");
+      setNotice("That sign-in link couldn’t be used. Enter your email below and we’ll send a one-time code instead.");
       if (window.location.hash) {
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
       }
@@ -71,8 +71,8 @@ export function SignIn() {
     e.preventDefault();
     if (!configured || busy) return;
     const token = code.replace(/\D/g, "").trim();
-    if (token.length !== 6) {
-      setError("Enter the 6-digit code from your email.");
+    if (token.length < 6) {
+      setError("Enter the full code from your email.");
       return;
     }
     const supabase = getSupabaseBrowser();
@@ -103,8 +103,8 @@ export function SignIn() {
         </Link>
         <h1 className="auth-title">Sign in or sign up</h1>
         <p className="auth-sub">
-          One email field — no password. We&apos;ll email you a 6-digit code. New to CompaniesIQ? Your account is created
-          automatically the first time.
+          One email field — no password. We&apos;ll email you a one-time sign-in code. New to CompaniesIQ? Your account is
+          created automatically the first time.
         </p>
 
         {!configured ? (
@@ -127,19 +127,19 @@ export function SignIn() {
                 Check your inbox
               </Badge>
               <p>
-                We&apos;ve emailed a 6-digit code to <strong>{email}</strong>. Enter it below to sign in. The code
+                We&apos;ve emailed a sign-in code to <strong>{email}</strong>. Enter it below to sign in. The code
                 expires shortly.
               </p>
             </div>
             <Input
-              label="6-digit code"
+              label="Sign-in code"
               inputMode="numeric"
               autoComplete="one-time-code"
               pattern="[0-9]*"
-              maxLength={6}
-              placeholder="123456"
+              maxLength={8}
+              placeholder="Enter the code"
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
               autoFocus
               required
               iconLeft="shield"
@@ -191,7 +191,7 @@ export function SignIn() {
               error={error ?? undefined}
             />
             <Button variant="primary" block type="submit" disabled={busy} iconRight="arrowRight">
-              {busy ? "Sending…" : "Email me a 6-digit code"}
+              {busy ? "Sending…" : "Email me a sign-in code"}
             </Button>
             <p className="auth-hint">Passwordless · the same code signs you in and signs you up.</p>
           </form>
