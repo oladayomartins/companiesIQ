@@ -6,54 +6,89 @@ import { Button, Input, Badge } from "@/components/ds";
 import { getSupabaseBrowser, isSupabaseConfigured } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
 
+// Passwordless sign-in via a 6-digit email CODE (not a magic link). A code
+// can't be consumed by an email scanner / browser prefetch the way a single-use
+// magic-link URL can, which is what was silently burning the token before the
+// user's click (see the auth debugging in the git history). Flow:
+//   1. enter email  -> signInWithOtp() emails a code
+//   2. enter code   -> verifyOtp() sets the session, then we navigate to `next`
 export function SignIn() {
   const configured = isSupabaseConfigured();
   const params = useSearchParams();
   const next = params.get("next") || "/app";
+
+  const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
-  // Surface why the user landed back here. A magic link is single-use: once it
-  // has been opened (or opened twice, or has expired) it can't be reused, and
-  // Supabase reports that in the URL hash (#error=…&error_code=…), while our
-  // callback reports exchange failures via ?auth_error=. Read both, tell the
-  // user plainly, and clean the URL so a refresh doesn't re-show the message.
+  // If the user arrived here from an old/expired magic link (Supabase reports it
+  // in the URL hash; our callback via ?auth_error), explain it and steer them to
+  // the code flow. Clean the URL so a refresh doesn't re-show the message.
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const hashErr = hash.get("error") || hash.get("error_code");
-    const queryErr = params.get("auth_error");
-    if (hashErr || queryErr) {
-      setNotice("That sign-in link couldn’t be used — it may have already been opened or expired. Enter your email below and we’ll send a fresh one.");
+    if (hash.get("error") || hash.get("error_code") || params.get("auth_error")) {
+      setNotice("That sign-in link couldn’t be used. Enter your email below and we’ll send a 6-digit code instead.");
       if (window.location.hash) {
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
       }
     }
   }, [params]);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!configured) return;
-    setBusy(true);
-    setError(null);
+  // Resend cooldown ticker (Supabase rate-limits new codes to ~1/min).
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  async function sendCode(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!configured || busy) return;
     const supabase = getSupabaseBrowser();
     if (!supabase) return;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      // Carry the intended destination through the magic link so the callback
-      // returns the user to the page they were trying to reach.
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
-    });
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    // No emailRedirectTo: we verify the code in-app rather than via a link.
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
     setBusy(false);
     if (error) {
       setError(error.message);
-      toast("Couldn't send the link — check the email and try again.", { tone: "error" });
-    } else {
-      setSent(true);
-      toast(`Magic link sent to ${email} — check your inbox`, { tone: "info" });
+      toast("Couldn’t send the code — check the email and try again.", { tone: "error" });
+      return;
     }
+    setStep("code");
+    setCode("");
+    setCooldown(45);
+    toast(`Code sent to ${email} — check your inbox`, { tone: "info" });
+  }
+
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    if (!configured || busy) return;
+    const token = code.replace(/\D/g, "").trim();
+    if (token.length !== 6) {
+      setError("Enter the 6-digit code from your email.");
+      return;
+    }
+    const supabase = getSupabaseBrowser();
+    if (!supabase) return;
+    setBusy(true);
+    setError(null);
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    if (error) {
+      setBusy(false);
+      setError("That code is incorrect or has expired. Check the most recent email, or resend a new code.");
+      return;
+    }
+    // verifyOtp has written the session cookies. Do a full navigation (not a
+    // client push) so middleware + server components pick up the new session.
+    toast("Signed in — taking you in…", { tone: "info" });
+    window.location.assign(next);
   }
 
   return (
@@ -68,8 +103,8 @@ export function SignIn() {
         </Link>
         <h1 className="auth-title">Sign in or sign up</h1>
         <p className="auth-sub">
-          One email field — no password. We&apos;ll send you a secure magic link. New to CompaniesIQ? Your account is
-          created automatically the first time.
+          One email field — no password. We&apos;ll email you a 6-digit code. New to CompaniesIQ? Your account is created
+          automatically the first time.
         </p>
 
         {!configured ? (
@@ -85,30 +120,80 @@ export function SignIn() {
               </Button>
             </Link>
           </div>
-        ) : sent ? (
-          <div className="auth-note">
-            <Badge tone="pos" dot>
-              Check your inbox
-            </Badge>
-            <p>
-              We&apos;ve emailed a one-click magic link to <strong>{email}</strong>. Open it on this device to continue —
-              it signs you in (or creates your account) instantly. No password needed.
-            </p>
-          </div>
+        ) : step === "code" ? (
+          <form onSubmit={verifyCode} className="auth-form">
+            <div className="auth-note" role="status" style={{ marginBottom: 16 }}>
+              <Badge tone="pos" dot>
+                Check your inbox
+              </Badge>
+              <p>
+                We&apos;ve emailed a 6-digit code to <strong>{email}</strong>. Enter it below to sign in. The code
+                expires shortly.
+              </p>
+            </div>
+            <Input
+              label="6-digit code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              placeholder="123456"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              autoFocus
+              required
+              iconLeft="shield"
+              error={error ?? undefined}
+            />
+            <Button variant="primary" block type="submit" disabled={busy} iconRight="arrowRight">
+              {busy ? "Verifying…" : "Verify & sign in"}
+            </Button>
+            <div className="auth-hint" style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <button
+                type="button"
+                className="auth-linkbtn"
+                onClick={() => sendCode()}
+                disabled={busy || cooldown > 0}
+                style={{ background: "none", border: 0, padding: 0, cursor: cooldown > 0 ? "default" : "pointer", color: "inherit", textDecoration: "underline" }}
+              >
+                {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+              </button>
+              <button
+                type="button"
+                className="auth-linkbtn"
+                onClick={() => {
+                  setStep("email");
+                  setCode("");
+                  setError(null);
+                }}
+                style={{ background: "none", border: 0, padding: 0, cursor: "pointer", color: "inherit", textDecoration: "underline" }}
+              >
+                Use a different email
+              </button>
+            </div>
+          </form>
         ) : (
-          <form onSubmit={submit} className="auth-form">
+          <form onSubmit={sendCode} className="auth-form">
             {notice ? (
               <div className="auth-note" role="status" style={{ marginBottom: 16 }}>
                 <Badge tone="warn">Link expired</Badge>
                 <p>{notice}</p>
               </div>
             ) : null}
-            <Input label="Email address" type="email" placeholder="you@company.co.uk" value={email} onChange={(e) => setEmail(e.target.value)} required iconLeft="users" />
-            {error ? <span className="ciq-field__hint ciq-field__hint--error">{error}</span> : null}
+            <Input
+              label="Email address"
+              type="email"
+              placeholder="you@company.co.uk"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              iconLeft="users"
+              error={error ?? undefined}
+            />
             <Button variant="primary" block type="submit" disabled={busy} iconRight="arrowRight">
-              {busy ? "Sending…" : "Email me a magic link"}
+              {busy ? "Sending…" : "Email me a 6-digit code"}
             </Button>
-            <p className="auth-hint">Passwordless · the same link signs you in and signs you up.</p>
+            <p className="auth-hint">Passwordless · the same code signs you in and signs you up.</p>
           </form>
         )}
 

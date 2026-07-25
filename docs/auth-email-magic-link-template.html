@@ -1,0 +1,55 @@
+<!--
+  CompaniesIQ — Supabase "Magic Link" email template (6-digit CODE flow).
+
+  WHERE: Supabase dashboard → Authentication → Emails → "Magic Link" template.
+  Paste the <body> markup below into the template editor and Save.
+
+  WHY no clickable link: the 6-digit {{ .Token }} and the magic-link URL verify
+  the SAME one-time token. If the email also contains the /verify link, an email
+  scanner or browser prefetch can open it and burn the token before the user
+  types the code — which is the exact bug this flow fixes. So this template
+  shows the CODE ONLY and deliberately omits {{ .ConfirmationURL }}.
+
+  Supabase variable used: {{ .Token }} = the 6-digit one-time code.
+  (If new-user sign-ups use the "Confirm signup" template on your project, add
+  the same {{ .Token }} block there too.)
+-->
+<div style="margin:0;padding:0;background:#f7f1ea;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f1ea;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="width:480px;max-width:92%;">
+          <!-- Wordmark -->
+          <tr>
+            <td align="center" style="padding-bottom:24px;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;color:#1a1a1a;">
+              <span style="display:inline-block;width:22px;height:22px;background:#d4551f;border-radius:6px;vertical-align:middle;margin-right:8px;"></span>
+              Companies<span style="color:#d4551f;">IQ</span>
+            </td>
+          </tr>
+          <!-- Card -->
+          <tr>
+            <td style="background:#ffffff;border:1px solid #ece4d8;border-radius:16px;padding:36px 36px 32px;">
+              <h1 style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:24px;color:#1a1a1a;">Your sign-in code</h1>
+              <p style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#4a4a4a;">
+                Enter this 6-digit code on the CompaniesIQ sign-in screen to continue. For your security it expires shortly and can only be used once.
+              </p>
+              <!-- The code -->
+              <div style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:38px;font-weight:700;letter-spacing:10px;color:#1a1a1a;background:#faf6f0;border:1px solid #ece4d8;border-radius:12px;padding:18px 0;text-align:center;">
+                {{ .Token }}
+              </div>
+              <p style="margin:24px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#8a8a8a;">
+                Didn&rsquo;t request this? You can safely ignore this email &mdash; nothing changes until the code is used.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#9a9a9a;">
+              CompaniesIQ Ltd &middot; London, United Kingdom &middot; UK company data from Companies House under the Open Government Licence.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
