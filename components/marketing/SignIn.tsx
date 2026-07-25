@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button, Input, Badge } from "@/components/ds";
 import { getSupabaseBrowser, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -13,7 +13,25 @@ export function SignIn() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Surface why the user landed back here. A magic link is single-use: once it
+  // has been opened (or opened twice, or has expired) it can't be reused, and
+  // Supabase reports that in the URL hash (#error=…&error_code=…), while our
+  // callback reports exchange failures via ?auth_error=. Read both, tell the
+  // user plainly, and clean the URL so a refresh doesn't re-show the message.
+  useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const hashErr = hash.get("error") || hash.get("error_code");
+    const queryErr = params.get("auth_error");
+    if (hashErr || queryErr) {
+      setNotice("That sign-in link couldn’t be used — it may have already been opened or expired. Enter your email below and we’ll send a fresh one.");
+      if (window.location.hash) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+    }
+  }, [params]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,6 +97,12 @@ export function SignIn() {
           </div>
         ) : (
           <form onSubmit={submit} className="auth-form">
+            {notice ? (
+              <div className="auth-note" role="status" style={{ marginBottom: 16 }}>
+                <Badge tone="warn">Link expired</Badge>
+                <p>{notice}</p>
+              </div>
+            ) : null}
             <Input label="Email address" type="email" placeholder="you@company.co.uk" value={email} onChange={(e) => setEmail(e.target.value)} required iconLeft="users" />
             {error ? <span className="ciq-field__hint ciq-field__hint--error">{error}</span> : null}
             <Button variant="primary" block type="submit" disabled={busy} iconRight="arrowRight">

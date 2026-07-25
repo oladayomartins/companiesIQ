@@ -27,6 +27,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(cb);
   }
 
+  // Never run session refresh / gating on the auth callback itself. The callback
+  // route exchanges the PKCE code for a session and sets the auth cookies on its
+  // own response; if middleware also creates a client and refreshes cookies on
+  // the same request it can clobber that exchange, leaving the user unauthed and
+  // bounced back to /sign-in. Let /auth/* pass straight through.
+  if (req.nextUrl.pathname.startsWith("/auth/")) return res;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return res; // not configured → don't gate anything
