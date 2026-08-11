@@ -117,6 +117,8 @@ A practical starting workflow:
 
 For the day-by-day flow rather than a one-off pull, see [companies formed today](/blog/companies-formed-today-uk); for the full method, the [new business leads playbook](/blog/new-business-leads-companies-house) and the [UK company database explainer](/blog/uk-company-database) go deeper.
 
+Prefer it delivered? Get a [free weekly email of newly registered companies](/free-alerts) in your sector and region — no account needed.
+
 ## A note on contact data and compliance
 
 The register gives you company and officer details, not marketing consent. If you plan to contact new companies, treat directors' details as business data and follow PECR and UK GDPR — keep B2B outreach relevant, identify yourself clearly and honour opt-outs. The cleanest approach is to use the register to decide *who* to contact and *when*, then reach them through legitimate channels.
@@ -131,11 +133,11 @@ You can see exactly which figures on CompaniesIQ are live from Companies House v
       { q: "How many new companies are registered in the UK?", a: "Hundreds of thousands of companies are incorporated each year on the Companies House register — a constant daily flow rather than a seasonal spike, which is why a filtered, recency-based feed beats a periodic bulk list." },
     ],
     related: [
+      { label: "Free weekly new-company alerts", href: "/free-alerts" },
       { label: "New business leads from Companies House", href: "/blog/new-business-leads-companies-house" },
       { label: "The UK company database explained", href: "/blog/uk-company-database" },
       { label: "Companies formed today", href: "/blog/companies-formed-today-uk" },
       { label: "Search the live register", href: "/search" },
-      { label: "Technology companies", href: "/industry/technology" },
     ],
   },
 
@@ -199,11 +201,11 @@ The register tells you *who* and *when*; it does not grant marketing consent. Fo
       { q: "How do I avoid working the same leads as everyone else?", a: "Filter tightly by sector, region and recency, and act on new formations quickly. Niche, time-sensitive lists are far less contested than broad bought files." },
     ],
     related: [
+      { label: "Free weekly new-company alerts", href: "/free-alerts" },
       { label: "Newly registered companies UK", href: "/blog/newly-registered-companies-uk" },
       { label: "UK business leads playbook", href: "/blog/uk-business-leads" },
       { label: "SIC codes explained", href: "/blog/sic-codes-explained" },
       { label: "Search the register", href: "/search" },
-      { label: "Construction sector data", href: "/industry/construction" },
     ],
   },
 
@@ -1406,11 +1408,11 @@ The teams that benefit most check the day's relevant new formations as a habit �
       { q: "How do I make a daily new-company feed usable?", a: "Filter it by the sectors and regions you serve. Two filters — industry and location — turn thousands of daily registrations into a short, relevant cohort you can qualify and act on the same day." },
     ],
     related: [
+      { label: "Free weekly new-company alerts", href: "/free-alerts" },
       { label: "Newly registered companies UK", href: "/blog/newly-registered-companies-uk" },
       { label: "Newly incorporated companies UK", href: "/blog/newly-incorporated-companies-uk" },
       { label: "UK business leads playbook", href: "/blog/uk-business-leads" },
       { label: "Company monitoring and alerts", href: "/blog/company-monitoring-alerts-uk" },
-      { label: "Search the register", href: "/search" },
     ],
   },
 ];
