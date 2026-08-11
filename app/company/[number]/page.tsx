@@ -17,6 +17,7 @@ import { hasProAccess } from "@/lib/access";
 import { isWatched } from "@/lib/watchlist";
 import { getDirectorNetwork } from "@/lib/network";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
+import { TrackCompanyCta } from "@/components/app/TrackCompanyCta";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
 import { PublicShell } from "@/components/public/PublicShell";
 import { JsonLd } from "@/components/JsonLd";
@@ -123,6 +124,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
     <>
       <JsonLd data={[orgSchema, breadcrumb]} />
       <PublicReportChrome unlocked={unlocked} signedIn={signedIn}>
+        {!signedIn ? <TrackCompanyCta company={c.name} number={c.number} sector={c.primaryClassification?.sector} /> : null}
         <CompanyProfile
           company={c}
           officers={bundle.officers}
