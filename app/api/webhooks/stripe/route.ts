@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { markPurchased, recordFunnelEvent } from "@/lib/leads";
 import { upsertSubscription, planForPriceId } from "@/lib/subscriptions";
+import { setProfileNameIfEmpty } from "@/lib/profile";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +86,13 @@ export async function POST(req: NextRequest) {
           stripe_subscription_id: subId,
           current_period_end: periodEnd,
         });
+        // Stripe collects the cardholder name at checkout — capture it for
+        // personalization (never overwriting a name the user already set).
+        await setProfileNameIfEmpty(
+          userId,
+          session.customer_details?.email ?? session.customer_email ?? null,
+          session.customer_details?.name ?? null,
+        );
       }
       return NextResponse.json({ received: true });
     }
