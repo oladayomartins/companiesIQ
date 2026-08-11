@@ -94,3 +94,81 @@ alter table public.companies add column if not exists fin_checked_at      timest
 ## 8. Effort
 
 Phase 1 is a contained, high-signal proof (~2–3 days). Phases 2–3 are where the competitive value compounds. The architecture is already proven by the filing-status cache, so risk is mostly in the parser robustness — which Phase 1 de-risks.
+
+---
+
+# Phase 2 — spec (cache + size/health filters)
+
+_Extends Phase 1 (shipped). Two goals: (a) drop the per-request document fetch by caching, and (b) add size/health search filters — where the paid value lands._
+
+## Architecture fit (why it's low-risk)
+
+Phase 2 reuses **two patterns already in the codebase**:
+- The **filing-status cache**: `public.companies` columns populated by `scripts/backfill-filing.mjs` + the ingest job.
+- The **cache-backed filter path**: `lib/data.ts` `exploreWithFiling()` runs a live `explore()` (≈60 candidates by sector/region/recency), reads each candidate's cached fields (or fetches + writes on miss), then post-filters via `matchesFiling()`.
+
+Financials is the same shape: cache the `fin_*` columns, and add a `matchesFinancial()` post-filter.
+
+## 2a — Cache + report reads cache-first
+
+1. **Migration** (add to `public.companies`):
+   ```sql
+   alter table public.companies add column if not exists fin_turnover      bigint;
+   alter table public.companies add column if not exists fin_net_assets    bigint;
+   alter table public.companies add column if not exists fin_cash          bigint;
+   alter table public.companies add column if not exists fin_employees     integer;
+   alter table public.companies add column if not exists fin_accounts_type text;
+   alter table public.companies add column if not exists fin_period_end    date;
+   alter table public.companies add column if not exists fin_checked_at    timestamptz;
+   create index if not exists companies_fin_net_assets_idx on public.companies (fin_net_assets);
+   create index if not exists companies_fin_turnover_idx   on public.companies (fin_turnover);
+   ```
+2. **`getCompanyFinancials(number)` becomes cache-first**: read the row; if `fin_checked_at` is fresh, return it (zero CH calls). On miss/stale, do the Phase-1 live fetch **and write the columns**. This removes the per-request document fetch that Phase 1 does on every company-page render — the operational concern flagged at ship.
+   - **TTL**: long (≈120 days) — accounts are annual. Force a re-check when a new `accounts` filing appears (the ingest/streaming job already sees filing events; flag `fin_checked_at = null` on a new accounts filing so the next read re-parses).
+
+## 2b — Size/health search filters
+
+Extend the existing filter path — no new architecture:
+
+1. **`FinancialFilters`** (alongside `FilingFilters` in `lib/data.ts`):
+   ```ts
+   interface FinancialFilters {
+     minTurnover?: number; minNetWorth?: number; minCash?: number;
+     minEmployees?: number; hasAccounts?: boolean; sizeBand?: "micro" | "small" | "mid";
+   }
+   ```
+2. **`exploreWithFiling`** (rename conceptually to `exploreWithCache`): add `fin_*` to the batched `companies` select it already does; on cache miss for a candidate, call the cache-first `getCompanyFinancials`. Then a `matchesFinancial(result, filters)` post-filter, mirroring `matchesFiling`.
+3. **UI**: add a "Financials" group to the search filter panel (the same component that exposes the accounts-overdue / due-soon filters today) — min turnover / min net worth / has-accounts / size band. Gated (see below).
+
+### The one honest constraint (state it plainly)
+This filters **within the live-search context** (the ≈60 candidates from sector/region/recency), exactly like the filing filters do today — not the entire register. That's the right fit for the product ("new **tech** companies **in London** with **£X+** net worth"), but it means there's no "every UK company over £Y turnover, ungated by sector" query. A true whole-register financial query would need a fully-backfilled cache queried directly — a later option, gated by backfill coverage.
+
+## 2c — Backfill strategy (coverage, honestly)
+
+Millions of companies × ~3 CH calls is a long, throttled job — **don't try to backfill the whole register.** Prioritise, in order:
+1. **On-demand** — every company whose report is viewed caches itself (2a).
+2. **Recent formations** — the product's focus; the ingest job already writes these rows, so add a financials pass for companies old enough to have filed first accounts (~9–21 months post-incorporation).
+3. **Watchlisted / searched** companies.
+
+`scripts/backfill-financials.mjs` clones `backfill-filing.mjs` (same 600-req/5-min throttle, `--limit`, `--stale`), calling the cache-first fetch and writing `fin_*`.
+
+## Gating & provenance
+
+- **Figures on the report**: keep **visible** (public) — they enrich the SEO pages and drive conversion (Phase 1 already does this).
+- **Filtering by financials**: **paid** — it's the power feature. Add `caps.financials` to `lib/subscription.ts` (Team+), gate the UI controls + the filter path.
+- **Provenance**: add a `SOURCES` entry ("Filed accounts (iXBRL), Companies House, OGL") and a `/sources` "How the figures are computed" note. Evidence-first labelling already in the card.
+
+## Parser hardening
+
+Phase 1's regex reader is proven on real filings but targeted. If coverage/accuracy dips at scale, swap `lib/enrichment/ixbrl-parse.ts` for a proper XML parser (e.g. `fast-xml-parser`) behind the same `parseIxbrlConcepts(xhtml)` signature — a contained change, no call-site churn. Add concepts as needed (current assets, creditors → current ratio; prior-year turnover → growth).
+
+## Phasing & effort
+
+| Step | What | Effort |
+|---|---|---|
+| 2a | Migration + cache-first `getCompanyFinancials` + ingest financials pass | ~2 days |
+| 2b | `FinancialFilters` + `matchesFinancial` + search-panel UI + gating | ~3 days |
+| 2c | `backfill-financials.mjs` + prioritised backfill | ~1–2 days |
+| 3  | Multi-year history table → turnover trend + growth score | later |
+
+**Sequence 2a first** — it removes the live-fetch cost and makes the report instant, independent of the filter work. 2b is where revenue-relevant value (screen leads by size/health) appears.
