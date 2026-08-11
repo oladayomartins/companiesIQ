@@ -13,6 +13,8 @@ import { isoDaysAgo } from "@/lib/companies-house";
 import { fmtNumber, fmtDelta, fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
+import { RelatedGuides } from "@/components/RelatedGuides";
+import { guidesForSector } from "@/lib/guides";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/site";
 
@@ -186,6 +188,8 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
             </CardBody>
           </Card>
         </div>
+
+        <RelatedGuides guides={guidesForSector(stat.sector)} />
 
         <PublicCta
           title={`Track the ${stat.sector} sector`}

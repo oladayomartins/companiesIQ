@@ -14,6 +14,8 @@ import { fmtNumber, fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 import { FEATURED_SECTORS } from "@/lib/sic";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
+import { RelatedGuides } from "@/components/RelatedGuides";
+import { guidesForPlace } from "@/lib/guides";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/site";
 
@@ -180,6 +182,8 @@ export default async function MarketPage({ params }: { params: Promise<{ region:
             </CardBody>
           </Card>
         </div>
+
+        <RelatedGuides guides={guidesForPlace()} />
 
         <PublicCta
           title={`Track new companies in ${stat.region}`}

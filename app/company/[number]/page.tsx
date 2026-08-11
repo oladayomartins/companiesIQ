@@ -18,6 +18,8 @@ import { isWatched } from "@/lib/watchlist";
 import { getDirectorNetwork } from "@/lib/network";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { TrackCompanyCta } from "@/components/app/TrackCompanyCta";
+import { RelatedGuides } from "@/components/RelatedGuides";
+import { guidesForCompany } from "@/lib/guides";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
 import { PublicShell } from "@/components/public/PublicShell";
 import { JsonLd } from "@/components/JsonLd";
@@ -141,6 +143,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           watched={watched}
           network={network}
         />
+        <div className="screen" style={{ paddingTop: 0 }}>
+          <RelatedGuides guides={guidesForCompany()} dark />
+        </div>
       </PublicReportChrome>
     </>
   );
