@@ -20,6 +20,8 @@ import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { TrackCompanyCta } from "@/components/app/TrackCompanyCta";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForCompany } from "@/lib/guides";
+import { FinancialsCard } from "@/components/app/FinancialsCard";
+import { getCompanyFinancials } from "@/lib/enrichment/financials";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
 import { PublicShell } from "@/components/public/PublicShell";
 import { JsonLd } from "@/components/JsonLd";
@@ -82,7 +84,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   const unlocked = subscribed;
   const partner = isPartner(user);
 
-  const [economicLive, similar, enrichment, network] = await Promise.all([
+  const [economicLive, similar, enrichment, network, financials] = await Promise.all([
     getRegionLive(c.geo?.region),
     getSimilarCompanies(c.number, c.sicCodes[0], c.geo?.region),
     // Digital-presence enrichment hits the paid Places API — only run it for
@@ -98,6 +100,10 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
     // Director network (shared-director connections) — gated, costs officer-
     // appointment calls, so unlocked-only.
     unlocked ? getDirectorNetwork(bundle.officers, c.number, c.name).catch(() => null) : Promise.resolve(null),
+    // Financials from filed accounts (iXBRL) — free Companies House data, so
+    // shown on the public report too. Phase 2 moves this to the register cache
+    // (see docs/financials-ixbrl.md) to drop the per-request document fetch.
+    getCompanyFinancials(c.number).catch(() => null),
   ]);
   const report = buildIntelligenceReport(c, economicLive);
   const watched = unlocked ? await isWatched(c.number).catch(() => false) : false;
@@ -143,6 +149,11 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           watched={watched}
           network={network}
         />
+        {financials ? (
+          <div className="screen" style={{ paddingTop: 0 }}>
+            <FinancialsCard financials={financials} company={c.name} />
+          </div>
+        ) : null}
         <div className="screen" style={{ paddingTop: 0 }}>
           <RelatedGuides guides={guidesForCompany()} dark />
         </div>

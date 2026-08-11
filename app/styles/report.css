@@ -250,3 +250,10 @@
 /* Company-report CTA: embedded free-alert form (dark chrome) */
 .company-cta__form { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 320px; flex: 1; max-width: 460px; }
 .company-cta__form .fa-form { width: 100%; }
+
+/* Financials card (from filed accounts, iXBRL enrichment) */
+.fin-card { margin-top: 18px; }
+.fin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+@media (max-width: 720px) { .fin-grid { grid-template-columns: repeat(2, 1fr); } }
+.fin-src { margin: 16px 0 0; font-size: 11px; color: var(--text-faint); line-height: 1.5; }
+.fin-none { margin: 0; font-size: 14px; color: var(--text-muted); line-height: 1.55; }
