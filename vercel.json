@@ -3,6 +3,7 @@
   "crons": [
     { "path": "/api/ingest", "schedule": "*/15 * * * *" },
     { "path": "/api/alerts/run", "schedule": "0 7 * * *" },
-    { "path": "/api/free-alerts/run", "schedule": "0 8 * * 1" }
+    { "path": "/api/free-alerts/run", "schedule": "0 8 * * 1" },
+    { "path": "/api/financials/backfill", "schedule": "0 3 * * *" }
   ]
 }

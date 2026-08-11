@@ -163,6 +163,44 @@ export async function getCompanyFinancials(number: string, opts: { name?: string
 }
 
 /**
+ * Cron-driven backfill: check a bounded batch of cached companies that are old
+ * enough to have filed first accounts (~15 months) and haven't been checked.
+ * Reuses the cache-first fetch (so each company caches itself). Bounded per run
+ * to stay within the Companies House rate limit alongside the ingest job.
+ */
+export async function backfillFinancialsBatch(limit = 60): Promise<{ checked: number; withFigures: number }> {
+  const admin = getSupabaseAdmin();
+  if (!admin || !isFinancialsConfigured()) return { checked: 0, withFigures: 0 };
+  const cutoff = new Date(Date.now() - 456 * 86_400_000).toISOString().slice(0, 10); // ~15 months
+  const { data } = await admin
+    .from("companies")
+    .select("number,name")
+    .is("fin_checked_at", null)
+    .lt("incorporated", cutoff)
+    .order("incorporated", { ascending: false })
+    .limit(limit);
+  const rows = (data ?? []) as { number: string; name: string }[];
+
+  let checked = 0;
+  let withFigures = 0;
+  let i = 0;
+  const worker = async () => {
+    while (i < rows.length) {
+      const row = rows[i++];
+      try {
+        const f = await getCompanyFinancials(row.number, { name: row.name });
+        checked++;
+        if (f.netAssets != null || f.turnover != null) withFigures++;
+      } catch {
+        /* skip this one */
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(4, rows.length) }, worker));
+  return { checked, withFigures };
+}
+
+/**
  * Latest financials for a company, parsed from its most recent accounts filing.
  * Returns an all-null "Not Assessed" result if no accounts, no iXBRL, or a parse
  * miss — never a fabricated figure.
