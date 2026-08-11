@@ -95,6 +95,28 @@ The fastest way to make a new-company feed productive is to narrow it. A few exa
 
 Combining a sector signal with a region gives you a short, relevant list rather than thousands of rows you will never work through.
 
+## Newly registered vs dormant, shelf and re-registered companies
+
+Not every "new" entry on the register is a genuine fresh business, and the difference decides lead quality:
+
+- **Genuinely newly incorporated** — formed this week to start trading. This is the real opportunity.
+- **Shelf companies** — incorporated in advance and left dormant to be sold on later, so the incorporation date predates any real activity.
+- **Dormant companies** — registered but not trading (sometimes just to protect a name); a dormant-accounts filing is the tell.
+- **Re-registrations and name changes** — an existing business under a new identity, not a new customer.
+
+A good new-company feed lets you screen these out — excluding dormant filings and sense-checking that the office and directors look like a real, active setup. The signals that separate a trading business from a shell are in [how to read a company's filing history](/blog/company-filings-history-explained).
+
+## Build your first list in ten minutes
+
+A practical starting workflow:
+
+1. **Pick one sector and one region** you actually serve — say [technology](/industry/technology) companies in [London](/market/london). Two filters beat twenty.
+2. **Set a recency window** — the last 7 to 30 days, so every company is still inside the decision window.
+3. **Scan the directors and PSCs** — first-time founder or experienced operator? Cross-reference a [company director search](/blog/company-director-search-uk) and check [who owns the company](/blog/who-owns-a-company-uk).
+4. **Export the shortlist** and work it while it's fresh — run the search on the [live register](/search).
+
+For the day-by-day flow rather than a one-off pull, see [companies formed today](/blog/companies-formed-today-uk); for the full method, the [new business leads playbook](/blog/new-business-leads-companies-house) and the [UK company database explainer](/blog/uk-company-database) go deeper.
+
 ## A note on contact data and compliance
 
 The register gives you company and officer details, not marketing consent. If you plan to contact new companies, treat directors' details as business data and follow PECR and UK GDPR — keep B2B outreach relevant, identify yourself clearly and honour opt-outs. The cleanest approach is to use the register to decide *who* to contact and *when*, then reach them through legitimate channels.
@@ -105,13 +127,15 @@ You can see exactly which figures on CompaniesIQ are live from Companies House v
       { q: "How quickly do new companies appear on the register?", a: "Usually within a day or two of incorporation. Online formations are often registered within 24 working hours, so a new company can be visible the next working day." },
       { q: "When is the best time to contact a newly formed company?", a: "Roughly one to four weeks after incorporation. By then the initial setup rush has settled and the director is making decisions about accounting, banking, VAT and suppliers, but has often not yet committed to providers." },
       { q: "Can I download a list of newly registered companies?", a: "Not directly from the free Companies House website, which has no date filter or bulk export. You need the Companies House API or an intelligence platform that ingests new incorporations and lets you filter and export them." },
+      { q: "What's the difference between a newly registered and a dormant company?", a: "A newly registered company has just incorporated to trade; a dormant company is registered but not trading (its accounts are filed as dormant). For lead quality, target genuinely new, active incorporations and screen out dormant shells and shelf companies." },
+      { q: "How many new companies are registered in the UK?", a: "Hundreds of thousands of companies are incorporated each year on the Companies House register — a constant daily flow rather than a seasonal spike, which is why a filtered, recency-based feed beats a periodic bulk list." },
     ],
     related: [
       { label: "New business leads from Companies House", href: "/blog/new-business-leads-companies-house" },
+      { label: "The UK company database explained", href: "/blog/uk-company-database" },
       { label: "Companies formed today", href: "/blog/companies-formed-today-uk" },
       { label: "Search the live register", href: "/search" },
       { label: "Technology companies", href: "/industry/technology" },
-      { label: "London market data", href: "/market/london" },
     ],
   },
 
@@ -231,6 +255,26 @@ Different jobs need different databases:
 - **Can you filter and export the way you work?** By SIC code, region, recency, size.
 - **What does it cost at your volume?** Per-search pricing and unlimited plans suit very different users — compare on [pricing](/pricing).
 
+## How much does a UK company database cost?
+
+The range is wide, and it maps to how much is layered on top of the free register:
+
+- **Free** — the Companies House register and its API cost nothing. You pay in engineering time and the lack of filtering, export and financials.
+- **Pay-as-you-go** — some tools charge per report or per credit, which suits occasional checks but gets expensive for list-building.
+- **Subscription** — a flat monthly fee for unlimited search, filtering and export, usually the best value for anyone building lists regularly rather than checking one company. See [pricing](/pricing) for how CompaniesIQ is packaged.
+
+The right question isn't "what's cheapest" but "what's cheapest for my job" — a per-report tool is cheap for due diligence and ruinous for prospecting, and vice versa.
+
+## Who uses a UK company database, and for what
+
+The same underlying register powers very different jobs:
+
+- **Sales and lead generation** — finding and qualifying prospects; see the [UK business leads playbook](/blog/uk-business-leads) and [new business leads from Companies House](/blog/new-business-leads-companies-house).
+- **Accountants and advisers** — reaching [newly incorporated companies](/blog/newly-incorporated-companies-uk) before they pick a firm.
+- **Due diligence, KYC and credit** — verifying [who owns a company](/blog/who-owns-a-company-uk) and reading its [filing history](/blog/company-filings-history-explained).
+- **Market research** — sizing sectors and regions from formation trends.
+- **Monitoring** — tracking a portfolio for change; see [company monitoring and alerts](/blog/company-monitoring-alerts-uk).
+
 ## The bottom line
 
 The "best" UK company database depends entirely on the job. For authoritative core facts, nothing beats Companies House itself. For anything involving lists, filtering, recency or analysis, you want an intelligence layer on top — ideally one that stays close to the live source and is honest about where every number comes from. If you are weighing options, our piece on [Companies House search alternatives](/blog/companies-house-search-alternatives) compares the main routes.`,
@@ -239,12 +283,14 @@ The "best" UK company database depends entirely on the job. For authoritative co
       { q: "What is the difference between Companies House and a commercial company database?", a: "Companies House is the official source of core company facts. Commercial databases build on it, adding structured financials, credit scores, contact data, ownership mapping and easier search, filtering and export." },
       { q: "How many companies are on the UK register?", a: "Companies House holds well over five million companies on the register, with hundreds of thousands incorporated each year and many dissolved, so the live total moves constantly." },
       { q: "Is company data live or a snapshot?", a: "It depends on the provider. Some resell periodic snapshots that go stale; others, including CompaniesIQ, query Companies House live so directors, addresses and statuses reflect the current record." },
+      { q: "How much does a UK company database cost?", a: "It ranges from free (the Companies House register and API) to pay-as-you-go per-report pricing to flat monthly subscriptions. Subscriptions usually offer the best value for regular list-building; per-report pricing suits occasional one-off checks." },
+      { q: "Which is the best UK company database?", a: "It depends on the job. Companies House is best for authoritative single lookups; a commercial intelligence layer is better for filtering, recency, financials or monitoring. Many serious users combine Companies House with one alternative." },
     ],
     related: [
       { label: "Companies House search alternatives", href: "/blog/companies-house-search-alternatives" },
+      { label: "New business leads from Companies House", href: "/blog/new-business-leads-companies-house" },
       { label: "Who owns a company in the UK", href: "/blog/who-owns-a-company-uk" },
-      { label: "Data sources and provenance", href: "/sources" },
-      { label: "Financial services sector", href: "/industry/financial-services" },
+      { label: "Newly registered companies UK", href: "/blog/newly-registered-companies-uk" },
       { label: "Pricing", href: "/pricing" },
     ],
   },
@@ -632,6 +678,18 @@ Can you export, integrate with your CRM, and set up monitoring? Signals are only
 
 Sales intelligence pays off for anyone selling into UK businesses where timing matters: SaaS and B2B sales teams, accountants and advisers, agencies, insurers, brokers and recruiters. The common thread is that a recent change at the target company creates a window — and the platform's job is to put you in it.
 
+## The trigger events that signal a buying window
+
+Sales intelligence is only as good as the timing signals underneath it. On the UK register, the highest-value triggers are:
+
+- **A new incorporation** in your target sector — the freshest opportunity of all. See [newly registered companies](/blog/newly-registered-companies-uk).
+- **A director appointment** — new leadership often means new budgets and new suppliers; trace it with a [company director search](/blog/company-director-search-uk).
+- **A PSC (ownership) change** — frequently the footprint of investment. See [who owns a company](/blog/who-owns-a-company-uk).
+- **A charge or mortgage** — secured borrowing, i.e. capital being deployed.
+- **Accounts and confirmation statements** — confirming the company is live and trading; read them via [filing history](/blog/company-filings-history-explained).
+
+A platform that surfaces these as they happen — rather than a static list you re-work each quarter — is what turns "who could I sell to" into "who should I call this week." See [company monitoring and alerts](/blog/company-monitoring-alerts-uk) for watching them at scale.
+
 ## Before you buy
 
 Map your use case to the data you need, then test on real searches. Check freshness, provenance, filters and export against your actual workflow, and weigh it against [pricing](/pricing) at your volume. The right platform is the one that surfaces the few hundred companies you should be talking to this week — not the one with the biggest headline database number.`,
@@ -640,12 +698,13 @@ Map your use case to the data you need, then test on real searches. Check freshn
       { q: "How is it different from a B2B contact database?", a: "A contact database tells you who to email. A sales intelligence platform adds firmographics, decision-makers and trigger events, so you know which companies to approach, why now, and who to speak to." },
       { q: "What should I look for in a UK sales intelligence tool?", a: "Live data rather than stale snapshots, clear provenance of every figure, filters that match how you sell (industry, region, recency), honest contact-data claims, and export or CRM integration." },
       { q: "Is Companies House data used in sales intelligence?", a: "Yes. The public Companies House register is the backbone of UK company data. Platforms build on it with enrichment, signals and easier search, filtering and export." },
+      { q: "What trigger events should a sales intelligence platform track?", a: "The highest-value UK triggers are new incorporations, director appointments, PSC (ownership) changes, new charges (secured borrowing), and accounts or confirmation statements. Together they mark when a company's buying window is open." },
     ],
     related: [
       { label: "The UK company database explained", href: "/blog/uk-company-database" },
       { label: "UK business leads playbook", href: "/blog/uk-business-leads" },
+      { label: "Newly registered companies UK", href: "/blog/newly-registered-companies-uk" },
       { label: "Company monitoring and alerts", href: "/blog/company-monitoring-alerts-uk" },
-      { label: "Data sources and provenance", href: "/sources" },
       { label: "Pricing", href: "/pricing" },
     ],
   },
