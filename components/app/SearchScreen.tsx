@@ -20,6 +20,27 @@ const INC_WINDOWS = [
   { label: "Last 12 months", value: "12m" },
   { label: "Last 5 years", value: "5y" },
 ];
+const NETWORTH_BANDS = [
+  { label: "Any net worth", value: "0" },
+  { label: "£10k+", value: "10000" },
+  { label: "£50k+", value: "50000" },
+  { label: "£100k+", value: "100000" },
+  { label: "£500k+", value: "500000" },
+  { label: "£1m+", value: "1000000" },
+];
+const TURNOVER_BANDS = [
+  { label: "Any turnover", value: "0" },
+  { label: "£100k+", value: "100000" },
+  { label: "£500k+", value: "500000" },
+  { label: "£1m+", value: "1000000" },
+  { label: "£5m+", value: "5000000" },
+];
+function shortGbp(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `£${(n / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1)}m`;
+  if (abs >= 1_000) return `£${Math.round(n / 1_000)}k`;
+  return `£${n.toLocaleString("en-GB")}`;
+}
 const TYPES = [
   { label: "Any type", value: "" },
   { label: "Private limited (LTD)", value: "ltd" },
@@ -68,10 +89,14 @@ export function SearchScreen() {
   const [accountsDueSoon, setAccountsDueSoon] = useState(false);
   const [confirmationDue, setConfirmationDue] = useState(false);
   const [ownerNationality, setOwnerNationality] = useState("");
+  // Financial filters (from filed accounts) — size/health.
+  const [minNetWorth, setMinNetWorth] = useState("0");
+  const [minTurnover, setMinTurnover] = useState("0");
+  const [hasAccounts, setHasAccounts] = useState(false);
   const [data, setData] = useState<{ total: number; results: EnrichedResult[]; live: boolean; cache?: boolean }>({ total: 0, results: [], live: true });
   // "Deep" filters (filing status, owner nationality) enrich each candidate
   // live — answered by the register cache, not Companies House search directly.
-  const deepMode = accountsOverdue || accountsDueSoon || confirmationDue || !!ownerNationality;
+  const deepMode = accountsOverdue || accountsDueSoon || confirmationDue || !!ownerNationality || minNetWorth !== "0" || minTurnover !== "0" || hasAccounts;
   const loadingMsg = deepMode ? "Checking the matching companies live…" : "Searching the register…";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,8 +156,11 @@ export function SearchScreen() {
     if (accountsDueSoon) sp.set("accountsDue", "60");
     if (confirmationDue) sp.set("confirmationDue", "1");
     if (ownerNationality) sp.set("nationality", ownerNationality);
+    if (minNetWorth !== "0") sp.set("minNetWorth", minNetWorth);
+    if (minTurnover !== "0") sp.set("minTurnover", minTurnover);
+    if (hasAccounts) sp.set("hasAccounts", "1");
     return sp;
-  }, [query, activeStatuses, incWindow, sicKey, ctype, sector, activeRegions, accountsOverdue, accountsDueSoon, confirmationDue, ownerNationality]);
+  }, [query, activeStatuses, incWindow, sicKey, ctype, sector, activeRegions, accountsOverdue, accountsDueSoon, confirmationDue, ownerNationality, minNetWorth, minTurnover, hasAccounts]);
 
   useEffect(() => {
     let cancelled = false;
@@ -226,6 +254,9 @@ export function SearchScreen() {
     setAccountsOverdue(false);
     setAccountsDueSoon(false);
     setConfirmationDue(false);
+    setMinNetWorth("0");
+    setMinTurnover("0");
+    setHasAccounts(false);
     setOwnerNationality("");
     setChips([]);
     router.push("/app/companies");
@@ -267,6 +298,11 @@ export function SearchScreen() {
           <Checkbox label="Accounts overdue" checked={accountsOverdue} onChange={(e) => setAccountsOverdue(e.target.checked)} />
           <Checkbox label="Accounts due ≤ 60 days" checked={accountsDueSoon} onChange={(e) => setAccountsDueSoon(e.target.checked)} />
           <Checkbox label="Confirmation statement due" checked={confirmationDue} onChange={(e) => setConfirmationDue(e.target.checked)} />
+        </FilterGroup>
+        <FilterGroup title="Financials (filed accounts)">
+          <Select size="sm" value={minNetWorth} onChange={(e) => setMinNetWorth(e.target.value)} options={NETWORTH_BANDS} />
+          <Select size="sm" value={minTurnover} onChange={(e) => setMinTurnover(e.target.value)} options={TURNOVER_BANDS} />
+          <Checkbox label="Has filed accounts" checked={hasAccounts} onChange={(e) => setHasAccounts(e.target.checked)} />
         </FilterGroup>
         <FilterGroup title="Owner nationality">
           <Select
@@ -447,6 +483,8 @@ export function SearchScreen() {
                             {c.accountsOverdue ? <Badge tone="warn">Accounts overdue</Badge> : null}
                             {!c.accountsOverdue && c.accountsNextDue ? <Badge tone="neutral">Accounts due {c.accountsNextDue.slice(0, 10)}</Badge> : null}
                             {c.confirmationOverdue ? <Badge tone="warn">Conf. stmt overdue</Badge> : null}
+                            {c.finNetAssets != null ? <Badge tone="pos">Net worth {shortGbp(c.finNetAssets)}</Badge> : null}
+                            {c.finTurnover != null ? <Badge tone="neutral">Turnover {shortGbp(c.finTurnover)}</Badge> : null}
                             {ownerNationality && c.pscNationalities?.length ? (
                               <Badge tone="accent">Owner: {c.pscNationalities.join(", ")}</Badge>
                             ) : null}

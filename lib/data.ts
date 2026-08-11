@@ -9,6 +9,7 @@ import "server-only";
 import type { Company, SearchResult, Officer, Filing, Charge, OfficerProfile, PSC } from "./types";
 import * as ch from "./companies-house";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { getCompanyFinancials } from "./enrichment/financials";
 
 export const LIVE = true;
 
@@ -98,6 +99,11 @@ export interface FilingFilters {
   accountsOverdue?: boolean;
   accountsDueDays?: number; // upcoming accounts due within N days
   confirmationDue?: boolean; // confirmation statement overdue or due within 30 days
+  // Financials (from filed accounts, iXBRL). Filter candidates by size/health.
+  minNetWorth?: number; // £ net assets
+  minTurnover?: number; // £ turnover
+  minEmployees?: number;
+  hasAccounts?: boolean; // has machine-readable filed accounts
 }
 
 function isoToday(): string {
@@ -151,6 +157,16 @@ function matchesFiling(r: EnrichedResult, f: FilingFilters, today: string): bool
   return true;
 }
 
+// A candidate must have the relevant figure AND meet the threshold — unknowns
+// are excluded (we can't confirm a company we couldn't assess meets a size bar).
+function matchesFinancial(r: EnrichedResult, f: FilingFilters): boolean {
+  if (f.hasAccounts && !r.finAccountsType) return false;
+  if (f.minNetWorth != null && !(r.finNetAssets != null && r.finNetAssets >= f.minNetWorth)) return false;
+  if (f.minTurnover != null && !(r.finTurnover != null && r.finTurnover >= f.minTurnover)) return false;
+  if (f.minEmployees != null && !(r.finEmployees != null && r.finEmployees >= f.minEmployees)) return false;
+  return true;
+}
+
 export async function exploreWithFiling(
   params: ExploreParams,
   filing: FilingFilters,
@@ -162,6 +178,7 @@ export async function exploreWithFiling(
   const today = isoToday();
   const numbers = base.results.map((r) => r.number);
   const needFiling = !!(filing.accountsOverdue || filing.accountsDueDays || filing.confirmationDue);
+  const needFin = filing.minNetWorth != null || filing.minTurnover != null || filing.minEmployees != null || !!filing.hasAccounts;
   const needPsc = !!ownerNationality;
   const natLc = ownerNationality?.toLowerCase();
 
@@ -234,6 +251,16 @@ export async function exploreWithFiling(
       }
     }
 
+    if (needFin) {
+      // getCompanyFinancials is cache-first + writes its own cache, so repeats
+      // are free; first time it costs a few CH calls per uncached candidate.
+      const fin = await getCompanyFinancials(r.number, { name: r.name });
+      out.finNetAssets = fin.netAssets;
+      out.finTurnover = fin.turnover;
+      out.finEmployees = fin.employees;
+      out.finAccountsType = fin.accountsType;
+    }
+
     if (Object.keys(write).length) {
       cacheRows.push({
         number: r.number,
@@ -263,6 +290,7 @@ export async function exploreWithFiling(
 
   let matches = enriched;
   if (needFiling) matches = matches.filter((r) => matchesFiling(r, filing, today));
+  if (needFin) matches = matches.filter((r) => matchesFinancial(r, filing));
   if (needPsc && natLc) matches = matches.filter((r) => (r.pscNationalities ?? []).some((n) => n.toLowerCase() === natLc));
 
   const start = params.startIndex ?? 0;

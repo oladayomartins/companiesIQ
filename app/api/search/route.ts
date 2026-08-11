@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { search, explore, exploreWithFiling } from "@/lib/data";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { hasProAccess } from "@/lib/access";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +33,19 @@ export async function GET(req: NextRequest) {
   const accountsDueDays = Number(sp.get("accountsDue") || 0) || 0;
   const confirmationDue = sp.get("confirmationDue") === "1";
   const ownerNationality = sp.get("nationality") || undefined;
+
+  // Financial filters (size/health) are a paid feature — gate server-side so
+  // they're ignored for free users regardless of what the client sends.
+  const pro = await hasProAccess(await getCurrentUser());
+  const minNetWorth = pro ? Number(sp.get("minNetWorth") || 0) || 0 : 0;
+  const minTurnover = pro ? Number(sp.get("minTurnover") || 0) || 0 : 0;
+  const minEmployees = pro ? Number(sp.get("minEmployees") || 0) || 0 : 0;
+  const hasAccounts = pro && sp.get("hasAccounts") === "1";
+  const needsFinancial = minNetWorth > 0 || minTurnover > 0 || minEmployees > 0 || hasAccounts;
+
   // Both filing status and owner nationality need per-company enrichment (CH
   // search can't filter on either) — handled by the request-driven path.
-  const needsEnrichment = accountsOverdue || accountsDueDays > 0 || confirmationDue || !!ownerNationality;
+  const needsEnrichment = accountsOverdue || accountsDueDays > 0 || confirmationDue || !!ownerNationality || needsFinancial;
 
   // Note: startIndex is NOT a facet — a paginated plain query should stay on the
   // same (name-search) endpoint across pages, not switch to advanced search.
@@ -60,6 +72,10 @@ export async function GET(req: NextRequest) {
           accountsOverdue: accountsOverdue || undefined,
           accountsDueDays: accountsDueDays || undefined,
           confirmationDue: confirmationDue || undefined,
+          minNetWorth: minNetWorth || undefined,
+          minTurnover: minTurnover || undefined,
+          minEmployees: minEmployees || undefined,
+          hasAccounts: hasAccounts || undefined,
         },
         ownerNationality
       );

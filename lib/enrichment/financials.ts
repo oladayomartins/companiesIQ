@@ -11,11 +11,13 @@
 // filters). The regex-based iXBRL reader is deliberately targeted at flat
 // ix:nonFraction facts + context period dates; Phase 2 can harden it.
 import "server-only";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import type { CompanyFinancials } from "./financials-types";
 import { parseIxbrlConcepts } from "./ixbrl-parse";
 
 const CH_API = "https://api.company-information.service.gov.uk";
 const SOURCE = "Companies House filed accounts (iXBRL)";
+const FIN_TTL_MS = 120 * 86_400_000; // accounts are annual — long cache TTL
 
 export function isFinancialsConfigured(): boolean {
   return !!process.env.COMPANIES_HOUSE_API_KEY;
@@ -74,12 +76,84 @@ async function chJson<T>(url: string): Promise<T | null> {
   }
 }
 
+// ---- Cache (public.companies fin_* columns) ----
+function fresh(ts?: string | null): boolean {
+  if (!ts) return false;
+  const t = Date.parse(ts);
+  return Number.isFinite(t) && Date.now() - t < FIN_TTL_MS;
+}
+
+async function readCache(number: string): Promise<CompanyFinancials | null> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return null;
+  const { data } = await admin
+    .from("companies")
+    .select("fin_turnover,fin_net_assets,fin_cash,fin_employees,fin_accounts_type,fin_period_end,fin_checked_at")
+    .eq("number", number)
+    .maybeSingle();
+  if (!data || !fresh(data.fin_checked_at as string)) return null;
+  const turnover = (data.fin_turnover as number) ?? null;
+  const netAssets = (data.fin_net_assets as number) ?? null;
+  const cash = (data.fin_cash as number) ?? null;
+  const employees = (data.fin_employees as number) ?? null;
+  const accountsType = (data.fin_accounts_type as string) ?? null;
+  const assessed = accountsType === "dormant" || turnover != null || netAssets != null || cash != null || employees != null;
+  return {
+    companyNumber: number,
+    assessed,
+    accountsType,
+    periodEnd: (data.fin_period_end as string) ?? null,
+    filedOn: null,
+    turnover,
+    netAssets,
+    cash,
+    employees,
+    source: SOURCE,
+    checkedAt: data.fin_checked_at as string,
+  };
+}
+
+async function writeCache(number: string, f: CompanyFinancials, name?: string): Promise<void> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return;
+  const row = {
+    fin_turnover: f.turnover,
+    fin_net_assets: f.netAssets,
+    fin_cash: f.cash,
+    fin_employees: f.employees,
+    fin_accounts_type: f.accountsType,
+    fin_period_end: f.periodEnd,
+    fin_checked_at: new Date().toISOString(),
+  };
+  try {
+    // With a name we can create the cache row; otherwise update an existing one
+    // (companies.name is NOT NULL, so a blind upsert without it would fail).
+    if (name) await admin.from("companies").upsert({ number, name, ...row }, { onConflict: "number" });
+    else await admin.from("companies").update(row).eq("number", number);
+  } catch {
+    /* best-effort — never block a render */
+  }
+}
+
+/**
+ * Cache-first financials. Returns the cached row when fresh (zero CH calls);
+ * otherwise fetches + parses the latest accounts and writes the cache. Pass
+ * `name` so a not-yet-cached company can be inserted (callers usually have it).
+ */
+export async function getCompanyFinancials(number: string, opts: { name?: string } = {}): Promise<CompanyFinancials> {
+  const cached = await readCache(number);
+  if (cached) return cached;
+  const live = await fetchLiveFinancials(number);
+  await writeCache(number, live, opts.name);
+  return live;
+}
+
 /**
  * Latest financials for a company, parsed from its most recent accounts filing.
  * Returns an all-null "Not Assessed" result if no accounts, no iXBRL, or a parse
  * miss — never a fabricated figure.
  */
-export async function getCompanyFinancials(number: string): Promise<CompanyFinancials> {
+async function fetchLiveFinancials(number: string): Promise<CompanyFinancials> {
   if (!isFinancialsConfigured()) return notAssessed(number);
 
   // 1. Latest accounts filing.

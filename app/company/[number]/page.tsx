@@ -103,7 +103,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
     // Financials from filed accounts (iXBRL) — free Companies House data, so
     // shown on the public report too. Phase 2 moves this to the register cache
     // (see docs/financials-ixbrl.md) to drop the per-request document fetch.
-    getCompanyFinancials(c.number).catch(() => null),
+    getCompanyFinancials(c.number, { name: c.name }).catch(() => null),
   ]);
   const report = buildIntelligenceReport(c, economicLive);
   const watched = unlocked ? await isWatched(c.number).catch(() => false) : false;

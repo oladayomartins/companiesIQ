@@ -134,4 +134,9 @@ export interface SearchResult {
   confirmationNextDue?: string;
   confirmationOverdue?: boolean;
   pscNationalities?: string[]; // owner (PSC) nationalities, when the nationality filter is active
+  // Financials (from filed accounts) — present when a financial filter is active.
+  finNetAssets?: number | null;
+  finTurnover?: number | null;
+  finEmployees?: number | null;
+  finAccountsType?: string | null;
 }
