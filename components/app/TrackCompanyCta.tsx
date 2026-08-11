@@ -1,40 +1,38 @@
 "use client";
 import Link from "next/link";
 import { useEffect } from "react";
-import { Button } from "@/components/ds";
+import { FreeAlertForm } from "@/components/FreeAlertForm";
 import { track } from "@/lib/track";
 
 // Conversion hook on the PUBLIC company report for logged-out search visitors.
-// GSC/GA4 showed these pages get the clicks but the visitor grabs one fact and
-// leaves (≈23s, no return). This offers an intent-matched next step — free
-// account into the new-formations dashboard — and measures view + click in GA4.
+// GSC/GA4 showed these pages get the clicks but visitors grab one fact and
+// leave (~23s, no return). Offer a zero-friction, intent-matched next step — a
+// free weekly email of new companies in the same sector — capturing the email
+// (the lead) instead of demanding an account. View is tracked; the form fires
+// generate_lead on submit.
 export function TrackCompanyCta({ company, number, sector }: { company: string; number: string; sector?: string }) {
   useEffect(() => {
     track("company_cta_view", { company: number });
   }, [number]);
 
-  const next = `/company/${number}`;
+  const scope = sector ? `new ${sector} companies` : "new UK companies";
   return (
     <div className="company-cta">
       <div className="company-cta__text">
         <span className="company-cta__title">Researching {company}?</span>
         <span className="company-cta__sub">
-          CompaniesIQ tracks every UK company as it forms{sector ? ` — including new ${sector} businesses` : ""}. Create a
-          free account to search the live register and watch companies for changes. No card required.
+          Get a free weekly email of {scope} as they’re incorporated — straight from the Companies House register. No
+          account, no card.
         </span>
       </div>
-      <div className="company-cta__actions">
-        <Link href={`/sign-in?next=${encodeURIComponent(next)}`} onClick={() => track("company_cta_click", { cta: "signup", company: number })}>
-          <Button variant="primary" iconRight="arrowRight">
-            Start free
-          </Button>
-        </Link>
+      <div className="company-cta__form">
+        <FreeAlertForm sector={sector ?? ""} source={`company:${number}`} compact dark />
         <Link
           className="company-cta__link"
-          href="/search"
-          onClick={() => track("company_cta_click", { cta: "explore", company: number })}
+          href={`/sign-in?next=${encodeURIComponent(`/company/${number}`)}`}
+          onClick={() => track("company_cta_click", { cta: "signup", company: number })}
         >
-          Explore new companies →
+          Or explore the full platform →
         </Link>
       </div>
     </div>

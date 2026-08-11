@@ -16,6 +16,7 @@
 @import "./styles/app.css";
 @import "./styles/report.css";
 @import "./styles/guides.css";
+@import "./styles/free-alerts.css";
 @import "./styles/funnel.css";
 
 *, *::before, *::after { box-sizing: border-box; }
