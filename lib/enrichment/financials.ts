@@ -61,6 +61,10 @@ const notAssessed = (n: string): CompanyFinancials => ({
   netAssets: null,
   cash: null,
   employees: null,
+  prevPeriodEnd: null,
+  prevTurnover: null,
+  prevNetAssets: null,
+  prevEmployees: null,
   source: SOURCE,
   checkedAt: new Date().toISOString(),
 });
@@ -88,7 +92,9 @@ async function readCache(number: string): Promise<CompanyFinancials | null> {
   if (!admin) return null;
   const { data } = await admin
     .from("companies")
-    .select("fin_turnover,fin_net_assets,fin_cash,fin_employees,fin_accounts_type,fin_period_end,fin_checked_at")
+    .select(
+      "fin_turnover,fin_net_assets,fin_cash,fin_employees,fin_accounts_type,fin_period_end,fin_checked_at,fin_prev_turnover,fin_prev_net_assets,fin_prev_employees,fin_prev_period_end",
+    )
     .eq("number", number)
     .maybeSingle();
   if (!data || !fresh(data.fin_checked_at as string)) return null;
@@ -108,6 +114,10 @@ async function readCache(number: string): Promise<CompanyFinancials | null> {
     netAssets,
     cash,
     employees,
+    prevPeriodEnd: (data.fin_prev_period_end as string) ?? null,
+    prevTurnover: (data.fin_prev_turnover as number) ?? null,
+    prevNetAssets: (data.fin_prev_net_assets as number) ?? null,
+    prevEmployees: (data.fin_prev_employees as number) ?? null,
     source: SOURCE,
     checkedAt: data.fin_checked_at as string,
   };
@@ -123,6 +133,10 @@ async function writeCache(number: string, f: CompanyFinancials, name?: string): 
     fin_employees: f.employees,
     fin_accounts_type: f.accountsType,
     fin_period_end: f.periodEnd,
+    fin_prev_turnover: f.prevTurnover,
+    fin_prev_net_assets: f.prevNetAssets,
+    fin_prev_employees: f.prevEmployees,
+    fin_prev_period_end: f.prevPeriodEnd,
     fin_checked_at: new Date().toISOString(),
   };
   try {
@@ -199,5 +213,9 @@ async function fetchLiveFinancials(number: string): Promise<CompanyFinancials> {
     netAssets: parsed.netAssets,
     cash: parsed.cash,
     employees: parsed.employees,
+    prevPeriodEnd: parsed.prevPeriodEnd,
+    prevTurnover: parsed.prevTurnover,
+    prevNetAssets: parsed.prevNetAssets,
+    prevEmployees: parsed.prevEmployees,
   };
 }

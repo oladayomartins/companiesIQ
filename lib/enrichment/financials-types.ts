@@ -16,6 +16,31 @@ export interface CompanyFinancials {
   netAssets: number | null; // net worth
   cash: number | null;
   employees: number | null;
+  // Prior-year comparatives (from the same accounts) — for the growth signal.
+  prevPeriodEnd: string | null;
+  prevTurnover: number | null;
+  prevNetAssets: number | null;
+  prevEmployees: number | null;
   source: string | null; // provenance label
   checkedAt: string;
+}
+
+export type GrowthTier = "Growing" | "Stable" | "Declining" | null;
+
+/**
+ * Year-on-year growth from the filed accounts' current vs prior period. A
+ * derived SIGNAL from as-filed figures — not a verdict. null when there's no
+ * comparable prior year. Turnover leads the tier; net worth is the fallback.
+ */
+export function financialGrowth(f: CompanyFinancials): { netWorthPct: number | null; turnoverPct: number | null; tier: GrowthTier } {
+  const pct = (cur: number | null, prev: number | null): number | null => {
+    if (cur == null || prev == null || prev === 0) return null;
+    if (prev < 0) return cur > prev ? 100 : cur < prev ? -100 : 0; // sign-aware, capped
+    return Math.round(((cur - prev) / prev) * 100);
+  };
+  const netWorthPct = pct(f.netAssets, f.prevNetAssets);
+  const turnoverPct = pct(f.turnover, f.prevTurnover);
+  const primary = turnoverPct != null ? turnoverPct : netWorthPct;
+  const tier: GrowthTier = primary == null ? null : primary >= 10 ? "Growing" : primary <= -10 ? "Declining" : "Stable";
+  return { netWorthPct, turnoverPct, tier };
 }

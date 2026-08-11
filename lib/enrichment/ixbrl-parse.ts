@@ -10,6 +10,11 @@ export interface ParsedFinancials {
   netAssets: number | null;
   cash: number | null;
   employees: number | null;
+  // Prior-year comparatives (from the second period tagged in the same doc).
+  prevPeriodEnd: string | null;
+  prevTurnover: number | null;
+  prevNetAssets: number | null;
+  prevEmployees: number | null;
 }
 
 interface Fact {
@@ -65,16 +70,30 @@ function pick(facts: Fact[], names: readonly string[], latestEnd: string | null)
   return matches[0].value;
 }
 
-/** Extract curated financial concepts from an iXBRL (XHTML) document string. */
+// Strict value for a concept at a specific period end (for comparatives).
+function at(facts: Fact[], names: readonly string[], end: string | null): number | null {
+  if (!end) return null;
+  const f = facts.find((x) => names.includes(x.name) && x.end === end);
+  return f ? f.value : null;
+}
+
+/** Extract curated financial concepts (current + prior year) from an iXBRL doc. */
 export function parseIxbrlConcepts(xhtml: string): ParsedFinancials {
   const contexts = parseContexts(xhtml);
   const facts = parseFacts(xhtml, contexts);
-  const latestEnd = Object.values(contexts).sort((a, b) => b.localeCompare(a))[0] ?? null;
+  // The two most recent distinct period-end dates in the document.
+  const ends = Array.from(new Set(Object.values(contexts))).sort((a, b) => b.localeCompare(a));
+  const latestEnd = ends[0] ?? null;
+  const priorEnd = ends[1] ?? null;
   return {
     periodEnd: latestEnd,
     turnover: pick(facts, CONCEPTS.turnover, latestEnd),
     netAssets: pick(facts, CONCEPTS.netAssets, latestEnd),
     cash: pick(facts, CONCEPTS.cash, latestEnd),
     employees: pick(facts, CONCEPTS.employees, latestEnd),
+    prevPeriodEnd: priorEnd,
+    prevTurnover: at(facts, CONCEPTS.turnover, priorEnd),
+    prevNetAssets: at(facts, CONCEPTS.netAssets, priorEnd),
+    prevEmployees: at(facts, CONCEPTS.employees, priorEnd),
   };
 }

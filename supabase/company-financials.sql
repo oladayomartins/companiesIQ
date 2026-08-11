@@ -10,3 +10,9 @@ alter table public.companies add column if not exists fin_period_end    date;
 alter table public.companies add column if not exists fin_checked_at    timestamptz;
 create index if not exists companies_fin_net_assets_idx on public.companies (fin_net_assets);
 create index if not exists companies_fin_turnover_idx on public.companies (fin_turnover);
+
+-- Phase 3: prior-year comparatives (from the same accounts) for the growth signal.
+alter table public.companies add column if not exists fin_prev_net_assets bigint;
+alter table public.companies add column if not exists fin_prev_turnover   bigint;
+alter table public.companies add column if not exists fin_prev_employees  integer;
+alter table public.companies add column if not exists fin_prev_period_end date;

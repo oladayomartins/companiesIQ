@@ -92,12 +92,16 @@ interface FinRow {
   fin_employees: number | null;
   fin_accounts_type: string | null;
   fin_period_end: string | null;
+  fin_prev_turnover: number | null;
+  fin_prev_net_assets: number | null;
+  fin_prev_employees: number | null;
+  fin_prev_period_end: string | null;
   fin_checked_at: string;
 }
 
 async function computeFinancials(number: string): Promise<FinRow | "retry"> {
   const nowIso = new Date().toISOString();
-  const empty: FinRow = { fin_turnover: null, fin_net_assets: null, fin_cash: null, fin_employees: null, fin_accounts_type: null, fin_period_end: null, fin_checked_at: nowIso };
+  const empty: FinRow = { fin_turnover: null, fin_net_assets: null, fin_cash: null, fin_employees: null, fin_accounts_type: null, fin_period_end: null, fin_prev_turnover: null, fin_prev_net_assets: null, fin_prev_employees: null, fin_prev_period_end: null, fin_checked_at: nowIso };
   const fh = await chJson(`${CH}/company/${encodeURIComponent(number)}/filing-history?category=accounts&items_per_page=10`);
   if (fh?.__retry) return "retry";
   const acc = (fh?.items || []).find((f: any) => (f.category === "accounts" || (f.type || "").startsWith("AA")) && f.links?.document_metadata);
@@ -119,7 +123,18 @@ async function computeFinancials(number: string): Promise<FinRow | "retry"> {
   const xhtml = await res.text();
   if (!/<ix:nonfraction/i.test(xhtml)) return row;
   const p = parseIxbrlConcepts(xhtml);
-  return { ...row, fin_turnover: p.turnover, fin_net_assets: p.netAssets, fin_cash: p.cash, fin_employees: p.employees, fin_period_end: p.periodEnd || row.fin_period_end };
+  return {
+    ...row,
+    fin_turnover: p.turnover,
+    fin_net_assets: p.netAssets,
+    fin_cash: p.cash,
+    fin_employees: p.employees,
+    fin_period_end: p.periodEnd || row.fin_period_end,
+    fin_prev_turnover: p.prevTurnover,
+    fin_prev_net_assets: p.prevNetAssets,
+    fin_prev_employees: p.prevEmployees,
+    fin_prev_period_end: p.prevPeriodEnd,
+  };
 }
 
 async function patch(number: string, row: FinRow): Promise<boolean> {
