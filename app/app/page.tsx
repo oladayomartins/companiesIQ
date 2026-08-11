@@ -7,7 +7,8 @@ import { TrendLine } from "@/components/app/Charts";
 import { getRegisterKpis, getRadarData, getFormationTrend, getRegisterAsOf, type RadarData, type RadarBucket } from "@/lib/live-stats";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { hasProAccess } from "@/lib/access";
-import { getGreeting } from "@/lib/profile";
+import { getGreeting, getOnboardingState } from "@/lib/profile";
+import { OnboardingPrompt } from "@/components/app/OnboardingPrompt";
 import { resolveRange } from "@/lib/ranges";
 import { fmtNumber, fmtDate, fmtDelta } from "@/lib/format";
 import { slugify } from "@/lib/slug";
@@ -83,6 +84,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const subscribed = await hasProAccess(user);
   const locked = !subscribed;
   const { greeting } = await getGreeting(user);
+  const onboarding = await getOnboardingState(user);
 
   let kpis = null as Awaited<ReturnType<typeof getRegisterKpis>> | null;
   let radar: RadarData | null = null;
@@ -124,6 +126,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <Suspense fallback={null}>
         <CheckoutSuccess />
       </Suspense>
+      {onboarding.needs ? (
+        <OnboardingPrompt suggestedName={onboarding.suggestedName} suggestedCompany={onboarding.suggestedCompany} />
+      ) : null}
       <div className="screen-head">
         <div>
           <div className="app-eyebrow">{greeting} · {todayLabel()}</div>

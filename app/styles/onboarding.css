@@ -1,0 +1,12 @@
+/* First-run onboarding prompt on the dashboard. Uses surface/text tokens so it
+   sits correctly on the dark app chrome. */
+.onboard { position: relative; background: var(--surface-card); border: 1px solid var(--border-strong); border-radius: 14px; padding: 20px 22px; margin-bottom: 18px; }
+.onboard__close { position: absolute; top: 12px; right: 12px; background: none; border: 0; color: var(--text-faint); cursor: pointer; padding: 4px; display: inline-flex; }
+.onboard__close:hover { color: var(--text-strong); }
+.onboard__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 17px; color: var(--text-strong); }
+.onboard__sub { margin: 4px 0 14px; font-size: 14px; color: var(--text-muted); line-height: 1.5; max-width: 560px; }
+.onboard__fields { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.onboard__fields .ciq-field { flex: 1; min-width: 200px; margin: 0; }
+.onboard__actions { display: flex; align-items: center; gap: 16px; }
+.onboard__skip { background: none; border: 0; color: var(--text-muted); font-size: 14px; cursor: pointer; padding: 0; }
+.onboard__skip:hover { color: var(--text-strong); text-decoration: underline; }

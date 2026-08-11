@@ -33,6 +33,31 @@ export async function getGreeting(user: User | null): Promise<{ firstName: strin
 }
 
 /**
+ * Whether to show the first-run onboarding prompt: only when the user has no
+ * saved name AND hasn't already completed/skipped it (onboarded_at). Returns
+ * email-derived suggestions to pre-fill the fields.
+ */
+export async function getOnboardingState(
+  user: User | null,
+): Promise<{ needs: boolean; suggestedName: string; suggestedCompany: string }> {
+  const empty = { needs: false, suggestedName: "", suggestedCompany: "" };
+  if (!user) return empty;
+  const admin = getSupabaseAdmin();
+  if (!admin) return empty;
+  let full: string | null = null;
+  let onboardedAt: string | null = null;
+  try {
+    const { data } = await admin.from("profiles").select("full_name, onboarded_at").eq("id", user.id).maybeSingle();
+    full = ((data?.full_name as string | undefined) || "").trim() || null;
+    onboardedAt = (data?.onboarded_at as string | undefined) || null;
+  } catch {
+    return empty;
+  }
+  const id = deriveIdentity(user.email ?? "");
+  return { needs: !full && !onboardedAt, suggestedName: id.firstName ?? "", suggestedCompany: id.company ?? "" };
+}
+
+/**
  * Save a name captured at Stripe checkout — but NEVER overwrite a name the user
  * has already set themselves. Best-effort; called from the webhook.
  */
