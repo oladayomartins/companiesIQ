@@ -12,9 +12,18 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Sign in to subscribe." }, { status: 401 });
 
-  const body = (await req.json().catch(() => ({}))) as { plan?: string; interval?: BillingInterval };
+  const body = (await req.json().catch(() => ({}))) as {
+    plan?: string;
+    interval?: BillingInterval;
+    gaClientId?: string;
+    gaSessionId?: string;
+  };
   const plan = body.plan ?? "";
   const interval: BillingInterval = body.interval === "annual" ? "annual" : "monthly";
+  // GA ids flow through to the webhook so the server-side purchase attributes correctly.
+  const gaMeta: Record<string, string> = {};
+  if (body.gaClientId) gaMeta.ga_client_id = String(body.gaClientId).slice(0, 100);
+  if (body.gaSessionId) gaMeta.ga_session_id = String(body.gaSessionId).slice(0, 100);
 
   const key = process.env.STRIPE_SECRET_KEY;
   const price = priceIdFor(plan, interval);
@@ -37,7 +46,7 @@ export async function POST(req: NextRequest) {
       ...(existingCustomer ? { customer: existingCustomer } : { customer_email: user.email ?? undefined }),
       // user_id + plan flow through to the webhook on both the session and the
       // subscription, so later subscription.updated/deleted events resolve too.
-      metadata: { user_id: user.id, plan },
+      metadata: { user_id: user.id, plan, ...gaMeta },
       subscription_data: { metadata: { user_id: user.id, plan } },
     });
     if (!session.url) return NextResponse.json({ error: "Checkout session has no URL." }, { status: 502 });

@@ -19,14 +19,18 @@ export function CheckoutSuccess() {
     } catch {
       /* private mode — proceed */
     }
-    const p = planById((params.get("plan") || "") as PlanId);
-    const value = params.get("interval") === "annual" ? (p.annual ?? 0) * 12 : p.monthly ?? 0;
-    track("purchase", {
-      transaction_id: session || undefined,
-      currency: "GBP",
-      value,
-      items: [{ item_id: p.id, item_name: p.name }],
-    });
+    // When server-side purchase is enabled (webhook → Measurement Protocol),
+    // skip the client-side purchase so revenue isn't double-counted.
+    if (process.env.NEXT_PUBLIC_GA_SERVER_PURCHASE !== "1") {
+      const p = planById((params.get("plan") || "") as PlanId);
+      const value = params.get("interval") === "annual" ? (p.annual ?? 0) * 12 : p.monthly ?? 0;
+      track("purchase", {
+        transaction_id: session || undefined,
+        currency: "GBP",
+        value,
+        items: [{ item_id: p.id, item_name: p.name }],
+      });
+    }
     try {
       sessionStorage.setItem(key, "1");
     } catch {

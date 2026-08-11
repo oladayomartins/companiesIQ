@@ -9,6 +9,7 @@ import Stripe from "stripe";
 import { markPurchased, recordFunnelEvent } from "@/lib/leads";
 import { upsertSubscription, planForPriceId } from "@/lib/subscriptions";
 import { setProfileNameIfEmpty } from "@/lib/profile";
+import { sendGa4Purchase, isGaServerPurchaseEnabled } from "@/lib/ga-mp";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +94,18 @@ export async function POST(req: NextRequest) {
           session.customer_details?.email ?? session.customer_email ?? null,
           session.customer_details?.name ?? null,
         );
+      }
+      // Server-side purchase (bulletproof revenue). Real Stripe amount, GA ids
+      // from metadata for attribution. Dark unless GA4_MP_API_SECRET is set.
+      if (isGaServerPurchaseEnabled()) {
+        await sendGa4Purchase({
+          clientId: session.metadata?.ga_client_id,
+          sessionId: session.metadata?.ga_session_id,
+          transactionId: session.id,
+          value: (session.amount_total ?? 0) / 100,
+          currency: (session.currency ?? "gbp").toUpperCase(),
+          items: [{ item_id: plan, item_name: plan }],
+        });
       }
       return NextResponse.json({ received: true });
     }

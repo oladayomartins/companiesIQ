@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button, Badge, Icon, Switch } from "@/components/ds";
 import { MARKETING_TIERS, type Plan } from "@/lib/subscription";
 import { toast } from "@/lib/toast";
-import { track } from "@/lib/track";
+import { track, getGaIds } from "@/lib/track";
 
 // In-app plan picker. Subscribes directly via Stripe (no free trial) and the
 // user comes straight back into the app with Pro unlocked.
@@ -20,10 +20,13 @@ export function UpgradeScreen() {
     setBusy(t.id);
     setError(null);
     try {
+      // Capture GA ids so the server-side purchase (fired from the webhook)
+      // attributes to the same GA user/session. Best-effort; resolves fast.
+      const ga = await getGaIds();
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: t.id, interval: annual ? "annual" : "monthly" }),
+        body: JSON.stringify({ plan: t.id, interval: annual ? "annual" : "monthly", gaClientId: ga.clientId, gaSessionId: ga.sessionId }),
       });
       if (res.status === 401) {
         window.location.href = "/sign-in?next=/app/upgrade";
