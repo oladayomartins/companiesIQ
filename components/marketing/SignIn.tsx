@@ -86,10 +86,15 @@ export function SignIn() {
       setError("That code is incorrect or has expired. Check the most recent email, or resend a new code.");
       return;
     }
-    // Fire the funnel event: a just-created account (created within the last ~2
-    // minutes) is a sign_up conversion; otherwise it's a returning login.
+    // Fire the funnel event: a just-created account is a sign_up conversion;
+    // otherwise it's a returning login. The account is created the moment the
+    // code is *requested*, then the user leaves to fetch it from their inbox —
+    // so the window must comfortably cover that email round-trip (a tight ~2-min
+    // window undercounts sign_up when a genuinely new user is slow to type the
+    // code). 30 min is generous for a new signup yet never mistakes a returning
+    // user, whose account is days/weeks old.
     const created = data?.user?.created_at ? Date.parse(data.user.created_at) : 0;
-    const isNew = created > 0 && Date.now() - created < 120_000;
+    const isNew = created > 0 && Date.now() - created < 30 * 60_000;
     track(isNew ? "sign_up" : "login", { method: "otp" });
     // verifyOtp has written the session cookies. Do a full navigation (not a
     // client push) so middleware + server components pick up the new session.
