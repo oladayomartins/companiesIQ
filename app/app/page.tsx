@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Card, CardHeader, CardBody, Stat, StatusPill, Badge, Icon } from "@/components/ds";
 import { DateRangeSelector } from "@/components/app/DateRangeSelector";
+import { CheckoutSuccess } from "@/components/app/CheckoutSuccess";
 import { TrendLine } from "@/components/app/Charts";
 import { getRegisterKpis, getRadarData, getFormationTrend, getRegisterAsOf, type RadarData, type RadarBucket } from "@/lib/live-stats";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -117,6 +118,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="screen">
+      <Suspense fallback={null}>
+        <CheckoutSuccess />
+      </Suspense>
       <div className="screen-head">
         <div>
           <div className="app-eyebrow">{todayLabel()}</div>

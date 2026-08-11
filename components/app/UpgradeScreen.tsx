@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button, Badge, Icon, Switch } from "@/components/ds";
 import { MARKETING_TIERS, type Plan } from "@/lib/subscription";
 import { toast } from "@/lib/toast";
+import { track } from "@/lib/track";
 
 // In-app plan picker. Subscribes directly via Stripe (no free trial) and the
 // user comes straight back into the app with Pro unlocked.
@@ -30,6 +31,9 @@ export function UpgradeScreen() {
       }
       const d = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
       if (d.url) {
+        // Funnel event: intent to pay. Value = yearly total (annual is £/mo billed annually).
+        const value = annual ? (t.annual ?? 0) * 12 : t.monthly ?? 0;
+        track("begin_checkout", { currency: "GBP", value, items: [{ item_id: t.id, item_name: t.name }] });
         toast("Redirecting to secure checkout…", { tone: "pending", duration: 6000 });
         window.location.href = d.url;
         return;

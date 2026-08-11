@@ -29,7 +29,9 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price, quantity: 1 }],
-      success_url: `${origin}/app?subscribed=1`,
+      // Carry plan + interval + Stripe session id back so GA4 can fire a
+      // `purchase` with value and transaction_id on the return page.
+      success_url: `${origin}/app?subscribed=1&plan=${encodeURIComponent(plan)}&interval=${interval}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing`,
       client_reference_id: user.id,
       ...(existingCustomer ? { customer: existingCustomer } : { customer_email: user.email ?? undefined }),

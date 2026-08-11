@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button, Input, Badge } from "@/components/ds";
 import { getSupabaseBrowser, isSupabaseConfigured } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
+import { track } from "@/lib/track";
 
 // Passwordless sign-in via a one-time email CODE (not a magic link). A code
 // can't be consumed by an email scanner / browser prefetch the way a single-use
@@ -79,12 +80,17 @@ export function SignIn() {
     if (!supabase) return;
     setBusy(true);
     setError(null);
-    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
     if (error) {
       setBusy(false);
       setError("That code is incorrect or has expired. Check the most recent email, or resend a new code.");
       return;
     }
+    // Fire the funnel event: a just-created account (created within the last ~2
+    // minutes) is a sign_up conversion; otherwise it's a returning login.
+    const created = data?.user?.created_at ? Date.parse(data.user.created_at) : 0;
+    const isNew = created > 0 && Date.now() - created < 120_000;
+    track(isNew ? "sign_up" : "login", { method: "otp" });
     // verifyOtp has written the session cookies. Do a full navigation (not a
     // client push) so middleware + server components pick up the new session.
     toast("Signed in — taking you in…", { tone: "info" });
