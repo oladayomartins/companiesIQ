@@ -6,10 +6,10 @@ import { Button } from "@/components/ds";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 
 const LINKS: [string, string][] = [
-  ["/#product", "Product"],
-  ["/#data", "Data"],
+  ["/product", "Product"],
+  ["/data", "Data"],
   ["/pricing", "Pricing"],
-  ["/#about", "About"],
+  ["/about", "About"],
 ];
 
 export function SiteHeader() {
@@ -36,7 +36,7 @@ export function SiteHeader() {
         </Link>
         <nav className="site-nav">
           {LINKS.map(([href, label]) => {
-            const active = href === "/pricing" && pathname === "/pricing";
+            const active = pathname === href;
             return (
               <Link key={href} className={"site-nav__link" + (active ? " is-active" : "")} href={href}>
                 {label}

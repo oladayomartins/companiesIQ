@@ -63,6 +63,8 @@
 .feat__icon { width: 44px; height: 44px; border-radius: var(--radius-lg); background: var(--accent-tint); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; }
 .feat__title { font-family: var(--font-grotesk); font-weight: 700; font-size: 18px; letter-spacing: -0.015em; color: var(--text-strong); margin: 0 0 8px; }
 .feat__body { font-size: 14.5px; line-height: 1.55; color: var(--text-muted); margin: 0; }
+.feat__link { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-family: var(--font-sans); font-weight: 600; font-size: 13px; color: var(--accent); text-decoration: none; }
+.feat__link:hover { text-decoration: underline; }
 
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; counter-reset: step; }
 .step { border-top: 2px solid var(--accent); padding-top: 20px; }
