@@ -175,7 +175,44 @@
 .blog-faq__q { font-family: var(--font-grotesk); font-weight: 700; font-size: 17px; color: var(--text-strong); margin: 18px 0 6px; }
 .blog-faq__a { color: var(--text-muted); line-height: 1.6; margin: 0; }
 .blog-related { margin-top: 28px; }
-@media (max-width: 560px) { .blog-post__title { font-size: 27px; } }
+/* Public blog now lives in the (marketing) route group under the light .site
+   chrome. These layout wrappers centre the list + article the same way the
+   about/pricing pages do; all blog styles above are token-based, so they render
+   light here and still work under .ciq-dark elsewhere. */
+.blog-index { max-width: var(--container-xl); margin: 0 auto; padding: 8px 32px 8px; }
+.blog-article { max-width: 760px; margin: 0 auto; padding: 24px 24px 8px; }
+.blog-faq__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; color: var(--text-strong); margin: 0 0 4px; }
+@media (max-width: 560px) {
+  .blog-post__title { font-size: 27px; }
+  .blog-index { padding: 8px 16px; }
+  .blog-article { padding: 16px 16px 8px; }
+}
+
+/* Blog cards — used in the /blog grid and the "More insights" article block.
+   Shows the cover image, or a branded placeholder for posts without one. */
+.blog-tile { display: flex; flex-direction: column; background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-lg, 14px); overflow: hidden; text-decoration: none; transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.blog-tile:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--border-hair)); transform: translateY(-2px); }
+.blog-tile__cover { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: var(--surface-sunken); border-bottom: 1px solid var(--border-hair); }
+.blog-tile__cover--ph { display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface-card)), var(--surface-sunken)); }
+.blog-tile__cover--ph img { width: 44px; height: 44px; opacity: 0.75; }
+.blog-tile__body { padding: 15px 17px 17px; display: flex; flex-direction: column; flex: 1; }
+.blog-tile__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 16.5px; line-height: 1.28; letter-spacing: -0.02em; color: var(--text-strong); margin: 0; }
+.blog-tile__excerpt { color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 8px 0 0; }
+.blog-tile__date { color: var(--text-faint); font-size: 12px; margin-top: 12px; }
+
+/* Blog pagination */
+.blog-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 32px; flex-wrap: wrap; }
+.blog-pagination__pages { display: flex; gap: 6px; }
+.blog-pagination__page { min-width: 34px; height: 34px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border-hair); border-radius: var(--radius-md, 8px); color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600; transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
+.blog-pagination__page:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, var(--border-hair)); }
+.blog-pagination__page.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.blog-pagination__nav { font-size: 14px; font-weight: 600; color: var(--text-body); text-decoration: none; }
+.blog-pagination__nav:hover { color: var(--accent); }
+.blog-pagination__nav.is-disabled { color: var(--text-faint); pointer-events: none; }
+
+/* "More insights" block at the end of an article */
+.blog-more { margin-top: 40px; border-top: 1px solid var(--border-hair); padding-top: 28px; }
+.blog-more__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; color: var(--text-strong); margin: 0 0 18px; }
 
 /* Report → industry/market internal links (SEO graph from the money pages) */
 .profile-related { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 4px; }

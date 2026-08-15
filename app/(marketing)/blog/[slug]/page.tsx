@@ -1,13 +1,17 @@
 // PUBLIC blog post — indexable, no login. Article + FAQPage + Breadcrumb schema
-// for SEO/AEO; markdown body; internal links to live pages.
+// for SEO/AEO; markdown body; internal links to live pages. Lives in the
+// (marketing) route group so it inherits the light SiteHeader and matches the
+// homepage chrome (not the dark public-report shell).
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Card, CardBody, Icon } from "@/components/ds";
-import { getPublishedPostBySlug } from "@/lib/posts";
+import { Icon } from "@/components/ds";
+import { getPublishedPostBySlug, getPublishedPosts, type Post } from "@/lib/posts";
 import { renderMarkdown } from "@/lib/markdown";
 import { fmtDate } from "@/lib/format";
-import { PublicShell, PublicCta } from "@/components/public/PublicShell";
+import { BlogCard } from "@/components/marketing/BlogCard";
+import { PublicCta } from "@/components/public/PublicShell";
+import { SiteFooter } from "@/components/marketing/Footer";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 
@@ -39,6 +43,34 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   if (!post) notFound();
 
   const html = renderMarkdown(post.body_md);
+
+  // "More insights" — real post cards (with covers). Prefer the posts this
+  // article links to in `related`, then top up with the most recent, excluding
+  // the current article. The non-post `related` links (product pages) stay as
+  // chips below.
+  const allPosts = await getPublishedPosts();
+  const bySlug = new Map(allPosts.map((p) => [p.slug, p]));
+  const relatedSlugs = (post.related ?? [])
+    .filter((r) => r.href.startsWith("/blog/"))
+    .map((r) => r.href.slice("/blog/".length));
+  const morePosts: Post[] = [];
+  const taken = new Set<string>([post.slug]);
+  for (const s of relatedSlugs) {
+    const p = bySlug.get(s);
+    if (p && !taken.has(p.slug)) {
+      morePosts.push(p);
+      taken.add(p.slug);
+    }
+  }
+  for (const p of allPosts) {
+    if (morePosts.length >= 3) break;
+    if (!taken.has(p.slug)) {
+      morePosts.push(p);
+      taken.add(p.slug);
+    }
+  }
+  const moreToShow = morePosts.slice(0, 3);
+  const relatedChips = (post.related ?? []).filter((r) => !r.href.startsWith("/blog/"));
 
   const articleSchema = {
     "@context": "https://schema.org",
@@ -74,15 +106,15 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
       : null;
 
   return (
-    <PublicShell>
+    <main className="site">
       <JsonLd data={faqSchema ? [articleSchema, breadcrumb, faqSchema] : [articleSchema, breadcrumb]} />
-      <article className="screen blog-post">
+      <article className="blog-post blog-article">
         <Link className="back" href="/blog">
           <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> All articles
         </Link>
 
         <header className="blog-post__head">
-          <div className="app-eyebrow">CompaniesIQ blog</div>
+          <div className="eyebrow">CompaniesIQ blog</div>
           <h1 className="blog-post__title">{post.title}</h1>
           <div className="blog-post__meta mono">{fmtDate(post.published_at ?? post.created_at)}</div>
         </header>
@@ -96,7 +128,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
         {post.faq && post.faq.length ? (
           <section className="blog-faq">
-            <h2 className="section__title">Frequently asked questions</h2>
+            <h2 className="blog-faq__title">Frequently asked questions</h2>
             {post.faq.map((f, i) => (
               <div className="blog-faq__item" key={i}>
                 <h3 className="blog-faq__q">{f.q}</h3>
@@ -106,19 +138,28 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
           </section>
         ) : null}
 
-        {post.related && post.related.length ? (
-          <Card className="blog-related">
-            <CardBody>
-              <div className="app-eyebrow" style={{ marginBottom: 10 }}>Related</div>
-              <div className="signal-chips">
-                {post.related.map((r, i) => (
-                  <Link key={i} href={r.href} className="signal-chip">
-                    {r.label}
-                  </Link>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
+        {relatedChips.length ? (
+          <div className="blog-related">
+            <div className="eyebrow" style={{ marginBottom: 10 }}>Related</div>
+            <div className="signal-chips">
+              {relatedChips.map((r, i) => (
+                <Link key={i} href={r.href} className="signal-chip">
+                  {r.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {moreToShow.length ? (
+          <section className="blog-more">
+            <h2 className="blog-more__title">More insights</h2>
+            <div className="public-grid">
+              {moreToShow.map((p) => (
+                <BlogCard key={p.id} post={p} headingTag="h3" />
+              ))}
+            </div>
+          </section>
         ) : null}
 
         <PublicCta
@@ -126,6 +167,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
           sub="Create a free account to read a full company intelligence report, or upgrade for unlimited access."
         />
       </article>
-    </PublicShell>
+
+      <SiteFooter />
+    </main>
   );
 }
