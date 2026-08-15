@@ -7,6 +7,7 @@ import { CITIES } from "@/lib/cities";
 import { priorityCombos } from "@/lib/sector-city";
 import { CURATED_SIC_CODES } from "@/lib/sic";
 import { USE_CASES } from "@/lib/use-cases";
+import { COMPETITORS } from "@/lib/competitors";
 import { getPublishedPosts } from "@/lib/posts";
 
 // Static, content-bearing URLs: marketing + the public SEO landing pages
@@ -26,6 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/business-leads`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/company-monitoring`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/companies-house-alternative`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/alternatives`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/use-cases`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/sic`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/free-alerts`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
@@ -76,6 +78,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly",
     priority: 0.5,
   }));
+  const alternatives: MetadataRoute.Sitemap = COMPETITORS.map((c) => ({
+    url: `${SITE_URL}/alternatives/${c.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
   const useCases: MetadataRoute.Sitemap = USE_CASES.map((u) => ({
     url: `${SITE_URL}/use-cases/${u.slug}`,
     lastModified: now,
@@ -89,5 +97,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly",
     priority: 0.6,
   }));
-  return [...marketing, ...industries, ...markets, ...cities, ...signals, ...sectorCities, ...sicCodes, ...useCases, ...blog];
+  return [...marketing, ...industries, ...markets, ...cities, ...signals, ...sectorCities, ...sicCodes, ...alternatives, ...useCases, ...blog];
 }

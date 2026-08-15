@@ -20,6 +20,7 @@ const COLS: [string, [string, string][]][] = [
       ["UK business leads", "/business-leads"],
       ["Company monitoring", "/company-monitoring"],
       ["Companies House alternative", "/companies-house-alternative"],
+      ["Compare alternatives", "/alternatives"],
     ],
   ],
   [
