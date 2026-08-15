@@ -12,6 +12,7 @@ import { explore, type EnrichedResult } from "@/lib/data";
 import { isoDaysAgo } from "@/lib/companies-house";
 import { fmtNumber, fmtDelta, fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
+import { isPrioritySector, priorityCitiesFor } from "@/lib/sector-city";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForSector } from "@/lib/guides";
@@ -189,11 +190,29 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
           </Card>
         </div>
 
+        {isPrioritySector(slug) ? (
+          <div style={{ marginTop: 18 }}>
+            <Card>
+              <CardHeader subtitle="By city" title={`New ${stat.sector} companies by city`} />
+              <CardBody>
+                <div className="signal-chips">
+                  {priorityCitiesFor(slug).map((c) => (
+                    <Link key={c.name} href={`/industry/${slug}/${slugify(c.name)}`} className="signal-chip">
+                      {c.name}
+                    </Link>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        ) : null}
+
         <RelatedGuides guides={guidesForSector(stat.sector)} />
 
         <PublicCta
           title={`Track the ${stat.sector} sector`}
           sub="Create a free account to read a full intelligence report, or upgrade for unlimited reports, alerts and exports across every UK company."
+          ctaLabel={`Find ${stat.sector} companies`}
         />
       </div>
     </PublicShell>

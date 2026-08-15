@@ -48,8 +48,11 @@ export function PublicHeaderCta() {
 }
 
 /** Bottom conversion band body (sub + buttons) — swaps to an in-app prompt
- *  once the visitor is signed in, so logged-in users aren't asked to register. */
-export function PublicCtaBody({ sub }: { sub: string }) {
+ *  once the visitor is signed in, so logged-in users aren't asked to register.
+ *  `ctaLabel` lets each page match the button to the visitor's micro-moment
+ *  ("Find companies in Leeds", "Track this sector"); it defaults to the
+ *  generic "Create a free account". */
+export function PublicCtaBody({ sub, ctaLabel = "Create a free account" }: { sub: string; ctaLabel?: string }) {
   const signedIn = useSignedIn();
   // Render the signed-out copy until we know (avoids a register flash for
   // logged-in users only briefly; SEO crawlers see the signed-out version).
@@ -73,7 +76,7 @@ export function PublicCtaBody({ sub }: { sub: string }) {
       <div className="public-cta__row">
         <Link href="/sign-in">
           <Button variant="primary" iconRight="arrowRight">
-            Create a free account
+            {ctaLabel}
           </Button>
         </Link>
         <Link href="/pricing">

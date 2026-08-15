@@ -138,6 +138,7 @@ export default async function SignalPage({ params }: { params: Promise<{ keyword
         <PublicCta
           title={`Track new ${signal.key} companies`}
           sub="Create a free account to read a full intelligence report, or upgrade for unlimited reports, alerts and exports."
+          ctaLabel={`Track ${signal.key} companies`}
         />
       </div>
     </PublicShell>

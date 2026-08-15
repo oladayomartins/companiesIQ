@@ -4,6 +4,9 @@ import { SECTOR_STATS, REGION_STATS } from "@/lib/ons";
 import { slugify } from "@/lib/slug";
 import { SIGNALS } from "@/lib/signals";
 import { CITIES } from "@/lib/cities";
+import { priorityCombos } from "@/lib/sector-city";
+import { CURATED_SIC_CODES } from "@/lib/sic";
+import { USE_CASES } from "@/lib/use-cases";
 import { getPublishedPosts } from "@/lib/posts";
 
 // Static, content-bearing URLs: marketing + the public SEO landing pages
@@ -18,6 +21,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/product`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/data`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/pricing`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    // Commercial keyword landing pages (bottom-of-funnel head terms).
+    { url: `${SITE_URL}/company-database`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/business-leads`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/company-monitoring`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/companies-house-alternative`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/use-cases`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_URL}/sic`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/free-alerts`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/sources`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
@@ -51,6 +61,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly",
     priority: 0.5,
   }));
+  // Only the curated high-value sector×city combos go in the sitemap; the rest
+  // of the matrix is crawlable via the "by city" links on each sector page and
+  // self-governs indexation (thin combos return robots:noindex). No live calls.
+  const sectorCities: MetadataRoute.Sitemap = priorityCombos().map((c) => ({
+    url: `${SITE_URL}/industry/${c.sectorSlug}/${c.citySlug}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.5,
+  }));
+  const sicCodes: MetadataRoute.Sitemap = CURATED_SIC_CODES.map((code) => ({
+    url: `${SITE_URL}/sic/${code}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.5,
+  }));
+  const useCases: MetadataRoute.Sitemap = USE_CASES.map((u) => ({
+    url: `${SITE_URL}/use-cases/${u.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.6,
+  }));
   const posts = await getPublishedPosts().catch(() => []);
   const blog: MetadataRoute.Sitemap = posts.map((p) => ({
     url: `${SITE_URL}/blog/${p.slug}`,
@@ -58,5 +89,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly",
     priority: 0.6,
   }));
-  return [...marketing, ...industries, ...markets, ...cities, ...signals, ...blog];
+  return [...marketing, ...industries, ...markets, ...cities, ...signals, ...sectorCities, ...sicCodes, ...useCases, ...blog];
 }

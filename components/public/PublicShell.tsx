@@ -43,11 +43,12 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
 }
 
 // A reusable bottom-of-page conversion band for the SEO landing pages.
-export function PublicCta({ title, sub }: { title: string; sub: string }) {
+// `ctaLabel` lets each page match its primary button to the visitor's intent.
+export function PublicCta({ title, sub, ctaLabel }: { title: string; sub: string; ctaLabel?: string }) {
   return (
     <div className="public-cta">
       <h2 className="public-cta__title">{title}</h2>
-      <PublicCtaBody sub={sub} />
+      <PublicCtaBody sub={sub} ctaLabel={ctaLabel} />
     </div>
   );
 }
