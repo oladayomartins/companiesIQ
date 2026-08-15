@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Badge, Button, Icon, type IconName } from "@/components/ds";
 import { SiteFooter } from "@/components/marketing/Footer";
+import { RelatedGuides } from "@/components/RelatedGuides";
+import { guidesForData } from "@/lib/guides";
 import { JsonLd } from "@/components/JsonLd";
 import { fmtNumber } from "@/lib/format";
 import { getRegisterKpis } from "@/lib/live-stats";
@@ -225,6 +227,10 @@ export default async function CompanyDatabasePage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="section">
+        <RelatedGuides guides={guidesForData()} title="Learn the basics" />
       </section>
 
       <section className="cta ciq-dark">

@@ -13,6 +13,8 @@ import { countCompanies, isoDaysAgo } from "@/lib/companies-house";
 import { fmtNumber, fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
+import { RelatedGuides } from "@/components/RelatedGuides";
+import { guidesForSic } from "@/lib/guides";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/site";
 
@@ -179,6 +181,8 @@ export default async function SicCodePage({ params }: { params: Promise<{ code: 
             </CardBody>
           </Card>
         </div>
+
+        <RelatedGuides guides={guidesForSic()} title="Understand the register" />
 
         <PublicCta
           title={`Find companies with SIC code ${code}`}

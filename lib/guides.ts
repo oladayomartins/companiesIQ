@@ -29,6 +29,15 @@ const G = {
   constructionLeads: { label: "Construction company leads", href: "/blog/construction-company-leads-uk" },
   highGrowth: { label: "Finding high-growth & funded companies", href: "/blog/high-growth-companies-uk" },
   startupDb: { label: "Building a UK startup database", href: "/blog/startup-database-uk" },
+  // Educational "Know" pillars (round-3 blog). NOTE: these resolve only once the
+  // round-3 articles are published (scripts/seed-blog-education.mjs) — the
+  // getters below that use them must not ship live before that.
+  howCHWorks: { label: "How Companies House works", href: "/blog/how-companies-house-works" },
+  researchCompany: { label: "How to research a UK company", href: "/blog/how-to-research-a-uk-company" },
+  companyTypes: { label: "UK company types explained", href: "/blog/uk-company-types-explained" },
+  companyAccounts: { label: "Company accounts explained", href: "/blog/company-accounts-explained" },
+  confirmationStatement: { label: "What is a confirmation statement?", href: "/blog/confirmation-statement-explained" },
+  companyStatus: { label: "Company status meanings", href: "/blog/company-status-meanings" },
 } as const;
 
 // A single company report — reader is looking at one company: lead them to the
@@ -64,4 +73,26 @@ export function guidesForPlace(): Guide[] {
 /** Guides for a single company report. */
 export function guidesForCompany(): Guide[] {
   return COMPANY_GUIDES;
+}
+
+// ---------------------------------------------------------------------------
+// Educational-cluster getters — surface the "Know" pillars on the SIC and
+// commercial data pages, closing the internal-link loop (educational content
+// links down to product; product/data pages link back up to the explainers).
+// Each mixes new pillars with a relevant already-published explainer.
+// ---------------------------------------------------------------------------
+
+/** For the /sic and /sic/[code] pages — classification & register basics. */
+export function guidesForSic(): Guide[] {
+  return [G.sicCodes, G.companyTypes, G.howCHWorks, G.researchCompany];
+}
+
+/** For /company-database — research & the register, database-oriented. */
+export function guidesForData(): Guide[] {
+  return [G.howCHWorks, G.researchCompany, G.companyTypes, G.companyAccounts, G.sicCodes, G.ukCompanyDatabase];
+}
+
+/** For /company-monitoring — status, filings & tracking. */
+export function guidesForMonitoring(): Guide[] {
+  return [G.howCHWorks, G.researchCompany, G.companyStatus, G.confirmationStatement, G.companyAccounts, G.monitoring];
 }
