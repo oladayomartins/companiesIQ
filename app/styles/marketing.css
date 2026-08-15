@@ -86,7 +86,7 @@
 .site-foot__inner { max-width: var(--container-xl); margin: 0 auto; padding: 56px 32px 36px; display: grid; grid-template-columns: 1.4fr 2.6fr; gap: 48px; }
 .site-foot__tag { font-size: 14px; color: var(--text-muted); margin: 16px 0 12px; max-width: 280px; }
 .site-foot__src { font-size: 11px; color: var(--text-faint); max-width: 300px; line-height: 1.5; }
-.site-foot__cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.site-foot__cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 24px; }
 .foot-col { display: flex; flex-direction: column; gap: 10px; }
 .foot-col__h { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 2px; }
 .foot-col__link { font-size: 13.5px; color: var(--text-muted); text-decoration: none; }
@@ -135,6 +135,18 @@
   .src-row { grid-template-columns: 1fr; gap: 6px; }
   .src-row--head { display: none; }
 }
+
+/* ---------- Comparison table (commercial "vs" pages) ---------- */
+.vs-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.vs-table { width: 100%; min-width: 600px; border-collapse: collapse; border: 1px solid var(--border-hair); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-card); font-family: var(--font-sans); }
+.vs-table th, .vs-table td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--border-hair); font-size: 14.5px; line-height: 1.5; vertical-align: top; }
+.vs-table thead th { background: var(--surface-sunken); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); font-weight: 500; }
+.vs-table tbody tr:last-child td { border-bottom: 0; }
+.vs-table .vs-feature { font-weight: 600; color: var(--text-strong); }
+.vs-table .vs-them { color: var(--text-muted); }
+.vs-table .vs-ciq { color: var(--text-body); }
+.vs-table th.vs-col-ciq, .vs-table td.vs-col-ciq { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.vs-table th.vs-col-ciq { color: var(--accent); }
 
 /* ---------- Auth ---------- */
 .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-page); padding: 32px; }

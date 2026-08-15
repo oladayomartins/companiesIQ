@@ -14,8 +14,29 @@ const COLS: [string, [string, string][]][] = [
     ],
   ],
   [
+    "Solutions",
+    [
+      ["UK company database", "/company-database"],
+      ["UK business leads", "/business-leads"],
+      ["Company monitoring", "/company-monitoring"],
+      ["Companies House alternative", "/companies-house-alternative"],
+    ],
+  ],
+  [
+    "Use cases",
+    [
+      ["Accountants", "/use-cases/accountants"],
+      ["Recruiters", "/use-cases/recruiters"],
+      ["Agencies", "/use-cases/marketing-agencies"],
+      ["Sales teams", "/use-cases/sales-teams"],
+      ["Investors", "/use-cases/investors"],
+      ["All use cases", "/use-cases"],
+    ],
+  ],
+  [
     "Data",
     [
+      ["SIC code search", "/sic"],
       ["Sources & methodology", "/sources"],
       ["Blog", "/blog"],
     ],

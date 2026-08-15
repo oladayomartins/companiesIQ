@@ -7,9 +7,10 @@ import { getSupabaseBrowser } from "@/lib/supabase/client";
 
 const LINKS: [string, string][] = [
   ["/product", "Product"],
+  ["/use-cases", "Use cases"],
+  ["/industry", "Industries"],
   ["/data", "Data"],
   ["/pricing", "Pricing"],
-  ["/about", "About"],
 ];
 
 export function SiteHeader() {

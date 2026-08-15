@@ -161,6 +161,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
         <PublicCta
           title={`Track new companies in ${city.name}`}
           sub="Create a free account to read a full intelligence report, or upgrade for unlimited reports, alerts and exports."
+          ctaLabel={`Find companies in ${city.name}`}
         />
       </div>
     </PublicShell>

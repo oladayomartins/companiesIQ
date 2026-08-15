@@ -188,6 +188,7 @@ export default async function MarketPage({ params }: { params: Promise<{ region:
         <PublicCta
           title={`Track new companies in ${stat.region}`}
           sub="Create a free account to read a full intelligence report, or upgrade for unlimited reports, alerts and exports."
+          ctaLabel={`Find companies in ${stat.region}`}
         />
       </div>
     </PublicShell>

@@ -154,6 +154,16 @@ const CODE_CATEGORY: Record<string, string> = {
   "74909": "Other professional & technical activities n.e.c.",
 };
 
+// Curated 5-digit SIC codes we build dedicated /sic/[code] pages for. Bounded
+// and real (each has a friendly category and plenty of companies), so the SIC
+// page layer never risks thin content or junk URLs.
+export const CURATED_SIC_CODES: string[] = Object.keys(CODE_CATEGORY);
+
+/** Friendly category for a curated code, or null if it isn't one we cover. */
+export function sicCategory(code: string): string | null {
+  return CODE_CATEGORY[(code || "").trim()] ?? null;
+}
+
 // Light-touch raw descriptions for codes not in the curated map.
 function titleize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
