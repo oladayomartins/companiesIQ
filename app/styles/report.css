@@ -214,6 +214,10 @@
 .blog-more { margin-top: 40px; border-top: 1px solid var(--border-hair); padding-top: 28px; }
 .blog-more__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; color: var(--text-strong); margin: 0 0 18px; }
 
+/* Company report — plain-language summary paragraph (unique, indexable prose). */
+.profile-summary { color: var(--text-body); font-size: 15.5px; line-height: 1.6; max-width: 760px; margin: 2px 0 20px; }
+.detail-overdue { color: var(--neg, #c0392b); font-weight: 600; }
+
 /* Report → industry/market internal links (SEO graph from the money pages) */
 .profile-related { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 4px; }
 .profile-related a { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); text-decoration: none; padding: 6px 12px; border: 1px solid var(--border-hair); border-radius: var(--radius-pill); transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
