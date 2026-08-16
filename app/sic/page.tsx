@@ -7,6 +7,8 @@ import { Card, CardHeader, CardBody } from "@/components/ds";
 import { classifySic, sicCategory, CURATED_SIC_CODES } from "@/lib/sic";
 import { slugify } from "@/lib/slug";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
+import { RelatedGuides } from "@/components/RelatedGuides";
+import { guidesForSic } from "@/lib/guides";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/site";
 
@@ -90,6 +92,8 @@ export default function SicIndexPage() {
             </Card>
           </div>
         ))}
+
+        <RelatedGuides guides={guidesForSic()} title="Understand the register" />
 
         <PublicCta
           title="Find companies by SIC code"
