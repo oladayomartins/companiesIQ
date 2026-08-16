@@ -12,7 +12,7 @@ import { WatchButton } from "@/components/app/WatchButton";
 import type { DirectorNetwork } from "@/lib/network";
 import { toCSV, downloadCSV } from "@/lib/csv";
 import { toast } from "@/lib/toast";
-import { fmtDate, ageLabel } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 
 function OfficerRow({ p, unlocked }: { p: Officer; unlocked: boolean }) {
@@ -179,6 +179,59 @@ export function CompanyProfile({
     ? [c.address.line1, c.address.line2, c.address.locality, c.address.postcode].filter(Boolean).join(", ")
     : "—";
 
+  // Plain-language summary + freshness, derived entirely from the free register
+  // data — gives each public company page unique, answer-first prose (much better
+  // for indexing and AI answers than a bare data table).
+  const statusKey = (c.status ?? "").toLowerCase();
+  const article = (w: string) => (/^[aeiou]/i.test(w) ? "an" : "a");
+  const typePhrase = c.type ? c.type.toLowerCase().replace(/-/g, " ") : "company";
+  let lead: string;
+  if (statusKey === "active" || statusKey === "dissolved") {
+    lead = `${c.name} is ${article(statusKey)} ${statusKey} ${typePhrase}`;
+  } else if (statusKey === "liquidation" || statusKey === "administration") {
+    lead = `${c.name} is ${article(typePhrase)} ${typePhrase} in ${statusKey}`;
+  } else {
+    lead = `${c.name} is ${article(typePhrase)} ${typePhrase}`;
+  }
+  // Dedupe so a company whose town == region doesn't read "London, London".
+  const place = [
+    ...new Set(
+      [c.geo?.locality, c.geo?.region]
+        .map((p) => p?.trim())
+        .filter((p): p is string => !!p && p !== "Unknown")
+    ),
+  ].join(", ");
+  const summarySector = c.primaryClassification?.sector;
+  const incDays = c.incorporated ? Math.floor((Date.now() - Date.parse(c.incorporated)) / 86_400_000) : null;
+  const newlyIncorporated = statusKey === "active" && incDays != null && incDays >= 0 && incDays <= 90;
+  // Humanise the age properly (days → months → years) — ageLabel only does years,
+  // so a 3-week-old company read "0 yrs".
+  const agoText = (days: number): string => {
+    if (days <= 0) return "today";
+    if (days === 1) return "yesterday";
+    if (days < 31) return `${days} days ago`;
+    const m = Math.floor(days / 30.44);
+    if (m < 12) return `${m === 1 ? "1 month" : `${m} months`} ago`;
+    const y = Math.floor(days / 365.25);
+    return `${y === 1 ? "1 year" : `${y} years`} ago`;
+  };
+  const shortAge = (days: number): string => {
+    if (days < 31) return `${Math.max(days, 0)} days`;
+    const m = Math.floor(days / 30.44);
+    if (m < 12) return `${m} mo`;
+    return `${Math.floor(days / 365.25)} yrs`;
+  };
+  const summary =
+    lead +
+    (c.incorporated ? ` incorporated on ${fmtDate(c.incorporated)}` : "") +
+    (place ? `, with its registered office in ${place}` : "") +
+    "." +
+    (incDays != null ? ` It was registered ${agoText(incDays)}.` : "") +
+    (summarySector ? ` The company operates in ${summarySector}.` : "");
+
+  const fmtDue = (d?: { nextDue?: string; overdue?: boolean }) =>
+    d?.nextDue ? `${d.overdue ? "Overdue, was due" : "Next due"} ${fmtDate(d.nextDue)}` : "—";
+
   return (
     <div className="screen profile">
       {unlocked ? (
@@ -193,6 +246,7 @@ export function CompanyProfile({
           <div className="profile-head__title-row">
             <h1 className="profile-name">{c.name}</h1>
             <StatusPill status={c.status} />
+            {newlyIncorporated ? <Badge tone="accent">Newly incorporated</Badge> : null}
             {!live ? <Badge tone="warn">Sample</Badge> : <Badge tone="pos" dot>Live</Badge>}
           </div>
           <div className="profile-meta mono">
@@ -239,11 +293,13 @@ export function CompanyProfile({
         </div>
       </div>
 
+      <p className="profile-summary">{summary}</p>
+
       <div className="profile-kpis">
         <Stat label="SIC code" value={c.sicCodes[0] ?? "—"} sub={c.primaryClassification?.category} />
         <Stat label="Sector" value={c.primaryClassification?.sector ?? "—"} />
         <Stat label="Nation" value={c.geo?.nation ?? "—"} sub={c.geo?.region} />
-        <Stat label="Age" value={ageLabel(c.incorporated)} />
+        <Stat label="Age" value={incDays != null ? shortAge(incDays) : "—"} />
       </div>
 
       {c.primaryClassification?.sector || (c.geo?.region && c.geo.region !== "Unknown") ? (
@@ -333,6 +389,16 @@ export function CompanyProfile({
                   <dt>Region / nation</dt>
                   <dd>
                     {c.geo?.region} · {c.geo?.nation}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Accounts</dt>
+                  <dd className={c.accounts?.overdue ? "detail-overdue" : undefined}>{fmtDue(c.accounts)}</dd>
+                </div>
+                <div>
+                  <dt>Confirmation statement</dt>
+                  <dd className={c.confirmationStatement?.overdue ? "detail-overdue" : undefined}>
+                    {fmtDue(c.confirmationStatement)}
                   </dd>
                 </div>
               </dl>
