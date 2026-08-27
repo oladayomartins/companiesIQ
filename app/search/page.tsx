@@ -1,5 +1,10 @@
-// PUBLIC search funnel. Anonymous → results blurred behind a Sign-in CTA;
-// free (signed in) → top 3 visible, rest blurred behind Go-Pro; Pro → full.
+// PUBLIC search funnel. Search itself is open to everyone — the company
+// profiles it links to are the indexable SEO surface (also reachable from
+// /industry and /city), so hiding results from anonymous visitors would just
+// break the Google → search → profile journey. Instead we tier the DEPTH:
+//   anonymous → top 3 results, rest blurred behind a "create free account" CTA
+//   free      → top 8, rest blurred behind Go-Pro
+//   Pro       → everything.
 // noindex (thin/duplicate query pages); the full search tool lives in /app.
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -14,7 +19,8 @@ import { SearchBox } from "@/components/public/SearchBox";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Search", robots: { index: false, follow: true } };
 
-const FREE_VISIBLE = 3;
+const ANON_VISIBLE = 3;
+const FREE_VISIBLE = 8;
 
 function ResultRow({ c, link }: { c: EnrichedResult; link?: boolean }) {
   const inner = (
@@ -60,10 +66,27 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     }
   }
 
-  const visibleCount = subscribed ? results.length : signedIn ? FREE_VISIBLE : 0;
+  const visibleCount = subscribed ? results.length : signedIn ? FREE_VISIBLE : ANON_VISIBLE;
   const visible = results.slice(0, visibleCount);
   const hidden = results.slice(visibleCount);
   const next = encodeURIComponent(`/search?q=${encodeURIComponent(query)}`);
+  const totalLabel = total.toLocaleString("en-GB");
+
+  // Conversion copy for the blurred tail — anonymous gets the free-account ask,
+  // free accounts get the Pro ask.
+  const lock = signedIn
+    ? {
+        title: `Go Pro to see all ${totalLabel} results`,
+        sub: `Your free account previews the first ${FREE_VISIBLE}. Upgrade for the full result set, filters, exports and alerts.`,
+        cta: "Go Pro",
+        href: "/app/upgrade",
+      }
+    : {
+        title: `Create a free account to see all ${totalLabel} results`,
+        sub: `You're previewing the top ${ANON_VISIBLE} — every profile above is free to open. Sign up free to search deeper, then upgrade for exports and alerts.`,
+        cta: "Create free account",
+        href: `/sign-in?next=${next}`,
+      };
 
   return (
     <PublicShell>
@@ -83,40 +106,39 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         ) : results.length === 0 ? (
           <p className="public-lede">No matches for “{query}”. Try a different term.</p>
         ) : (
-          <div className="search-list">
-            {visible.map((c) => (
-              <ResultRow key={c.number} c={c} link />
-            ))}
-            {hidden.length && !subscribed ? (
-              <div className="search-lock">
-                <div className="search-lock__blur" aria-hidden="true">
-                  {hidden.slice(0, 6).map((c) => (
-                    <ResultRow key={c.number} c={c} />
-                  ))}
-                </div>
-                <div className="search-lock__overlay">
-                  <span className="search-lock__icon">
-                    <Icon name="shield" size={22} />
-                  </span>
-                  <div className="search-lock__title">
-                    {signedIn
-                      ? `Go Pro to see all ${total.toLocaleString("en-GB")} results`
-                      : "Sign in to see your results"}
+          <>
+            <p className="search-meta mono">
+              {hidden.length && !subscribed
+                ? `Showing ${visible.length} of ${totalLabel} — company profiles are free to open`
+                : `${totalLabel} ${total === 1 ? "company" : "companies"} match`}
+            </p>
+            <div className="search-list">
+              {visible.map((c) => (
+                <ResultRow key={c.number} c={c} link />
+              ))}
+              {hidden.length && !subscribed ? (
+                <div className="search-lock">
+                  <div className="search-lock__blur" aria-hidden="true">
+                    {hidden.slice(0, 6).map((c) => (
+                      <ResultRow key={c.number} c={c} />
+                    ))}
                   </div>
-                  <p className="search-lock__sub">
-                    {signedIn
-                      ? "Your free account previews the top 3. Upgrade for the full result set, filters, exports and alerts."
-                      : "Create a free account to preview results — then upgrade to Pro for the full set, exports and alerts."}
-                  </p>
-                  <Link href={signedIn ? "/app/upgrade" : `/sign-in?next=${next}`}>
-                    <Button variant="primary" iconRight="arrowRight">
-                      {signedIn ? "Go Pro" : "Sign in to view"}
-                    </Button>
-                  </Link>
+                  <div className="search-lock__overlay">
+                    <span className="search-lock__icon">
+                      <Icon name="shield" size={22} />
+                    </span>
+                    <div className="search-lock__title">{lock.title}</div>
+                    <p className="search-lock__sub">{lock.sub}</p>
+                    <Link href={lock.href}>
+                      <Button variant="primary" iconRight="arrowRight">
+                        {lock.cta}
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
+              ) : null}
+            </div>
+          </>
         )}
       </div>
     </PublicShell>
