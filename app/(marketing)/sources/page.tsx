@@ -30,7 +30,7 @@ export default function SourcesPage() {
           <Badge tone="neutral">{REFERENCE_SOURCES.length} reference baselines</Badge>
           <Badge tone="neutral">Full UK register · live</Badge>
         </div>
-        <p className="pricing-hero__sub" style={{ marginTop: 14, fontSize: 14 }}>
+        <p className="pricing-hero__sub" style={{ marginTop: 14, fontSize: "var(--text-ui)" }}>
           CompaniesIQ covers the entire UK register — every company, officer, person with significant control (PSC),
           filing and charge — queried <strong>live</strong> from Companies House. We don&apos;t hold a private copy that
           drifts out of date; the record you see is the record as it stands.

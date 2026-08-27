@@ -173,7 +173,7 @@ export default async function UseCasePage({ params }: { params: Promise<{ person
 
       <section className="section">
         <div className="prose" style={{ textAlign: "center" }}>
-          <p style={{ fontSize: 14 }}>
+          <p style={{ fontSize: "var(--text-ui)" }}>
             Explore more <Link href="/use-cases">use cases</Link>, or see the{" "}
             <Link href="/business-leads">business leads</Link> and{" "}
             <Link href="/company-database">company database</Link> pages.

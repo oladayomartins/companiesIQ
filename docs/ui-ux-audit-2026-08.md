@@ -22,11 +22,42 @@ Fixed and verified on `claude/website-ui-ux-audit-i007v4`:
 | 3 · Accessibility | CIQ-06, 08, 10, 15 | polymorphic Button, landmarks, skip links, reduced motion |
 | 4 · Truthfulness | CIQ-07, 12, 13 | error states, one register-size constant, KPI band fallback |
 | 5 · Differentiator | CIQ-16 | opportunity score public at the top of the report, upgrade gates show the screen |
+| 6 · Token drift | CIQ-11 | UI type scale closed and tokenised, radii tokenised, wrong fallbacks removed |
 
-Still open: **CIQ-11** (type-scale drift — 32 hardcoded font sizes against a
-12-step token scale) and **CIQ-14** (homepage rhythm and alignment; the mobile
-gutter and pricing-teaser parts were fixed in Block 1, the `.feat-grid` row gap,
-the unused `.band` and the mobile stacking density were not).
+Still open: **CIQ-14** (homepage rhythm and alignment; the mobile gutter and
+pricing-teaser parts were fixed in Block 1, the `.feat-grid` row gap, the unused
+`.band` and the mobile stacking density were not), and the display half of
+CIQ-11 — see below.
+
+### CIQ-11 — what was done, and what deliberately wasn't
+
+**Done.** 333 of 361 `font-size` declarations now use a token (was 23). The UI
+range is 100% tokenised and closed: `--text-micro` (10), `2xs` (11), `xs` (12),
+`sm` (13), `--text-ui` (14), `base` (15), `--text-prose` (16), `md` (17),
+`--text-card` (18). Four rungs were added, named by role rather than extending
+the t-shirt sizes further. Every half-pixel value (9, 10.5, 12.5, 13.5, 14.5,
+15.5, 16.5) is gone — they rounded **down**, so no box could grow and re-wrap.
+The fifteen-sizes-in-an-8px-range problem the audit named is resolved.
+
+Radii: 11 of 14 raw values tokenised; `7px → --radius-sm` and `14px →
+--radius-lg` were the only ones that moved, by 1–2px. Three 2–3px hairline radii
+keep their literals — there is no rung that small and inventing one for a
+progress bar would be worse.
+
+24 token fallbacks were removed. They were dead (every token is defined in
+`:root` in an always-imported file) and three actively lied: `--radius-lg` was
+declared with fallbacks of 12px, 14px *and* 16px in different places when it is
+12px, and `--neg` carried two hexes, neither of which was its real value.
+
+**Not done, on purpose.** 28 declarations at 19px and above stay raw: 22, 26,
+27, 28, 32, 34, 36, 40, 42, 44, 46, 52. These are hero, section and card titles
+tuned individually. Collapsing them needs a decision about the typographic
+hierarchy — mapping them onto the existing display rungs (20/24/30/38/48) would
+move headlines by up to 4px — and adding a rung per used value would re-label
+the drift without reducing it. That is a design call, not a cleanup.
+
+A reasonable proposal when someone wants to make it: a display ramp of 20, 24,
+28, 34, 40, 46, capping every change at 2px.
 
 ### Correction to CIQ-16
 

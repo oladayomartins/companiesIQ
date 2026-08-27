@@ -212,7 +212,7 @@ export default async function CompaniesHouseAlternativePage() {
             </tbody>
           </table>
         </div>
-        <p className="prose" style={{ paddingTop: 18, fontSize: 13, textAlign: "center" }}>
+        <p className="prose" style={{ paddingTop: 18, fontSize: "var(--text-sm)", textAlign: "center" }}>
           Both use the same official Companies House register. CompaniesIQ reuses it under the Open Government Licence and
           adds the working layer on top.
         </p>

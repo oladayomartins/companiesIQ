@@ -117,7 +117,7 @@ export default async function AlternativePage({ params }: { params: Promise<{ co
             </tbody>
           </table>
         </div>
-        <p className="prose" style={{ paddingTop: 16, fontSize: 12.5, textAlign: "center" }}>
+        <p className="prose" style={{ paddingTop: 16, fontSize: "var(--text-xs)", textAlign: "center" }}>
           Comparison based on publicly available information about {c.name} (
           {c.sources.map((s, i) => (
             <span key={s.url}>
@@ -180,7 +180,7 @@ export default async function AlternativePage({ params }: { params: Promise<{ co
             </div>
           ))}
         </div>
-        <p className="prose" style={{ paddingTop: 18, fontSize: 12, textAlign: "center" }}>
+        <p className="prose" style={{ paddingTop: 18, fontSize: "var(--text-xs)", textAlign: "center" }}>
           Last updated {c.asOf}. See more <Link href="/alternatives">alternatives</Link>, or the{" "}
           <Link href="/companies-house-alternative">Companies House alternative</Link> page.
         </p>
