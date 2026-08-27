@@ -60,7 +60,7 @@ const FAQS: [string, string][] = [
   ],
   [
     "Can I export leads to my CRM?",
-    "Yes. Any list exports to CSV, and Pro plans include API access to pull companies straight into your CRM, spreadsheet or sales tool. Every field is sourced from the public register and dated.",
+    "Yes. Any list exports to CSV, and Team and Enterprise include API access to pull companies straight into your CRM, spreadsheet or sales tool. Every field is sourced from the public register and dated.",
   ],
   [
     "Is it legal to use Companies House data for lead generation?",
@@ -80,7 +80,7 @@ export default async function BusinessLeadsPage() {
       : null;
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd
         data={[
           webPageLd({
@@ -123,16 +123,12 @@ export default async function BusinessLeadsPage() {
           <Badge tone="neutral">Export to CSV</Badge>
         </div>
         <div className="hero__actions" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 26 }}>
-          <Link href="/sign-in">
-            <Button variant="primary" size="lg" iconRight="arrowRight">
-              Find B2B prospects
-            </Button>
-          </Link>
-          <Link href="/signals">
-            <Button variant="secondary" size="lg">
-              See what&apos;s forming
-            </Button>
-          </Link>
+          <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+            Find B2B prospects
+          </Button>
+          <Button href="/signals" variant="secondary" size="lg">
+            See what&apos;s forming
+          </Button>
         </div>
       </section>
 
@@ -227,16 +223,12 @@ export default async function BusinessLeadsPage() {
           <h2 className="cta__title">Find your next customers before anyone else.</h2>
           <p className="cta__sub">Free to search the register. Upgrade to build, enrich and export targeted prospect lists.</p>
           <div className="cta__actions">
-            <Link href="/sign-in">
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                Find B2B prospects
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+              Find B2B prospects
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

@@ -92,7 +92,7 @@ const FAQS: [string, string][] = [
   ],
   [
     "Can I export the data or access it via API?",
-    "Yes. Any search, report or list exports to CSV, and Pro plans add API access for pulling companies and signals into your own tools. See the pricing page for per-plan limits.",
+    "Yes. Any search, report or list exports to CSV, and Team and Enterprise add API access for pulling companies and signals into your own tools. See the pricing page for per-plan limits.",
   ],
 ];
 
@@ -110,7 +110,7 @@ export default async function DataPage() {
   const kpis = await getRegisterKpis(30).catch(() => null);
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd data={[WEBPAGE, DATASET, BREADCRUMB, FAQ_SCHEMA]} />
 
       <section className="pricing-hero">
@@ -227,16 +227,12 @@ export default async function DataPage() {
           <h2 className="cta__title">Put the UK register to work.</h2>
           <p className="cta__sub">Search 5.5M companies free. Upgrade to track, alert and export the data that matters.</p>
           <div className="cta__actions">
-            <Link href="/sign-in">
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                Start free
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+              Start free
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

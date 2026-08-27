@@ -376,11 +376,9 @@ export function CompanyProfile({
               </Button>
             </>
           ) : (
-            <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
-              <Button variant="primary" iconRight="arrowRight">
-                Go Pro
-              </Button>
-            </Link>
+            <Button href={signedIn ? "/app/upgrade" : "/pricing"} variant="primary" iconRight="arrowRight">
+              See plans
+            </Button>
           )}
         </div>
       </div>
@@ -662,7 +660,7 @@ export function CompanyProfile({
                 <Badge tone="accent" dot>
                   Deep intelligence · Pro
                 </Badge>
-                <h2 className="deepgate__title">Go Pro for the full report</h2>
+                <h2 className="deepgate__title">Unlock the full report</h2>
                 <p className="deepgate__sub">
                   Verified digital presence, director networks, keyword and regional intelligence, CSV exports, alerts
                   and watchlists across every UK company. Everything above stays free.
@@ -670,7 +668,7 @@ export function CompanyProfile({
                 <div className="deepgate__cta">
                   <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
                     <Button variant="primary" iconRight="arrowRight">
-                      Go Pro
+                      See plans
                     </Button>
                   </Link>
                   {!signedIn ? (

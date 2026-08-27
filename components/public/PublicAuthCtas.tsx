@@ -26,11 +26,9 @@ export function PublicHeaderCta() {
   const signedIn = useSignedIn();
   if (signedIn) {
     return (
-      <Link href="/app">
-        <Button variant="primary" iconRight="arrowRight">
-          Open app
-        </Button>
-      </Link>
+      <Button href="/app" variant="primary" iconRight="arrowRight">
+        Open app
+      </Button>
     );
   }
   return (
@@ -38,11 +36,9 @@ export function PublicHeaderCta() {
       <Link className="rep-head__link" href="/sign-in">
         Sign in
       </Link>
-      <Link href="/pricing">
-        <Button variant="primary" iconRight="arrowRight">
-          Get full access
-        </Button>
-      </Link>
+      <Button href="/pricing" variant="primary" iconRight="arrowRight">
+        Get full access
+      </Button>
     </>
   );
 }
@@ -61,11 +57,9 @@ export function PublicCtaBody({ sub, ctaLabel = "Create a free account" }: { sub
       <>
         <p className="public-cta__sub">You&apos;re signed in. Jump into the app to search, score and save companies.</p>
         <div className="public-cta__row">
-          <Link href="/app">
-            <Button variant="primary" iconRight="arrowRight">
-              Open in CompaniesIQ
-            </Button>
-          </Link>
+          <Button href="/app" variant="primary" iconRight="arrowRight">
+            Open in CompaniesIQ
+          </Button>
         </div>
       </>
     );
@@ -74,14 +68,10 @@ export function PublicCtaBody({ sub, ctaLabel = "Create a free account" }: { sub
     <>
       <p className="public-cta__sub">{sub}</p>
       <div className="public-cta__row">
-        <Link href="/sign-in">
-          <Button variant="primary" iconRight="arrowRight">
-            {ctaLabel}
-          </Button>
-        </Link>
-        <Link href="/pricing">
-          <Button variant="secondary">See plans</Button>
-        </Link>
+        <Button href="/sign-in" variant="primary" iconRight="arrowRight">
+          {ctaLabel}
+        </Button>
+        <Button href="/pricing" variant="secondary">See plans</Button>
       </div>
     </>
   );

@@ -63,7 +63,7 @@ const FAQS: [string, string][] = [
   ],
   [
     "Can I export the data or connect it to my CRM?",
-    "Yes. Any search, list or report exports to CSV, and Pro plans include API access so you can pull companies and signals straight into your CRM, spreadsheet or model. Every field is sourced from the public register and dated.",
+    "Yes. Any search, list or report exports to CSV, and Team and Enterprise include API access so you can pull companies and signals straight into your CRM, spreadsheet or model. Every field is sourced from the public register and dated.",
   ],
   [
     "How is this different from downloading Companies House bulk data?",
@@ -90,7 +90,7 @@ export default async function CompanyDatabasePage() {
   const kpis = await getRegisterKpis(30).catch(() => null);
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd
         data={[
           webPageLd({
@@ -125,16 +125,12 @@ export default async function CompanyDatabasePage() {
           <Badge tone="neutral">CSV &amp; API export</Badge>
         </div>
         <div className="hero__actions" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 26 }}>
-          <Link href="/sign-in">
-            <Button variant="primary" size="lg" iconRight="arrowRight">
-              Search the database free
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button variant="secondary" size="lg">
-              See pricing
-            </Button>
-          </Link>
+          <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+            Search the database free
+          </Button>
+          <Button href="/pricing" variant="secondary" size="lg">
+            See pricing
+          </Button>
         </div>
       </section>
 
@@ -238,16 +234,12 @@ export default async function CompanyDatabasePage() {
           <h2 className="cta__title">Search the UK company database.</h2>
           <p className="cta__sub">Free to search all 5.5M companies. Upgrade to save, alert and export.</p>
           <div className="cta__actions">
-            <Link href="/sign-in">
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                Search the database free
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+              Search the database free
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

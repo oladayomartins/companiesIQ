@@ -6,6 +6,7 @@ import { fmtNumber, fmtDelta } from "@/lib/format";
 import { getRegisterKpis, getQuickInsights } from "@/lib/live-stats";
 import { slugify } from "@/lib/slug";
 import { SITE_DESCRIPTION } from "@/lib/site";
+import { planById } from "@/lib/subscription";
 
 export const metadata = {
   description: SITE_DESCRIPTION,
@@ -13,6 +14,9 @@ export const metadata = {
 };
 
 export const revalidate = 3600;
+
+const FREE_PLAN = planById("free");
+const PAID_PLAN = planById("analyst");
 
 function PreviewRow({ name, no, status, sic, rev }: { name: string; no: string; status: string; sic: string; rev: string }) {
   return (
@@ -75,7 +79,7 @@ export default async function LandingPage() {
     kpis && kpis.prevIncorporations > 0 ? ((kpis.incorporations - kpis.prevIncorporations) / kpis.prevIncorporations) * 100 : null;
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       {/* Hero */}
       <section className="hero" id="product">
         <div className="hero__copy">
@@ -126,39 +130,52 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Live register intelligence */}
-      <section className="live-band" id="data">
-        <div className="live-band__head">
-          <span className="eyebrow">Live on the UK register · last 30 days</span>
-          <Badge tone="pos" dot>
-            Live from Companies House
-          </Badge>
-        </div>
-        <div className="live-grid">
-          <div className="live-stat">
-            <div className="live-stat__label mono">New companies</div>
-            <div className="live-stat__value">{kpis ? fmtNumber(kpis.incorporations) : "—"}</div>
-            <div className="live-stat__sub">
-              {incGrowth != null ? `${fmtDelta(incGrowth)} vs prior 30 days` : "incorporated this period"}
-            </div>
+      {/* Live register intelligence. Each figure is a separate query wrapped in
+          .catch(() => null); rendering "—" under a "Live from Companies House"
+          badge advertises a dead feed, so a tile without data is omitted and
+          the whole band disappears if nothing resolved. */}
+      {kpis || insights ? (
+        <section className="live-band" id="data">
+          <div className="live-band__head">
+            <span className="eyebrow">Live on the UK register · last 30 days</span>
+            <Badge tone="pos" dot>
+              Live from Companies House
+            </Badge>
           </div>
-          <Link className="live-stat live-stat--link" href={insights ? `/industry/${slugify(insights.fastestSector.name)}` : "/industry"}>
-            <div className="live-stat__label mono">Fastest-growing sector</div>
-            <div className="live-stat__value">{insights ? insights.fastestSector.name : "—"}</div>
-            <div className="live-stat__sub">{insights ? `${fmtDelta(insights.fastestSector.growth)} annual growth →` : "explore industries →"}</div>
-          </Link>
-          <Link className="live-stat live-stat--link" href={insights ? `/market/${slugify(insights.fastestRegion.name)}` : "/market"}>
-            <div className="live-stat__label mono">Fastest-growing region</div>
-            <div className="live-stat__value">{insights ? insights.fastestRegion.name : "—"}</div>
-            <div className="live-stat__sub">{insights ? `${insights.fastestRegion.index.toFixed(2)}× index →` : "explore markets →"}</div>
-          </Link>
-          <div className="live-stat">
-            <div className="live-stat__label mono">Most active activity</div>
-            <div className="live-stat__value">{insights?.topSic ? insights.topSic.label : "—"}</div>
-            <div className="live-stat__sub">{insights?.topSic ? `SIC ${insights.topSic.key}` : "by new registrations"}</div>
+          <div className="live-grid">
+            {kpis ? (
+              <div className="live-stat">
+                <div className="live-stat__label mono">New companies</div>
+                <div className="live-stat__value">{fmtNumber(kpis.incorporations)}</div>
+                <div className="live-stat__sub">
+                  {incGrowth != null ? `${fmtDelta(incGrowth)} vs prior 30 days` : "incorporated this period"}
+                </div>
+              </div>
+            ) : null}
+            {insights ? (
+              <Link className="live-stat live-stat--link" href={`/industry/${slugify(insights.fastestSector.name)}`}>
+                <div className="live-stat__label mono">Fastest-growing sector</div>
+                <div className="live-stat__value">{insights.fastestSector.name}</div>
+                <div className="live-stat__sub">{`${fmtDelta(insights.fastestSector.growth)} annual growth →`}</div>
+              </Link>
+            ) : null}
+            {insights ? (
+              <Link className="live-stat live-stat--link" href={`/market/${slugify(insights.fastestRegion.name)}`}>
+                <div className="live-stat__label mono">Fastest-growing region</div>
+                <div className="live-stat__value">{insights.fastestRegion.name}</div>
+                <div className="live-stat__sub">{`${insights.fastestRegion.index.toFixed(2)}× index →`}</div>
+              </Link>
+            ) : null}
+            {insights?.topSic ? (
+              <div className="live-stat">
+                <div className="live-stat__label mono">Most active activity</div>
+                <div className="live-stat__value">{insights.topSic.label}</div>
+                <div className="live-stat__sub">{`SIC ${insights.topSic.key}`}</div>
+              </div>
+            ) : null}
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {/* Features */}
       <section className="section">
@@ -219,33 +236,35 @@ export default async function LandingPage() {
         </div>
         <div className="price-teaser">
           <div className="price-teaser__card">
-            <div className="price-teaser__name">Free</div>
+            <div className="price-teaser__name">{FREE_PLAN.name}</div>
             <div className="price-teaser__price">£0</div>
             <ul className="price-teaser__list">
-              <li><Icon name="check" size={15} color="var(--accent)" /> Search 5.5M companies</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> Public company profiles</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> 1 full intelligence report / month</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> Industry, market &amp; signal pages</li>
+              {FREE_PLAN.features.map((f) => (
+                <li key={f}>
+                  <Icon name="check" size={15} color="var(--accent)" /> {f}
+                </li>
+              ))}
             </ul>
           </div>
           <div className="price-teaser__card price-teaser__card--pro">
             <div className="price-teaser__flag"><Badge tone="accent">Most popular</Badge></div>
-            <div className="price-teaser__name">Pro</div>
-            <div className="price-teaser__price">from £39<span className="price-teaser__per mono">/mo</span></div>
+            <div className="price-teaser__name">{PAID_PLAN.name}</div>
+            <div className="price-teaser__price">
+              from £{PAID_PLAN.annual}<span className="price-teaser__per mono">/user/mo</span>
+            </div>
             <ul className="price-teaser__list">
-              <li><Icon name="check" size={15} color="var(--accent)" /> Unlimited intelligence reports</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> Real-time formation &amp; filing alerts</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> Watchlists &amp; saved searches</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> CSV export &amp; API</li>
+              {PAID_PLAN.features.slice(1, 5).map((f) => (
+                <li key={f}>
+                  <Icon name="check" size={15} color="var(--accent)" /> {f}
+                </li>
+              ))}
             </ul>
           </div>
         </div>
         <div className="price-teaser__cta">
-          <Link href="/pricing">
-            <Button variant="secondary" iconRight="arrowRight">
-              See full pricing
-            </Button>
-          </Link>
+          <Button href="/pricing" variant="secondary" iconRight="arrowRight">
+            See full pricing
+          </Button>
         </div>
       </section>
 
@@ -255,16 +274,12 @@ export default async function LandingPage() {
           <h2 className="cta__title">See new UK businesses before everyone else.</h2>
           <p className="cta__sub">Free to search. No card required. Upgrade when you&apos;re ready to track, alert and export.</p>
           <div className="cta__actions">
-            <Link href="/sign-in">
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                Start free
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+              Start free
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

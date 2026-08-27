@@ -191,7 +191,7 @@ export function LensBar({
         ) : (
           <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
             <Button variant="primary" iconRight="arrowRight">
-              Go Pro to save a default
+              Upgrade to save a default
             </Button>
           </Link>
         )}

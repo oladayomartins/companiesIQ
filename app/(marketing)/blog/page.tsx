@@ -66,7 +66,7 @@ export default async function BlogIndex({
   const hrefFor = (n: number) => (n <= 1 ? "/blog" : `/blog?page=${n}`);
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd data={blogSchema} />
 
       <section className="pricing-hero">

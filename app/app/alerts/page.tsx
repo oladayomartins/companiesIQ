@@ -11,6 +11,7 @@ export default async function AlertsPage() {
   if (!(await hasProAccess(user))) {
     return (
       <ProGate
+        shape="list"
         icon="bell"
         title="Alerts"
         features={["Real-time new-formation alerts", "Filing, appointment & status changes", "Email & webhook delivery"]}

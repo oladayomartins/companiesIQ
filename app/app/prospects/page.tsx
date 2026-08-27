@@ -12,6 +12,7 @@ export default async function ProspectsPage({ searchParams }: { searchParams: Pr
   if (!(await hasProAccess(user))) {
     return (
       <ProGate
+        shape="list"
         icon="bookmark"
         title="Prospect lists"
         features={[

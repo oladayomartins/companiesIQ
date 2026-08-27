@@ -6,6 +6,12 @@
 // the canonical host changes (keep it in sync with the apex→www redirect).
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.companiesiq.co.uk").replace(/\/$/, "");
 export const SITE_NAME = "CompaniesIQ";
+
+// Approximate size of the live register, for copy that runs before (or without)
+// a live count from getRegisterKpis(). One constant so the marketing site and
+// the app can't disagree — they previously said 5.5M and 5.3M respectively.
+// Update this when the register's rounded size changes.
+export const REGISTER_SIZE = "5.5M";
 export const SITE_DESCRIPTION =
   "The UK company intelligence platform built on Companies House. Find newly registered companies, growing sectors and new-company alerts before competitors — a modern Companies House alternative for sales, lead generation and market intelligence.";
 

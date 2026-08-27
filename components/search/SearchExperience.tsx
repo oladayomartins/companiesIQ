@@ -853,7 +853,7 @@ export function SearchExperience({
                     </span>
                     <div className="search-lock__title">
                       {tier.signedIn
-                        ? `Go Pro to see all ${num(sorted.length)} matches`
+                        ? `Upgrade to see all ${num(sorted.length)} matches`
                         : `Create a free account to see all ${num(sorted.length)} matches`}
                     </div>
                     <p className="search-lock__sub">
@@ -863,7 +863,7 @@ export function SearchExperience({
                     </p>
                     <Link href={tier.signedIn ? "/app/upgrade" : `/sign-in?next=${next}`}>
                       <Button variant="primary" iconRight="arrowRight">
-                        {tier.signedIn ? "Go Pro" : "Create free account"}
+                        {tier.signedIn ? "See plans" : "Create free account"}
                       </Button>
                     </Link>
                   </div>

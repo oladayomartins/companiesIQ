@@ -14,12 +14,20 @@
   --font-grotesk: 'Archivo', system-ui, -apple-system, sans-serif;
   --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* ---- Type scale (rem-ish px, 1.0 base = 16px) ----------- */
+  /* ---- Type scale (rem-ish px, 1.0 base = 16px) -----------
+     The UI range (10-18px) is where the work happens, so it steps 1px at a
+     time and every rung below is one the design actually uses. Named by role
+     rather than extending the t-shirt sizes further, because "3xs" says
+     nothing about where a size belongs. */
+  --text-micro: 10px;  /* uppercase mono labels, table heads, footnotes */
   --text-2xs:  11px;
   --text-xs:   12px;
   --text-sm:   13px;
+  --text-ui:   14px;   /* default UI text — nav, buttons, list rows */
   --text-base: 15px;
+  --text-prose: 16px;  /* running copy and ledes */
   --text-md:   17px;
+  --text-card: 18px;   /* card and panel titles */
   --text-lg:   20px;
   --text-xl:   24px;
   --text-2xl:  30px;

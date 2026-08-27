@@ -3,6 +3,7 @@
 // deep intelligence gated behind sign-in. Logged-in users see the full report
 // inline; logged-out visitors (and Googlebot) see the free preview + an
 // "Unlock full intelligence" gate.
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCompanyBundle } from "@/lib/data";
@@ -17,6 +18,8 @@ import { hasProAccess } from "@/lib/access";
 import { isWatched } from "@/lib/watchlist";
 import { getSavedLens } from "@/lib/profile";
 import { getDirectorNetwork } from "@/lib/network";
+import { Button } from "@/components/ds";
+import { ErrorState } from "@/components/app/ErrorState";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { TrackCompanyCta } from "@/components/app/TrackCompanyCta";
 import { RelatedGuides } from "@/components/RelatedGuides";
@@ -61,15 +64,39 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
     bundle = await getCompanyBundle(number);
   } catch (e) {
     if (e instanceof CompaniesHouseError && e.status === 404) notFound();
+    // "Try again in a moment" is only true when the register itself is busy.
+    // Anything else is ours to fix, and telling the visitor to keep refreshing
+    // would leave them doing it forever.
+    const busy = e instanceof CompaniesHouseError && e.kind === "rate_limited";
     return (
       <PublicShell>
-        <div className="screen" style={{ textAlign: "center", paddingTop: 80 }}>
-          <div className="app-eyebrow">Companies House</div>
-          <h1 className="screen-title" style={{ marginBottom: 10 }}>The register is busy right now</h1>
-          <p className="public-lede" style={{ maxWidth: 520, margin: "0 auto" }}>
-            We couldn&apos;t reach Companies House for this company just now (it briefly rate-limits high traffic).
-            Please refresh in a moment.
-          </p>
+        <div className="screen">
+          <ErrorState
+            title={busy ? "The register is busy right now" : "We couldn't load this company"}
+            body={
+              busy
+                ? "Companies House briefly rate-limits high traffic. Reloading in a moment usually works."
+                : "Something went wrong on our side fetching this company from Companies House. It's logged — please try again shortly."
+            }
+            actions={
+              <>
+                <Button href={`/company/${number}`} variant="primary" iconRight="arrowRight">
+                  Try again
+                </Button>
+                <Button href="/search" variant="secondary">
+                  Search companies
+                </Button>
+              </>
+            }
+            links={
+              <>
+                <Link href="/industry">Industries</Link>
+                <Link href="/market">Markets</Link>
+                <Link href="/city">Cities</Link>
+                <Link href="/sources">Sources &amp; methodology</Link>
+              </>
+            }
+          />
         </div>
       </PublicShell>
     );

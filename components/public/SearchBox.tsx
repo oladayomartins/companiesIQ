@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Icon } from "@/components/ds";
+import { REGISTER_SIZE } from "@/lib/site";
 
 export function SearchBox({ initial = "" }: { initial?: string }) {
   const router = useRouter();
@@ -17,7 +18,7 @@ export function SearchBox({ initial = "" }: { initial?: string }) {
       <Icon name="search" size={18} />
       <input
         aria-label="Search UK companies"
-        placeholder="Search 5.5M UK companies…"
+        placeholder={`Search ${REGISTER_SIZE} UK companies…`}
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />

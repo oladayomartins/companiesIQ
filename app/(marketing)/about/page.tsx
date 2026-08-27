@@ -76,7 +76,7 @@ const FAQ_SCHEMA = {
 
 export default function AboutPage() {
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd data={[ABOUT_PAGE, BREADCRUMB, FAQ_SCHEMA]} />
 
       <section className="pricing-hero">

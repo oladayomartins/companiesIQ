@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardBody, Stat, Tabs, Badge } from "@/components/ds";
+import { Card, CardHeader, CardBody, Stat, Tabs, Badge, Button } from "@/components/ds";
 import { sectorBreakdown, fastestGrowingSectors, regionBreakdown, UK_SURVIVAL_5YR } from "@/lib/analytics";
 import { getRegisterKpis, getIncorporationTrend, getActivityBreakdown } from "@/lib/live-stats";
 import { getRegionIndicators } from "@/lib/nomis";
@@ -8,6 +8,7 @@ import { IncorporationTrend, SectorBars } from "@/components/app/Charts";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { hasProAccess } from "@/lib/access";
 import { ProGate } from "@/components/app/ProGate";
+import { ErrorState } from "@/components/app/ErrorState";
 
 export const metadata = { title: "Markets · CompaniesIQ" };
 export const dynamic = "force-dynamic";
@@ -39,6 +40,7 @@ export default async function MarketsPage() {
   if (!(await hasProAccess(await getCurrentUser()))) {
     return (
       <ProGate
+        shape="grid"
         icon="barChart"
         title="Market intelligence"
         features={["Regional & sector market analytics", "Live formation trends", "Survival & growth benchmarks"]}
@@ -62,7 +64,8 @@ export default async function MarketsPage() {
       getRegionIndicators().catch(() => null),
     ]);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Companies House unavailable";
+    console.error("[app/markets] region data failed", e);
+    error = "unavailable";
   }
 
   // Growth hotspots: regions ranked by their Nomis growth index, with live pay.
@@ -84,7 +87,18 @@ export default async function MarketsPage() {
         <Tabs variant="pill" tabs={["12 months"]} />
       </div>
 
-      {error ? <div className="app-error">{error}</div> : null}
+      {error ? (
+        <ErrorState
+          inline
+          title="Regional figures didn't load"
+          body="We couldn't reach Companies House for this window. It's logged on our side — try again shortly."
+          actions={
+            <Button href="/app/markets" variant="primary" iconRight="arrowRight">
+              Try again
+            </Button>
+          }
+        />
+      ) : null}
 
       <div className="kpi-grid">
         <Card>

@@ -79,11 +79,9 @@ export function WatchlistsScreen({ companies }: { companies: WatchedCompany[] })
             <div className="prospects__empty">
               <Icon name="bookmark" size={28} />
               <p>You haven&apos;t watched any companies yet. Open any company report and hit &ldquo;Watch&rdquo; to track it here.</p>
-              <Link href="/search">
-                <Button variant="primary" size="sm" iconRight="arrowRight">
-                  Find companies
-                </Button>
-              </Link>
+              <Button href="/search" variant="primary" size="sm" iconRight="arrowRight">
+                Find companies
+              </Button>
             </div>
           )}
         </CardBody>

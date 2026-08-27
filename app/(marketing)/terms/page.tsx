@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <section className="pricing-hero">
         <span className="eyebrow">Legal</span>
         <h1 className="pricing-hero__title">Terms of Service</h1>
