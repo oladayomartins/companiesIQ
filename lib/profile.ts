@@ -77,3 +77,21 @@ export async function setProfileNameIfEmpty(userId: string, email: string | null
     /* best-effort — never block the webhook */
   }
 }
+
+/**
+ * The user's saved default lens (what they sell), or null. Read on the company
+ * report so a Pro user's pinned choice wins over the per-session default; the
+ * client still overrides it with a session switch from localStorage.
+ */
+export async function getSavedLens(userId: string): Promise<string | null> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return null;
+  try {
+    const { data } = await admin.from("profiles").select("lens_profile").eq("id", userId).maybeSingle();
+    const v = ((data?.lens_profile as string | undefined) || "").trim();
+    return v || null;
+  } catch {
+    // Column not provisioned yet (supabase/profiles-lens.sql) — no default.
+    return null;
+  }
+}

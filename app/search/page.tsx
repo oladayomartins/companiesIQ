@@ -1,126 +1,92 @@
-// PUBLIC search funnel. Anonymous → results blurred behind a Sign-in CTA;
-// free (signed in) → top 3 visible, rest blurred behind Go-Pro; Pro → full.
-// noindex (thin/duplicate query pages); the full search tool lives in /app.
+// THE search surface — one page for anonymous visitors, free accounts and Pro.
+//
+// Search itself is open to everyone: the company profiles it links to are the
+// indexable SEO surface (also reachable from /industry and /city), so hiding
+// results from logged-out visitors would only break the Google → search →
+// profile journey. What tiers is DEPTH — how much of the register you can sweep
+// and what you can do with it — which is the part that actually costs us to
+// serve and the part Pro is really buying.
+//
+// noindex: query pages are thin and near-duplicate. The landing state is worth
+// indexing, so it stays crawlable when no query is present.
 import type { Metadata } from "next";
-import Link from "next/link";
-import { search, type EnrichedResult } from "@/lib/data";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { hasProAccess } from "@/lib/access";
-import { Button, Icon, StatusPill, CompanyAvatar } from "@/components/ds";
-import { fmtDate } from "@/lib/format";
+import { getUserPlan } from "@/lib/access";
+import { planById, type PlanId } from "@/lib/subscription";
+import { isAdmin, isPartner } from "@/lib/admin";
+import { getSavedLens } from "@/lib/profile";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { sectorBreakdown } from "@/lib/analytics";
+import { countCompanies } from "@/lib/companies-house";
 import { PublicShell } from "@/components/public/PublicShell";
-import { SearchBox } from "@/components/public/SearchBox";
+import { SearchExperience, type SavedSearch } from "@/components/search/SearchExperience";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Search", robots: { index: false, follow: true } };
 
-const FREE_VISIBLE = 3;
-
-function ResultRow({ c, link }: { c: EnrichedResult; link?: boolean }) {
-  const inner = (
-    <>
-      <CompanyAvatar name={c.name} size="sm" />
-      <div className="search-row__main">
-        <div className="search-row__name">{c.name}</div>
-        <div className="search-row__no mono">
-          {c.number}
-          {c.region ? ` · ${c.region}` : ""}
-        </div>
-      </div>
-      <span className="search-row__sector">{c.classification?.sector ?? "—"}</span>
-      <span className="search-row__date mono">{c.incorporated ? fmtDate(c.incorporated) : "—"}</span>
-      <StatusPill status={c.status} />
-    </>
-  );
-  return link ? (
-    <Link href={`/company/${c.number}`} className="search-row" style={{ textDecoration: "none" }}>
-      {inner}
-    </Link>
-  ) : (
-    <div className="search-row">{inner}</div>
-  );
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }): Promise<Metadata> {
+  const { q } = await searchParams;
+  const query = (q ?? "").trim();
+  return {
+    title: query ? `Results for “${query}”` : "Search 5.5m UK companies",
+    description:
+      "Search every company on the UK register by name, sector, SIC code or town — scored for what you sell. Free profiles, live from Companies House.",
+    robots: query ? { index: false, follow: true } : { index: true, follow: true },
+    alternates: { canonical: "/search" },
+  };
 }
+
+const isoDaysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
   const query = (q ?? "").trim();
+
   const user = await getCurrentUser();
   const signedIn = !!user;
-  const subscribed = await hasProAccess(user);
+  const plan = user ? await getUserPlan(user) : "free";
+  const comped = !!user && (isAdmin(user) || isPartner(user));
+  const caps = planById(plan as PlanId).caps;
+  const pro = comped || plan !== "free";
 
-  let results: EnrichedResult[] = [];
-  let total = 0;
-  if (query) {
-    try {
-      const r = await search(query);
-      results = r.results.slice(0, 12);
-      total = r.total;
-    } catch {
-      results = [];
-    }
-  }
-
-  const visibleCount = subscribed ? results.length : signedIn ? FREE_VISIBLE : 0;
-  const visible = results.slice(0, visibleCount);
-  const hidden = results.slice(visibleCount);
-  const next = encodeURIComponent(`/search?q=${encodeURIComponent(query)}`);
+  // The landing panels only matter when there's no query to answer, so they're
+  // skipped entirely on a results render — no wasted register calls.
+  const [newThisMonth, saved, savedLens] = await Promise.all([
+    query
+      ? Promise.resolve(null)
+      : countCompanies({ incorporatedFrom: isoDaysAgo(30), incorporatedTo: isoDaysAgo(0) }).catch(() => null),
+    loadSaved(user?.id),
+    user ? getSavedLens(user.id).catch(() => null) : Promise.resolve(null),
+  ]);
 
   return (
     <PublicShell>
       <div className="screen">
-        <div className="screen-head">
-          <div>
-            <div className="app-eyebrow">Search the UK register</div>
-            <h1 className="screen-title">{query ? `Results for “${query}”` : "Search companies"}</h1>
-          </div>
-        </div>
-        <div style={{ maxWidth: 560, marginBottom: 26 }}>
-          <SearchBox initial={query} />
-        </div>
-
-        {!query ? (
-          <p className="public-lede">Try “fintech London”, “care companies Manchester”, or a company name.</p>
-        ) : results.length === 0 ? (
-          <p className="public-lede">No matches for “{query}”. Try a different term.</p>
-        ) : (
-          <div className="search-list">
-            {visible.map((c) => (
-              <ResultRow key={c.number} c={c} link />
-            ))}
-            {hidden.length && !subscribed ? (
-              <div className="search-lock">
-                <div className="search-lock__blur" aria-hidden="true">
-                  {hidden.slice(0, 6).map((c) => (
-                    <ResultRow key={c.number} c={c} />
-                  ))}
-                </div>
-                <div className="search-lock__overlay">
-                  <span className="search-lock__icon">
-                    <Icon name="shield" size={22} />
-                  </span>
-                  <div className="search-lock__title">
-                    {signedIn
-                      ? `Upgrade to see all ${total.toLocaleString("en-GB")} results`
-                      : "Sign in to see your results"}
-                  </div>
-                  <p className="search-lock__sub">
-                    {signedIn
-                      ? "Your free account previews the top 3. Upgrade for the full result set, filters, exports and alerts."
-                      : "Create a free account to preview results — then upgrade for the full set, exports and alerts."}
-                  </p>
-                  <Button
-                    href={signedIn ? "/app/upgrade" : `/sign-in?next=${next}`}
-                    variant="primary"
-                    iconRight="arrowRight"
-                  >
-                    {signedIn ? "See plans" : "Sign in to view"}
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        )}
+        <SearchExperience
+          initialQuery={query}
+          tier={{ signedIn, pro, canSaveSearches: comped || caps.savedSearches }}
+          savedLens={savedLens}
+          initialSaved={saved}
+          sectors={sectorBreakdown().slice(0, 6).map((s) => ({ name: s.name, count: s.count, formatted: s.formatted }))}
+          newThisMonth={newThisMonth}
+        />
       </div>
     </PublicShell>
   );
+}
+
+async function loadSaved(userId?: string): Promise<SavedSearch[]> {
+  if (!userId) return [];
+  const admin = getSupabaseAdmin();
+  if (!admin) return [];
+  try {
+    const { data } = await admin
+      .from("saved_searches")
+      .select("id,label,query,created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(6);
+    return (data ?? []) as SavedSearch[];
+  } catch {
+    return [];
+  }
 }

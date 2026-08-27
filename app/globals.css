@@ -16,6 +16,8 @@
 @import "./styles/app.css";
 @import "./styles/report.css";
 @import "./styles/guides.css";
+@import "./styles/lens.css";
+@import "./styles/search.css";
 @import "./styles/free-alerts.css";
 @import "./styles/onboarding.css";
 @import "./styles/funnel.css";

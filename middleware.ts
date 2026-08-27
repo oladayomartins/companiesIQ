@@ -27,6 +27,15 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(cb);
   }
 
+  // The Pro explorer and the public funnel converged on /search. Redirect the
+  // retired route here, BEFORE the /app auth gate, so a logged-out visitor
+  // following an old link lands on the search page rather than a sign-in wall.
+  if (req.nextUrl.pathname === "/app/companies" || req.nextUrl.pathname.startsWith("/app/companies/")) {
+    const to = req.nextUrl.clone();
+    to.pathname = "/search";
+    return NextResponse.redirect(to);
+  }
+
   // Never run session refresh / gating on the auth callback itself. The callback
   // route exchanges the PKCE code for a session and sets the auth cookies on its
   // own response; if middleware also creates a client and refreshes cookies on

@@ -145,6 +145,7 @@
 .locked-intel__cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
 /* Public search teaser */
+.search-meta { font-size: 12px; color: var(--text-muted); letter-spacing: 0.02em; margin: 0 0 10px; }
 .search-list { display: flex; flex-direction: column; }
 .search-row { display: grid; grid-template-columns: auto 1fr 140px 110px auto; align-items: center; gap: 14px; padding: 12px 6px; border-bottom: 1px solid var(--border-hair); }
 .search-row__main { min-width: 0; }

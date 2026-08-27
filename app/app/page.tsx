@@ -244,7 +244,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               subtitle={`Newest in the last ${windowLabel}`}
               title="Recent registrations"
               action={
-                <Link className="link-btn" href="/app/companies">
+                <Link className="link-btn" href="/search">
                   View all companies →
                 </Link>
               }
