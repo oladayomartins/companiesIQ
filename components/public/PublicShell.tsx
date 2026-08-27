@@ -1,54 +1,36 @@
-import Link from "next/link";
-import { PublicHeaderCta, PublicCtaBody } from "@/components/public/PublicAuthCtas";
+import { SiteHeader } from "@/components/marketing/SiteHeader";
+import { SiteFooter } from "@/components/marketing/Footer";
+import { PublicCtaBody } from "@/components/public/PublicAuthCtas";
 
-// Generic dark chrome for the public, indexable SEO pages (industry, market,
-// etc.). Reuses the .report-public / .rep-head / .rep-foot styles so the public
-// surface is visually consistent with the company report.
+// The shell for every PUBLIC page that isn't marketing — industries, markets,
+// cities, signals, search.
+//
+// Theme by ACCESS, not by data density. Anything a visitor can reach without
+// signing in wears the light site chrome: same header, same footer, same
+// palette as the homepage. The dark theme belongs exclusively to the signed-in
+// app (/app), where it is the visual signal that you have crossed from the
+// public site into the workspace. Density is not a reason to go dark — a page
+// full of figures is still a public page.
+//
+// Previously these pages rendered their own dark header and dropped the site
+// nav and footer entirely, which made /industry and /market read as a different
+// product from the homepage that links to them.
 export function PublicShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="ciq-dark report-public">
+    <div className="site public-page">
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <header className="rep-head">
-        <Link className="rep-head__logo" href="/">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/ciq-mark-ink.svg" width={26} height={26} alt="" />
-          <span className="rep-head__word">
-            Companies<span className="rep-head__iq">IQ</span>
-          </span>
-        </Link>
-        <div className="rep-head__cta">
-          <PublicHeaderCta />
-        </div>
-      </header>
-
-      <main id="main-content" tabIndex={-1}>
-        {children}
-      </main>
-
-      <footer className="rep-foot">
-        <div className="rep-foot__inner">
-          <span className="rep-foot__brand">
-            Companies<span className="rep-head__iq">IQ</span>
-          </span>
-          <span className="rep-foot__note">
-            Public business data from Companies House, reused under the Open Government Licence.
-          </span>
-          <nav className="rep-foot__nav">
-            <Link href="/industry">Industries</Link>
-            <Link href="/market">Markets</Link>
-            <Link href="/sources">Sources</Link>
-            <Link href="/pricing">Pricing</Link>
-          </nav>
-        </div>
-      </footer>
+      <SiteHeader />
+      <main id="main-content">{children}</main>
+      <SiteFooter />
     </div>
   );
 }
 
-// A reusable bottom-of-page conversion band for the SEO landing pages.
-// `ctaLabel` lets each page match its primary button to the visitor's intent.
+// A reusable bottom-of-page conversion band for the SEO landing pages. The band
+// itself stays dark — it is the one sanctioned dark element on a light page,
+// shared with the marketing archetype so both end identically.
 export function PublicCta({ title, sub, ctaLabel }: { title: string; sub: string; ctaLabel?: string }) {
   return (
     <div className="public-cta">

@@ -700,7 +700,9 @@ export function SearchExperience({
           <div className="sx-head">
             <div className="sx-head__count">
               <span className="sx-head__noun mono">{loading ? "Searching" : "Companies"} for</span>
-              <span className="sx-head__q">“{ran}”</span>
+              {/* The results page is about this query, so the echo is its h1 —
+                  the landing has its own, and only one is ever rendered. */}
+              <h1 className="sx-head__q">“{ran}”</h1>
               {!loading ? (
                 <span className="sx-head__n mono">
                   {sampled

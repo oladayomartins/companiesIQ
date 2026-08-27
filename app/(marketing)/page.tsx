@@ -82,6 +82,15 @@ export default async function LandingPage() {
     <main className="site" id="main-content" tabIndex={-1}>
       {/* Hero */}
       <section className="hero" id="product">
+        {/* Four decorative layers, bounded to the hero and inert to input. Kept
+            in the markup rather than as ::before/::after so each layer can carry
+            its own drift, and so the whole set is one element to hide. */}
+        <div className="herofx" aria-hidden="true">
+          <span className="herofx__grid" />
+          <span className="herofx__wash herofx__wash--a" />
+          <span className="herofx__wash herofx__wash--b" />
+          <span className="herofx__scan" />
+        </div>
         <div className="hero__copy">
           <div className="hero__eyebrow">
             <Badge tone="accent" dot>

@@ -277,3 +277,100 @@
 .price-teaser__list li { display: flex; align-items: center; gap: 8px; font-size: var(--text-ui); color: var(--text-body); }
 .price-teaser__cta { margin-top: 22px; }
 @media (max-width: 560px) { .price-teaser { grid-template-columns: 1fr; } }
+
+/* =========================================================
+   Public data pages (industries, markets, cities, signals, search,
+   company). Same light shell as marketing — theme follows ACCESS, not data
+   density — so these only need the shared page frame, not a palette of their
+   own. Every colour below is a token, so nothing here is theme-specific.
+   ========================================================= */
+.public-page { display: flex; flex-direction: column; min-height: 100vh; overflow-x: clip; }
+.public-page > main { flex: 1; }
+/* The brief's container: 1240px with 40px side padding, and no min-width, so
+   nothing can force a horizontal scrollbar at 390px. */
+.public-page .screen { max-width: 1240px; margin: 0 auto; width: 100%; padding: 32px 40px 56px; min-width: 0; }
+
+@media (max-width: 720px) {
+  .public-page .screen { padding: 22px 18px 40px; }
+}
+
+/* Breadcrumb trail — the data archetype opens with it. */
+.crumbs { margin-bottom: 14px; }
+.crumbs__list { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.crumbs__item { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); }
+.crumbs__link { color: var(--text-muted); text-decoration: none; }
+.crumbs__link:hover { color: var(--accent); text-decoration: underline; }
+.crumbs__here { color: var(--text-body); }
+.crumbs__sep { color: var(--text-faint); }
+
+/* =========================================================
+   Hero background — four layers on the cream, per the motion spec.
+   A drifting grid, two breathing washes and a slow scan band. Every alpha
+   sits between 3% and 16%, every hue is already in the palette, the whole
+   set is pointer-events:none and clipped to the hero, and it is radially
+   masked so nothing touches the edges. Only transform and opacity animate,
+   so none of it can cost layout or paint the LCP element.
+
+   Deliberately four layers: adding a fifth, or raising these alphas, turns
+   a texture into a distraction behind the one headline that matters.
+   ========================================================= */
+.hero { position: relative; isolation: isolate; }
+.herofx {
+  position: absolute; inset: 0; z-index: -1; overflow: hidden;
+  pointer-events: none; border-radius: inherit;
+  -webkit-mask-image: radial-gradient(120% 100% at 50% 40%, #000 55%, transparent 100%);
+  mask-image: radial-gradient(120% 100% at 50% 40%, #000 55%, transparent 100%);
+}
+.herofx > * { position: absolute; display: block; }
+
+/* 1 — a 76px grid drifting exactly one cell, so the loop is seamless. */
+.herofx__grid {
+  inset: -76px;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--ink, #1A1613) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--ink, #1A1613) 6%, transparent) 1px, transparent 1px);
+  background-size: 76px 76px;
+  animation: fx-drift 44s linear infinite;
+}
+/* 2 + 3 — blurred washes breathing out of phase. */
+.herofx__wash { width: 46vw; height: 46vw; max-width: 620px; max-height: 620px; border-radius: 50%; filter: blur(70px); }
+.herofx__wash--a {
+  top: -14%; left: -6%;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  animation: fx-breathe 19s ease-in-out infinite;
+}
+.herofx__wash--b {
+  bottom: -22%; right: -8%;
+  background: color-mix(in srgb, var(--pos, #2F7D46) 11%, transparent);
+  animation: fx-breathe 26s ease-in-out infinite reverse;
+}
+/* 4 — a scan band easing down the hero. */
+.herofx__scan {
+  left: 0; right: 0; height: 34%;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--accent) 5%, transparent), transparent);
+  animation: fx-scan 24s ease-in-out infinite;
+}
+
+@keyframes fx-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(76px, 76px, 0); }
+}
+@keyframes fx-breathe {
+  0%, 100% { transform: scale(1) translate3d(0, 0, 0); opacity: .75; }
+  50% { transform: scale(1.14) translate3d(2%, -3%, 0); opacity: 1; }
+}
+@keyframes fx-scan {
+  0%, 100% { transform: translate3d(0, -40%, 0); }
+  50% { transform: translate3d(0, 240%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .herofx__grid, .herofx__wash, .herofx__scan { animation: none !important; }
+}
+
+/* Prose measure. Long-form paragraphs cap at 68 characters — past roughly that
+   the eye loses the line return and a wide screen actively hurts readability.
+   Applies to body copy only; grids, cards and tables set their own width. */
+.prose p,
+.sec__body,
+.faq-item__a { max-width: 68ch; }

@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Card, CardHeader, CardBody, Stat, Badge, Icon, CompanyAvatar } from "@/components/ds";
+import { Card, CardHeader, CardBody, Stat, Badge, CompanyAvatar } from "@/components/ds";
 import { FactualTags } from "@/components/app/Tags";
 import { SECTOR_STATS } from "@/lib/ons";
 import { regionBreakdown } from "@/lib/analytics";
@@ -14,9 +14,11 @@ import { fmtNumber, fmtDelta, fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 import { isPrioritySector, priorityCitiesFor } from "@/lib/sector-city";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
+import { QuarterBars } from "@/components/public/QuarterBars";
+import { getSectorFormationTrend } from "@/lib/sector-trend";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForSector } from "@/lib/guides";
-import { JsonLd } from "@/components/JsonLd";
+import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
 import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -51,7 +53,15 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
   const stat = statForSlug(slug);
   if (!stat) notFound();
 
+  const trend = await getSectorFormationTrend(stat.sector).catch(() => null);
   const regions = regionBreakdown().slice(0, 6);
+  // Sibling links: a handful of genuinely comparable sectors (nearest in size),
+  // not every sector on every page — the crawl budget matters more than the
+  // link count.
+  const siblings = Object.values(SECTOR_STATS)
+    .filter((x) => x.sector !== stat.sector)
+    .sort((a, b) => Math.abs(a.businesses - stat.businesses) - Math.abs(b.businesses - stat.businesses))
+    .slice(0, 5);
 
   let recent: EnrichedResult[] = [];
   try {
@@ -61,31 +71,31 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
     recent = [];
   }
 
-  const breadcrumb = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Industries", item: `${SITE_URL}/industry` },
-      { "@type": "ListItem", position: 2, name: stat.sector, item: `${SITE_URL}/industry/${slug}` },
-    ],
-  };
 
   return (
     <PublicShell>
-      <JsonLd data={breadcrumb} />
+      <DatasetLd
+        name={`${stat.sector} — UK company data`}
+        description={`Active companies, new registrations, annual growth and five-year survival for ${stat.sector} in the UK, from the Companies House register with ONS context.`}
+        path={`/industry/${slug}`}
+        dateModified={new Date().toISOString().slice(0, 10)}
+      />
       <div className="screen profile">
-        <Link className="back" href="/industry">
-          <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> All industries
-        </Link>
+        <Breadcrumbs crumbs={[{ href: "/", label: "Home" }, { href: "/industry", label: "Industries" }, { label: stat.sector }]} />
 
         <div className="screen-head">
           <div>
             <div className="app-eyebrow">UK industry intelligence</div>
             <h1 className="screen-title">{stat.sector}</h1>
           </div>
-          <Badge tone={stat.annualGrowth >= 5 ? "pos" : "neutral"} dot>
-            {fmtDelta(stat.annualGrowth)} annual growth
-          </Badge>
+          <div className="dx-head__actions">
+            <Badge tone={stat.annualGrowth >= 5 ? "pos" : "neutral"} dot>
+              {fmtDelta(stat.annualGrowth)} annual growth
+            </Badge>
+            <Link className="dx-action" href={`/search?q=${encodeURIComponent(stat.sector)}`}>
+              Search {stat.sector} companies <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
 
         <div className="profile-kpis">
@@ -94,6 +104,28 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
           <Stat label="1-yr survival" value={`${stat.survival.oneYear.toFixed(1)}%`} />
           <Stat label="5-yr survival" value={`${stat.survival.fiveYear.toFixed(1)}%`} />
         </div>
+
+        {trend ? (
+          <div style={{ marginTop: 18 }}>
+            <Card>
+              <CardHeader
+                subtitle="Companies House · last 12 quarters"
+                title="New incorporations"
+                action={<Badge tone="neutral">{trend.codeCount} SIC codes</Badge>}
+              />
+              <CardBody>
+                <QuarterBars
+                  points={trend.points}
+                  label={`Quarterly incorporations across the ${trend.codeCount} SIC codes tracked in ${stat.sector}`}
+                />
+                <div className="source">
+                  <span className="source__dot">●</span> Counted across the {trend.codeCount} SIC codes we track in this
+                  sector, not the whole SIC division — a trend, not a sector total.
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        ) : null}
 
         <div className="profile-grid" style={{ marginTop: 18 }}>
           <Card>
@@ -207,7 +239,28 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
           </div>
         ) : null}
 
+        <div style={{ marginTop: 18 }}>
+          <Card>
+            <CardHeader subtitle="Related sectors" title="Compare with a neighbouring sector" />
+            <CardBody>
+              <div className="signal-chips">
+                {siblings.map((sib) => (
+                  <Link key={sib.sector} href={`/industry/${slugify(sib.sector)}`} className="signal-chip">
+                    {sib.sector}
+                    <span className="signal-chip__n mono">{fmtNumber(sib.businesses)}</span>
+                  </Link>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+
         <RelatedGuides guides={guidesForSector(stat.sector)} />
+
+        <p className="dx-source mono">
+          Source · Companies House register, reused under the Open Government Licence v3.0 · sector totals, growth and
+          survival from ONS business demography · regional context from Nomis
+        </p>
 
         <PublicCta
           title={`Track the ${stat.sector} sector`}

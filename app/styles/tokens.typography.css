@@ -9,10 +9,14 @@
    ============================================================ */
 :root {
   /* ---- Families ------------------------------------------- */
-  --font-serif:   'Newsreader', Georgia, 'Times New Roman', serif;
-  --font-sans:    'Hanken Grotesk', system-ui, -apple-system, sans-serif;
-  --font-grotesk: 'Archivo', system-ui, -apple-system, sans-serif;
-  --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* The three families, self-hosted via next/font (app/layout.tsx). Each var
+     falls back to the stack next/font generates plus a system stack, so text
+     is readable and correctly sized even if a font file never arrives. */
+  --font-serif:   var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  /* Archivo is the UI sans AND the data-heading face — one family, not two. */
+  --font-sans:    var(--font-archivo), system-ui, -apple-system, sans-serif;
+  --font-grotesk: var(--font-archivo), system-ui, -apple-system, sans-serif;
+  --font-mono:    var(--font-jetbrains), ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* ---- Type scale (rem-ish px, 1.0 base = 16px) -----------
      The UI range (10-18px) is where the work happens, so it steps 1px at a

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Button } from "@/components/ds";
 import { SiteFooter } from "@/components/marketing/Footer";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
@@ -139,6 +140,25 @@ export default function AboutPage() {
               <p className="faq-item__a">{a}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Both archetypes end identically: the shared dark band, then the
+          footer. /about was the one editorial page that skipped it. */}
+      <section className="cta ciq-dark">
+        <div className="cta__inner">
+          <h2 className="cta__title">See new UK businesses before everyone else.</h2>
+          <p className="cta__sub">
+            Free to search. No card required. Upgrade when you&apos;re ready to track, alert and export.
+          </p>
+          <div className="cta__actions">
+            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+              Start free
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
+          </div>
         </div>
       </section>
 
