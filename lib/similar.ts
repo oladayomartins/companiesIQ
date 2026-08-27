@@ -7,7 +7,11 @@ import type { SimilarCompany } from "./analytics";
 export async function getSimilarCompanies(
   number: string,
   sic: string | undefined,
-  region: string | undefined
+  region: string | undefined,
+  // The report's peer table and score distribution need more than a handful to
+  // be worth drawing; the underlying query already fetches 60 either way, so a
+  // larger limit costs nothing extra.
+  limit = 6
 ): Promise<SimilarCompany[]> {
   if (!sic) return [];
   try {
@@ -16,7 +20,7 @@ export async function getSimilarCompanies(
     const inRegion = region && region !== "Unknown" ? others.filter((x) => x.region === region) : [];
     const rest = others.filter((x) => !inRegion.includes(x));
     return [...inRegion, ...rest]
-      .slice(0, 6)
+      .slice(0, Math.max(1, limit))
       .map((x) => ({ number: x.number, name: x.name, sicCode: x.sicCodes[0], region: x.region, incorporated: x.incorporated, status: x.status }));
   } catch {
     return [];

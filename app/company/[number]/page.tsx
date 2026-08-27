@@ -15,6 +15,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { isPartner } from "@/lib/admin";
 import { hasProAccess } from "@/lib/access";
 import { isWatched } from "@/lib/watchlist";
+import { getSavedLens } from "@/lib/profile";
 import { getDirectorNetwork } from "@/lib/network";
 import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { TrackCompanyCta } from "@/components/app/TrackCompanyCta";
@@ -86,7 +87,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
 
   const [economicLive, similar, enrichment, network, financials] = await Promise.all([
     getRegionLive(c.geo?.region),
-    getSimilarCompanies(c.number, c.sicCodes[0], c.geo?.region),
+    // 24 peers (not 6) so the Competitors tab has a table AND a score
+    // distribution worth drawing — the underlying query already fetches 60.
+    getSimilarCompanies(c.number, c.sicCodes[0], c.geo?.region, 24),
     // Digital-presence enrichment hits the paid Places API — only run it for
     // unlocked users so public crawler traffic never burns the quota.
     unlocked
@@ -107,6 +110,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   ]);
   const report = buildIntelligenceReport(c, economicLive);
   const watched = unlocked ? await isWatched(c.number).catch(() => false) : false;
+  // A Pro user's pinned lens ("what I sell") seeds the report; the client still
+  // overrides it with a per-session switch.
+  const savedLens = user ? await getSavedLens(user.id).catch(() => null) : null;
 
   const orgSchema = {
     "@context": "https://schema.org",
@@ -148,6 +154,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           signedIn={signedIn}
           watched={watched}
           network={network}
+          savedLens={savedLens}
         />
         {financials ? (
           <div className="screen" style={{ paddingTop: 0 }}>
