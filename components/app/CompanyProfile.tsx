@@ -324,7 +324,7 @@ export function CompanyProfile({
   return (
     <div className="screen profile">
       {unlocked ? (
-        <button className="back" onClick={() => router.push("/search")}>
+        <button className="back" onClick={() => router.push("/app/companies")}>
           <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> Back to results
         </button>
       ) : null}
