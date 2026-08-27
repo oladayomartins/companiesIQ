@@ -159,7 +159,7 @@ export function ProspectsScreen({
                   <div className="prospects__empty">
                     <StatusPill status="active" />
                     <p>This list is empty. Open any company report and use “Add to prospect list”.</p>
-                    <Link href="/app/companies">
+                    <Link href="/search">
                       <Button variant="primary" size="sm" iconRight="arrowRight">
                         Find companies
                       </Button>

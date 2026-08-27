@@ -9,7 +9,7 @@ type NavItem = { id: string; label: string; icon: IconName; href: string; count?
 
 const NAV: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: "grid", href: "/app" },
-  { id: "companies", label: "Companies", icon: "search", href: "/app/companies" },
+  { id: "companies", label: "Companies", icon: "search", href: "/search" },
   { id: "markets", label: "Markets", icon: "barChart", href: "/app/markets" },
   { id: "industries", label: "Industries", icon: "building", href: "/app/industries" },
   { id: "prospects", label: "Prospects", icon: "bookmark", href: "/app/prospects" },
@@ -24,7 +24,7 @@ const NAV: NavItem[] = [
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/app") return pathname === "/app";
-  if (href === "/app/companies") return pathname.startsWith("/app/companies") || pathname.startsWith("/app/company");
+  if (href === "/search") return pathname.startsWith("/search") || pathname.startsWith("/app/companies") || pathname.startsWith("/app/company");
   return pathname.startsWith(href);
 }
 
@@ -40,7 +40,7 @@ function TopSearch() {
       className="topsearch"
       onSubmit={(e) => {
         e.preventDefault();
-        router.push(`/app/companies${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
+        router.push(`/search${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
       }}
     >
       <Icon name="search" size={17} />
@@ -161,7 +161,7 @@ export function AppShell({
               className={pathname.startsWith("/app/alerts") ? "is-active" : ""}
               onClick={() => router.push("/app/alerts")}
             />
-            <IconButton icon="download" label="Search &amp; export companies" onClick={() => router.push("/app/companies")} />
+            <IconButton icon="download" label="Search &amp; export companies" onClick={() => router.push("/search")} />
           </div>
         </header>
         <div className="app-scroll">{children}</div>

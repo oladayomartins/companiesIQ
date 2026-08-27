@@ -52,6 +52,10 @@ export function LensBar({
   savedDefault,
   canSave,
   signedIn,
+  // "full" is the company report's banner; "compact" is the one-line
+  // "Scored for X · change" used in the search results header. Same picker,
+  // same persistence — only the trigger differs.
+  variant = "full",
 }: {
   profileKey: string;
   otherText: string;
@@ -59,6 +63,7 @@ export function LensBar({
   savedDefault: string | null;
   canSave: boolean;
   signedIn: boolean;
+  variant?: "full" | "compact";
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -122,6 +127,99 @@ export function LensBar({
     }
   }
 
+  const picker = open ? (
+    <div className="lenspick" role="dialog" aria-label="Choose your lens">
+      <div className="lenspick__head">
+        <div className="lenspick__title">What does your business sell?</div>
+        <p className="lenspick__sub">We weight the same data for the decision you are making.</p>
+        <input
+          className="lenspick__search"
+          autoFocus
+          placeholder="Search use cases…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search use cases"
+        />
+      </div>
+
+      <div className="lenspick__list">
+        {groups.map(([group, items]) => (
+          <div key={group}>
+            <div className="lenspick__group mono">{group}</div>
+            {items.map((p) => (
+              <button
+                key={p.key}
+                className={`lenspick__opt${p.key === profileKey ? " is-on" : ""}`}
+                onClick={() => {
+                  onChoose(p.key, p.key === "other" ? draftOther : undefined);
+                  if (p.key !== "other") setOpen(false);
+                }}
+              >
+                <span className="lenspick__radio" aria-hidden="true" />
+                <span className="lenspick__label">{p.label}</span>
+                <span className="lenspick__model mono">Model · {LENSES[p.lens].label}</span>
+                {saved === p.key ? <Badge tone="pos">Default</Badge> : null}
+              </button>
+            ))}
+          </div>
+        ))}
+        {groups.length === 0 ? <div className="lenspick__empty">No use case matches “{query}”.</div> : null}
+      </div>
+
+      {profileKey === "other" ? (
+        <div className="lenspick__other">
+          <div className="lenspick__otherTitle">Tell us what you sell</div>
+          <p className="lenspick__sub">
+            We will use the general opportunity model for now and build a weighting for your use case — it appears here
+            once ready.
+          </p>
+          <input
+            className="lenspick__search"
+            placeholder="e.g. commercial waste contracts"
+            value={draftOther}
+            onChange={(e) => setDraftOther(e.target.value)}
+            aria-label="What do you sell"
+          />
+        </div>
+      ) : null}
+
+      <div className="lenspick__foot">
+        {canSave ? (
+          <Button variant="primary" onClick={saveDefault} disabled={saving}>
+            {saving ? "Saving…" : "Save as my default"}
+          </Button>
+        ) : (
+          <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
+            <Button variant="primary" iconRight="arrowRight">
+              Go Pro to save a default
+            </Button>
+          </Link>
+        )}
+        <Button
+          variant="ghost"
+          onClick={() => {
+            onChoose(profileKey, profileKey === "other" ? draftOther : undefined);
+            setOpen(false);
+          }}
+        >
+          Use this session only
+        </Button>
+      </div>
+    </div>
+  ) : null;
+
+  if (variant === "compact") {
+    return (
+      <span className="lenscompact" ref={popRef}>
+        <span className="lenscompact__label mono">Scored for {lens.label}</span>
+        <button className="lenscompact__change" onClick={() => setOpen((v) => !v)}>
+          change
+        </button>
+        {picker}
+      </span>
+    );
+  }
+
   return (
     <div className="lensbar">
       <div className="lensbar__intro">
@@ -146,87 +244,7 @@ export function LensBar({
         <Button variant="secondary" onClick={() => setOpen((v) => !v)} iconRight="chevronDown">
           Change lens
         </Button>
-
-        {open ? (
-          <div className="lenspick" role="dialog" aria-label="Choose your lens">
-            <div className="lenspick__head">
-              <div className="lenspick__title">What does your business sell?</div>
-              <p className="lenspick__sub">We weight the same data for the decision you are making.</p>
-              <input
-                className="lenspick__search"
-                autoFocus
-                placeholder="Search use cases…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                aria-label="Search use cases"
-              />
-            </div>
-
-            <div className="lenspick__list">
-              {groups.map(([group, items]) => (
-                <div key={group}>
-                  <div className="lenspick__group mono">{group}</div>
-                  {items.map((p) => (
-                    <button
-                      key={p.key}
-                      className={`lenspick__opt${p.key === profileKey ? " is-on" : ""}`}
-                      onClick={() => {
-                        onChoose(p.key, p.key === "other" ? draftOther : undefined);
-                        if (p.key !== "other") setOpen(false);
-                      }}
-                    >
-                      <span className="lenspick__radio" aria-hidden="true" />
-                      <span className="lenspick__label">{p.label}</span>
-                      <span className="lenspick__model mono">Model · {LENSES[p.lens].label}</span>
-                      {saved === p.key ? <Badge tone="pos">Default</Badge> : null}
-                    </button>
-                  ))}
-                </div>
-              ))}
-              {groups.length === 0 ? <div className="lenspick__empty">No use case matches “{query}”.</div> : null}
-            </div>
-
-            {profileKey === "other" ? (
-              <div className="lenspick__other">
-                <div className="lenspick__otherTitle">Tell us what you sell</div>
-                <p className="lenspick__sub">
-                  We will use the general opportunity model for now and build a weighting for your use case — it appears
-                  here once ready.
-                </p>
-                <input
-                  className="lenspick__search"
-                  placeholder="e.g. commercial waste contracts"
-                  value={draftOther}
-                  onChange={(e) => setDraftOther(e.target.value)}
-                  aria-label="What do you sell"
-                />
-              </div>
-            ) : null}
-
-            <div className="lenspick__foot">
-              {canSave ? (
-                <Button variant="primary" onClick={saveDefault} disabled={saving}>
-                  {saving ? "Saving…" : "Save as my default"}
-                </Button>
-              ) : (
-                <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
-                  <Button variant="primary" iconRight="arrowRight">
-                    Go Pro to save a default
-                  </Button>
-                </Link>
-              )}
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  onChoose(profileKey, profileKey === "other" ? draftOther : undefined);
-                  setOpen(false);
-                }}
-              >
-                Use this session only
-              </Button>
-            </div>
-          </div>
-        ) : null}
+        {picker}
       </div>
     </div>
   );
