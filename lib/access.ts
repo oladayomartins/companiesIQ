@@ -12,6 +12,7 @@ import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { isAdmin, isPartner } from "@/lib/admin";
+import { planById, type PlanId } from "@/lib/subscription";
 
 const ACTIVE_STATUSES = new Set(["active", "trialing"]);
 
@@ -47,4 +48,17 @@ export async function hasProAccess(user: User | null): Promise<boolean> {
   if (!user) return false;
   if (isAdmin(user) || isPartner(user)) return true;
   return isSubscribed(user);
+}
+
+/**
+ * Gate for enriched director CONTACT data (email / direct dial). A higher bar
+ * than hasProAccess: it's a metered, regulated (UK GDPR / PECR) third-party
+ * feature, so it's limited to plans whose caps.contactData is true (Team+).
+ * Admins/partners get it comped, like every other Pro capability.
+ */
+export async function canUseContactData(user: User | null): Promise<boolean> {
+  if (!user) return false;
+  if (isAdmin(user) || isPartner(user)) return true;
+  const plan = await getUserPlan(user);
+  return planById(plan as PlanId).caps.contactData;
 }

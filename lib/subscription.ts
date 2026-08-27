@@ -29,6 +29,7 @@ export interface Plan {
     savedSearches: boolean;
     csvExport: boolean;
     api: boolean;
+    contactData: boolean; // reveal enriched director email / direct dial
   };
 }
 
@@ -42,7 +43,7 @@ export const PLANS: Plan[] = [
     ctaVariant: "secondary",
     cta: "Start free",
     features: ["Unlimited search & filters", "Company profiles", "Trend dashboards", "Basic intelligence reports"],
-    caps: { fullReport: false, historicalData: false, watchlists: 0, alerts: false, savedSearches: false, csvExport: false, api: false },
+    caps: { fullReport: false, historicalData: false, watchlists: 0, alerts: false, savedSearches: false, csvExport: false, api: false, contactData: false },
   },
   {
     id: "analyst",
@@ -54,7 +55,7 @@ export const PLANS: Plan[] = [
     ctaVariant: "secondary",
     cta: "Get Analyst",
     features: ["Everything in Free", "Full intelligence reports", "10-year filing history", "1 watchlist · 50 companies", "CSV export", "Email support"],
-    caps: { fullReport: true, historicalData: true, watchlists: 1, alerts: false, savedSearches: true, csvExport: true, api: false },
+    caps: { fullReport: true, historicalData: true, watchlists: 1, alerts: false, savedSearches: true, csvExport: true, api: false, contactData: false },
   },
   {
     id: "team",
@@ -67,7 +68,7 @@ export const PLANS: Plan[] = [
     ctaVariant: "primary",
     cta: "Get Team",
     features: ["Everything in Analyst", "Unlimited watchlists", "Real-time signal alerts", "Shared lists & seats (5)", "Market & sector analytics", "API access · 10k calls/mo", "Priority support"],
-    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true },
+    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true, contactData: true },
   },
   {
     id: "enterprise",
@@ -78,7 +79,7 @@ export const PLANS: Plan[] = [
     ctaVariant: "secondary",
     cta: "Talk to sales",
     features: ["Everything in Team", "Unlimited seats & API", "Bulk data & warehouse sync", "Custom signal models", "SSO / SAML & audit logs", "Dedicated success manager", "SLA & onboarding"],
-    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true },
+    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true, contactData: true },
   },
 ];
 
