@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Card, CardHeader, CardBody, Stat, Badge, Icon, CompanyAvatar } from "@/components/ds";
+import { Card, CardHeader, CardBody, Stat, Badge, CompanyAvatar } from "@/components/ds";
 import { FactualTags } from "@/components/app/Tags";
 import { SECTOR_STATS } from "@/lib/ons";
 import { regionBreakdown } from "@/lib/analytics";
@@ -16,7 +16,7 @@ import { isPrioritySector, priorityCitiesFor } from "@/lib/sector-city";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForSector } from "@/lib/guides";
-import { JsonLd } from "@/components/JsonLd";
+import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
 import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -61,22 +61,17 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
     recent = [];
   }
 
-  const breadcrumb = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Industries", item: `${SITE_URL}/industry` },
-      { "@type": "ListItem", position: 2, name: stat.sector, item: `${SITE_URL}/industry/${slug}` },
-    ],
-  };
 
   return (
     <PublicShell>
-      <JsonLd data={breadcrumb} />
+      <DatasetLd
+        name={`${stat.sector} — UK company data`}
+        description={`Active companies, new registrations, annual growth and five-year survival for ${stat.sector} in the UK, from the Companies House register with ONS context.`}
+        path={`/industry/${slug}`}
+        dateModified={new Date().toISOString().slice(0, 10)}
+      />
       <div className="screen profile">
-        <Link className="back" href="/industry">
-          <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> All industries
-        </Link>
+        <Breadcrumbs crumbs={[{ href: "/", label: "Home" }, { href: "/industry", label: "Industries" }, { label: stat.sector }]} />
 
         <div className="screen-head">
           <div>

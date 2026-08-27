@@ -277,3 +277,28 @@
 .price-teaser__list li { display: flex; align-items: center; gap: 8px; font-size: var(--text-ui); color: var(--text-body); }
 .price-teaser__cta { margin-top: 22px; }
 @media (max-width: 560px) { .price-teaser { grid-template-columns: 1fr; } }
+
+/* =========================================================
+   Public data pages (industries, markets, cities, signals, search,
+   company). Same light shell as marketing — theme follows ACCESS, not data
+   density — so these only need the shared page frame, not a palette of their
+   own. Every colour below is a token, so nothing here is theme-specific.
+   ========================================================= */
+.public-page { display: flex; flex-direction: column; min-height: 100vh; overflow-x: clip; }
+.public-page > main { flex: 1; }
+/* The brief's container: 1240px with 40px side padding, and no min-width, so
+   nothing can force a horizontal scrollbar at 390px. */
+.public-page .screen { max-width: 1240px; margin: 0 auto; width: 100%; padding: 32px 40px 56px; min-width: 0; }
+
+@media (max-width: 720px) {
+  .public-page .screen { padding: 22px 18px 40px; }
+}
+
+/* Breadcrumb trail — the data archetype opens with it. */
+.crumbs { margin-bottom: 14px; }
+.crumbs__list { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.crumbs__item { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); }
+.crumbs__link { color: var(--text-muted); text-decoration: none; }
+.crumbs__link:hover { color: var(--accent); text-decoration: underline; }
+.crumbs__here { color: var(--text-body); }
+.crumbs__sep { color: var(--text-faint); }

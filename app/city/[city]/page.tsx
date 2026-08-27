@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Card, CardHeader, CardBody, Stat, Badge, Icon, CompanyAvatar } from "@/components/ds";
+import { Card, CardHeader, CardBody, Stat, Badge, CompanyAvatar } from "@/components/ds";
 import { FactualTags } from "@/components/app/Tags";
 import { REGION_STATS } from "@/lib/ons";
 import { explore, type EnrichedResult } from "@/lib/data";
@@ -15,7 +15,7 @@ import { CITIES, cityForSlug } from "@/lib/cities";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForPlace } from "@/lib/guides";
-import { JsonLd } from "@/components/JsonLd";
+import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
 import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -51,22 +51,17 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
     recent = [];
   }
 
-  const breadcrumb = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Cities", item: `${SITE_URL}/city` },
-      { "@type": "ListItem", position: 2, name: city.name, item: `${SITE_URL}/city/${slug}` },
-    ],
-  };
 
   return (
     <PublicShell>
-      <JsonLd data={breadcrumb} />
+      <DatasetLd
+        name={`Companies in ${city.name}`}
+        description={`Company formations and business activity in ${city.name}, ${city.region}, from the Companies House register with ONS regional context.`}
+        path={`/city/${slugify(city.name)}`}
+        dateModified={new Date().toISOString().slice(0, 10)}
+      />
       <div className="screen profile">
-        <Link className="back" href="/city">
-          <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> All cities
-        </Link>
+        <Breadcrumbs crumbs={[{ href: "/", label: "Home" }, { href: "/city", label: "Cities" }, { label: city.name }]} />
 
         <div className="screen-head">
           <div>
