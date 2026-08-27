@@ -130,39 +130,52 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Live register intelligence */}
-      <section className="live-band" id="data">
-        <div className="live-band__head">
-          <span className="eyebrow">Live on the UK register · last 30 days</span>
-          <Badge tone="pos" dot>
-            Live from Companies House
-          </Badge>
-        </div>
-        <div className="live-grid">
-          <div className="live-stat">
-            <div className="live-stat__label mono">New companies</div>
-            <div className="live-stat__value">{kpis ? fmtNumber(kpis.incorporations) : "—"}</div>
-            <div className="live-stat__sub">
-              {incGrowth != null ? `${fmtDelta(incGrowth)} vs prior 30 days` : "incorporated this period"}
-            </div>
+      {/* Live register intelligence. Each figure is a separate query wrapped in
+          .catch(() => null); rendering "—" under a "Live from Companies House"
+          badge advertises a dead feed, so a tile without data is omitted and
+          the whole band disappears if nothing resolved. */}
+      {kpis || insights ? (
+        <section className="live-band" id="data">
+          <div className="live-band__head">
+            <span className="eyebrow">Live on the UK register · last 30 days</span>
+            <Badge tone="pos" dot>
+              Live from Companies House
+            </Badge>
           </div>
-          <Link className="live-stat live-stat--link" href={insights ? `/industry/${slugify(insights.fastestSector.name)}` : "/industry"}>
-            <div className="live-stat__label mono">Fastest-growing sector</div>
-            <div className="live-stat__value">{insights ? insights.fastestSector.name : "—"}</div>
-            <div className="live-stat__sub">{insights ? `${fmtDelta(insights.fastestSector.growth)} annual growth →` : "explore industries →"}</div>
-          </Link>
-          <Link className="live-stat live-stat--link" href={insights ? `/market/${slugify(insights.fastestRegion.name)}` : "/market"}>
-            <div className="live-stat__label mono">Fastest-growing region</div>
-            <div className="live-stat__value">{insights ? insights.fastestRegion.name : "—"}</div>
-            <div className="live-stat__sub">{insights ? `${insights.fastestRegion.index.toFixed(2)}× index →` : "explore markets →"}</div>
-          </Link>
-          <div className="live-stat">
-            <div className="live-stat__label mono">Most active activity</div>
-            <div className="live-stat__value">{insights?.topSic ? insights.topSic.label : "—"}</div>
-            <div className="live-stat__sub">{insights?.topSic ? `SIC ${insights.topSic.key}` : "by new registrations"}</div>
+          <div className="live-grid">
+            {kpis ? (
+              <div className="live-stat">
+                <div className="live-stat__label mono">New companies</div>
+                <div className="live-stat__value">{fmtNumber(kpis.incorporations)}</div>
+                <div className="live-stat__sub">
+                  {incGrowth != null ? `${fmtDelta(incGrowth)} vs prior 30 days` : "incorporated this period"}
+                </div>
+              </div>
+            ) : null}
+            {insights ? (
+              <Link className="live-stat live-stat--link" href={`/industry/${slugify(insights.fastestSector.name)}`}>
+                <div className="live-stat__label mono">Fastest-growing sector</div>
+                <div className="live-stat__value">{insights.fastestSector.name}</div>
+                <div className="live-stat__sub">{`${fmtDelta(insights.fastestSector.growth)} annual growth →`}</div>
+              </Link>
+            ) : null}
+            {insights ? (
+              <Link className="live-stat live-stat--link" href={`/market/${slugify(insights.fastestRegion.name)}`}>
+                <div className="live-stat__label mono">Fastest-growing region</div>
+                <div className="live-stat__value">{insights.fastestRegion.name}</div>
+                <div className="live-stat__sub">{`${insights.fastestRegion.index.toFixed(2)}× index →`}</div>
+              </Link>
+            ) : null}
+            {insights?.topSic ? (
+              <div className="live-stat">
+                <div className="live-stat__label mono">Most active activity</div>
+                <div className="live-stat__value">{insights.topSic.label}</div>
+                <div className="live-stat__sub">{`SIC ${insights.topSic.key}`}</div>
+              </div>
+            ) : null}
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {/* Features */}
       <section className="section">

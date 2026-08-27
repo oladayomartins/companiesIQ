@@ -63,7 +63,7 @@ const FAQS: [string, string][] = [
   ],
   [
     "Can I export the data or connect it to my CRM?",
-    "Yes. Any search, list or report exports to CSV, and Pro plans include API access so you can pull companies and signals straight into your CRM, spreadsheet or model. Every field is sourced from the public register and dated.",
+    "Yes. Any search, list or report exports to CSV, and Team and Enterprise include API access so you can pull companies and signals straight into your CRM, spreadsheet or model. Every field is sourced from the public register and dated.",
   ],
   [
     "How is this different from downloading Companies House bulk data?",

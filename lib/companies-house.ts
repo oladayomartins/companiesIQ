@@ -18,12 +18,19 @@ import { titleCaseName } from "./format";
 
 const BASE = "https://api.company-information.service.gov.uk";
 
+/** Why a Companies House call failed. Callers branch on this rather than on
+ *  the message: "we are misconfigured" and "the register is busy" look the
+ *  same to a fetch but must not read the same to a visitor. */
+export type CompaniesHouseErrorKind = "unconfigured" | "not_found" | "rate_limited" | "upstream";
+
 export class CompaniesHouseError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  kind: CompaniesHouseErrorKind;
+  constructor(message: string, status: number, kind: CompaniesHouseErrorKind = "upstream") {
     super(message);
     this.name = "CompaniesHouseError";
     this.status = status;
+    this.kind = kind;
   }
 }
 
@@ -34,10 +41,12 @@ export function hasApiKey(): boolean {
 async function chFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const key = process.env.COMPANIES_HOUSE_API_KEY;
   if (!key) {
-    throw new CompaniesHouseError(
-      "COMPANIES_HOUSE_API_KEY is not set. Add a free key from developer.company-information.service.gov.uk to .env.local",
-      503
+    // The fix is ours, not the visitor's — the env var name and where to get a
+    // key belong in the server log, never in the page.
+    console.error(
+      "[companies-house] COMPANIES_HOUSE_API_KEY is not set. Add a free key from developer.company-information.service.gov.uk"
     );
+    throw new CompaniesHouseError("Companies House is not configured.", 503, "unconfigured");
   }
   const auth = Buffer.from(`${key}:`).toString("base64");
   const res = await fetch(`${BASE}${path}`, {
@@ -51,9 +60,9 @@ async function chFetch<T>(path: string, init?: RequestInit): Promise<T> {
     // within rate limits (600 requests / 5 min).
     next: { revalidate: 300 },
   });
-  if (res.status === 404) throw new CompaniesHouseError("Not found", 404);
-  if (res.status === 429) throw new CompaniesHouseError("Rate limited by Companies House — try again shortly.", 429);
-  if (!res.ok) throw new CompaniesHouseError(`Companies House returned ${res.status}`, res.status);
+  if (res.status === 404) throw new CompaniesHouseError("Not found", 404, "not_found");
+  if (res.status === 429) throw new CompaniesHouseError("Rate limited by Companies House — try again shortly.", 429, "rate_limited");
+  if (!res.ok) throw new CompaniesHouseError(`Companies House returned ${res.status}`, res.status, "upstream");
   return (await res.json()) as T;
 }
 

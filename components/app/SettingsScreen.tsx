@@ -133,7 +133,7 @@ export function SettingsScreen({ email, fullName, billing, comped = false }: { e
                 </Button>
               ) : compedOnly ? null : (
                 <Button href="/app/upgrade" variant="primary" iconRight="arrowRight">
-                  Upgrade to Pro
+                  See plans
                 </Button>
               )}
             </div>

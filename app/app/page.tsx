@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Card, CardHeader, CardBody, Stat, StatusPill, Badge, Icon } from "@/components/ds";
+import { Card, CardHeader, CardBody, Stat, StatusPill, Badge, Icon, Button } from "@/components/ds";
+import { ErrorState } from "@/components/app/ErrorState";
 import { DateRangeSelector } from "@/components/app/DateRangeSelector";
 import { CheckoutSuccess } from "@/components/app/CheckoutSuccess";
 import { TrendLine } from "@/components/app/Charts";
@@ -67,7 +68,7 @@ function RankList({ items, href, locked = false }: { items: RadarBucket[]; href?
             {hidden.slice(0, 4).map((b, i) => row(b, i + FREE_VISIBLE))}
           </div>
           <Link className="list-lock__cta" href="/app/upgrade">
-            <Icon name="shield" size={14} /> Go Pro to see all {items.length} →
+            <Icon name="shield" size={14} /> Upgrade to see all {items.length} →
           </Link>
         </div>
       ) : null}
@@ -89,6 +90,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   let kpis = null as Awaited<ReturnType<typeof getRegisterKpis>> | null;
   let radar: RadarData | null = null;
   let trend: { month: string; value: number }[] = [];
+  // A flag, not a message: nothing from the exception reaches the page.
   let error: string | null = null;
   let asOf: string | undefined;
   try {
@@ -103,7 +105,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       getFormationTrend(days, anchor).catch(() => []),
     ]);
   } catch (e) {
-    error = e instanceof Error ? e.message : "Companies House unavailable";
+    console.error("[app/dashboard] register figures failed", e);
+    error = "unavailable";
   }
 
   const netTone = kpis && kpis.netNew >= 0 ? "up" : "down";
@@ -150,7 +153,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       ) : null}
 
       {error ? (
-        <div className="app-error">{error}</div>
+        <ErrorState
+          inline
+          title="Today's register figures didn't load"
+          body="We couldn't reach Companies House for this window. It's logged on our side — the rest of the app still works while we sort it out."
+          actions={
+            <>
+              <Button href="/app" variant="primary" iconRight="arrowRight">
+                Try again
+              </Button>
+              <Button href="/app/companies" variant="secondary">
+                Search companies
+              </Button>
+            </>
+          }
+        />
       ) : (
         <>
           {/* ---- What happened ---- */}
@@ -273,7 +290,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     <tr className="lock-row">
                       <td colSpan={4}>
                         <Link href="/app/upgrade" className="lock-row__cta">
-                          <Icon name="shield" size={15} /> Go Pro to see every new UK company registration →
+                          <Icon name="shield" size={15} /> Upgrade to see every new UK company registration →
                         </Link>
                       </td>
                     </tr>

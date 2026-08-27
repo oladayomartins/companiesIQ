@@ -6,8 +6,9 @@ import { MARKETING_TIERS, type Plan } from "@/lib/subscription";
 import { toast } from "@/lib/toast";
 import { track, getGaIds } from "@/lib/track";
 
-// In-app plan picker. Subscribes directly via Stripe (no free trial) and the
-// user comes straight back into the app with Pro unlocked.
+// In-app plan picker. Subscribes directly via Stripe and the user comes
+// straight back into the app with the plan unlocked. There is no trial: the
+// Free plan is the try-before-you-buy, and nothing here advertises one.
 export function UpgradeScreen() {
   const [annual, setAnnual] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -105,7 +106,7 @@ export function UpgradeScreen() {
           );
         })}
       </div>
-      <p className="upgrade-note mono">Billed securely via Stripe · cancel anytime · no free trial — full access immediately.</p>
+      <p className="upgrade-note mono">Billed securely via Stripe · cancel anytime · full access immediately.</p>
     </div>
   );
 }

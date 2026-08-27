@@ -99,7 +99,7 @@ const FAQS: [string, string][] = [
   ],
   [
     "Can I try it free?",
-    "Yes. You can search all 5.5M companies, view public profiles and read a full intelligence report for free, with no card required. Upgrade to Pro when you need unlimited reports, real-time alerts, watchlists and export.",
+    "Yes. You can search all 5.5M companies and view public company profiles for free, with no card required. Upgrade to Analyst when you need full intelligence reports, 10-year filing history and CSV export.",
   ],
 ];
 

@@ -41,7 +41,7 @@ function OfficerRow({ p, unlocked }: { p: Officer; unlocked: boolean }) {
 }
 
 // Locked Intelligence — the real report rendered BLURRED behind a centred
-// "Go Pro" card. Free/anonymous visitors get the public profile (Overview,
+// upgrade card. Free/anonymous visitors get the public profile (Overview,
 // People, Filings, Charges) but never the intelligence itself.
 function LockedIntelligence({
   report,
@@ -69,14 +69,14 @@ function LockedIntelligence({
             <Badge tone="accent" dot>
               Full intelligence · Pro
             </Badge>
-            <h2 className="locked-intel__title">Go Pro to unlock the full report</h2>
+            <h2 className="locked-intel__title">Unlock the full report</h2>
             <p className="locked-intel__sub">
               Competitor analysis, opportunity signals, market density, regional &amp; keyword intelligence — plus CSV
               exports, alerts and watchlists across every UK company.
             </p>
             <div className="locked-intel__cta">
               <Button href={signedIn ? "/app/upgrade" : "/pricing"} variant="primary" iconRight="arrowRight">
-                Go Pro
+                See plans
               </Button>
               {!signedIn ? (
                 <Button href="/sign-in" variant="secondary">Sign in</Button>
@@ -281,7 +281,7 @@ export function CompanyProfile({
             </>
           ) : (
             <Button href={signedIn ? "/app/upgrade" : "/pricing"} variant="primary" iconRight="arrowRight">
-              Go Pro
+              See plans
             </Button>
           )}
         </div>

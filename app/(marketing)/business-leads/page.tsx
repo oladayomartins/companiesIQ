@@ -60,7 +60,7 @@ const FAQS: [string, string][] = [
   ],
   [
     "Can I export leads to my CRM?",
-    "Yes. Any list exports to CSV, and Pro plans include API access to pull companies straight into your CRM, spreadsheet or sales tool. Every field is sourced from the public register and dated.",
+    "Yes. Any list exports to CSV, and Team and Enterprise include API access to pull companies straight into your CRM, spreadsheet or sales tool. Every field is sourced from the public register and dated.",
   ],
   [
     "Is it legal to use Companies House data for lead generation?",

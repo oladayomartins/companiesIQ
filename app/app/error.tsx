@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
-import { Button, Icon } from "@/components/ds";
+import { Button } from "@/components/ds";
+import { ErrorState } from "@/components/app/ErrorState";
 
 // Error boundary for the gated app. Renders inside the AppShell (nav stays put)
 // so a server exception on any /app page degrades to a friendly retry instead
@@ -12,22 +13,16 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
 
   return (
     <div className="screen">
-      <div className="app-error-state">
-        <div className="app-error-state__icon">
-          <Icon name="alert" size={26} />
-        </div>
-        <h1 className="app-error-state__title">Something went wrong</h1>
-        <p className="app-error-state__sub">
-          We hit a snag loading this page. This is usually temporary — the live register can be briefly busy. Try again
-          in a moment.
-        </p>
-        <div className="app-error-state__actions">
+      <ErrorState
+        title="Something went wrong"
+        body="We hit a snag loading this page. This is usually temporary — the live register can be briefly busy. Try again in a moment."
+        ref={error.digest}
+        actions={
           <Button variant="primary" onClick={() => reset()}>
             Try again
           </Button>
-        </div>
-        {error.digest ? <p className="app-error-state__ref mono">Ref: {error.digest}</p> : null}
-      </div>
+        }
+      />
     </div>
   );
 }

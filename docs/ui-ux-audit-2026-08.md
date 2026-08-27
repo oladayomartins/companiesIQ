@@ -5,11 +5,43 @@
 
 Full illustrated version: https://claude.ai/code/artifact/3673bae6-c5cf-4224-a5e2-44be8db2fe8e
 
-| | Count |
-|---|---|
-| Critical (P0) | 3 |
-| High (P1) | 7 |
-| Consistency (P2) | 6 |
+| | Count | Status |
+|---|---|---|
+| Critical (P0) | 3 | fixed |
+| High (P1) | 7 | fixed |
+| Consistency (P2) | 6 | 4 fixed, 2 open |
+
+## Status — updated 27 Aug 2026
+
+Fixed and verified on `claude/website-ui-ux-audit-i007v4`:
+
+| Block | Findings | Commit |
+|---|---|---|
+| 1 · Critical | CIQ-01, 02, 03, 09 | mobile nav, phone-width overflow, WCAG AA contrast, iOS input zoom |
+| 2 · Pricing | CIQ-04, 05 | tier alignment, Free restored, plan naming, billing control |
+| 3 · Accessibility | CIQ-06, 08, 10, 15 | polymorphic Button, landmarks, skip links, reduced motion |
+| 4 · Truthfulness | CIQ-07, 12, 13 | error states, one register-size constant, KPI band fallback |
+
+Still open: **CIQ-11** (type-scale drift — 32 hardcoded font sizes against a
+12-step token scale) and **CIQ-14** (homepage rhythm and alignment; the mobile
+gutter and pricing-teaser parts were fixed in Block 1, the `.feat-grid` row gap,
+the unused `.band` and the mobile stacking density were not).
+
+Two claims were corrected rather than built, on the owner's decision:
+
+- **No free trial exists.** All live Stripe prices have `trial_period_days: null`
+  and `/api/subscribe` never requests one, while `/pricing` advertised a 14-day
+  trial and `/app/upgrade` said the opposite. Copy now matches the billing
+  system; Free is the try-before-you-buy.
+- **No monthly free-report quota exists.** `caps.fullReport` is `false` for Free
+  and there is no counter, but three pages promised "one full intelligence
+  report a month". Free is now described as search, public profiles and trend
+  dashboards, which is what it delivers.
+
+Also corrected while fixing CIQ-04's naming: "Pro" was used as a plan name in
+14 places across the app and marketing FAQs. Stripe sells **Analyst** and
+**Team**; "Pro plans include API access" was doubly wrong, since Analyst has
+`caps.api: false` — API access is Team and Enterprise.
 
 The design system is sound. Almost every finding is a place where the system exists but a page
 didn't use it, or where a breakpoint removes something and never replaces it.

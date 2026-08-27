@@ -549,3 +549,13 @@
 .enrich-error { color: var(--neg); font-size: 13px; margin-top: 10px; }
 .enrich-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
 .enrich-toolbar__actions { display: flex; align-items: center; gap: 8px; }
+
+/* The shared error state (components/app/ErrorState). Callers add an inline
+   variant for errors that sit inside a page rather than replacing it, and a
+   links row for public pages where the visitor needs somewhere else to go. */
+.app-error-state--inline { max-width: none; margin: 0; align-items: flex-start; text-align: left; background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-lg); padding: 28px; }
+.app-error-state__links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border-hair); width: 100%; }
+.app-error-state__links a { color: var(--text-muted); font-size: 14px; font-weight: 600; text-decoration: none; }
+.app-error-state__links a:hover { color: var(--accent-text); }
+.app-error-state__actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+@media (max-width: 560px) { .app-error-state--inline { padding: 20px 18px; } }

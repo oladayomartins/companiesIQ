@@ -100,20 +100,20 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                   </span>
                   <div className="search-lock__title">
                     {signedIn
-                      ? `Go Pro to see all ${total.toLocaleString("en-GB")} results`
+                      ? `Upgrade to see all ${total.toLocaleString("en-GB")} results`
                       : "Sign in to see your results"}
                   </div>
                   <p className="search-lock__sub">
                     {signedIn
                       ? "Your free account previews the top 3. Upgrade for the full result set, filters, exports and alerts."
-                      : "Create a free account to preview results — then upgrade to Pro for the full set, exports and alerts."}
+                      : "Create a free account to preview results — then upgrade for the full set, exports and alerts."}
                   </p>
                   <Button
                     href={signedIn ? "/app/upgrade" : `/sign-in?next=${next}`}
                     variant="primary"
                     iconRight="arrowRight"
                   >
-                    {signedIn ? "Go Pro" : "Sign in to view"}
+                    {signedIn ? "See plans" : "Sign in to view"}
                   </Button>
                 </div>
               </div>

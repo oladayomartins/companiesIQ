@@ -92,7 +92,7 @@ const FAQS: [string, string][] = [
   ],
   [
     "Can I export the data or access it via API?",
-    "Yes. Any search, report or list exports to CSV, and Pro plans add API access for pulling companies and signals into your own tools. See the pricing page for per-plan limits.",
+    "Yes. Any search, report or list exports to CSV, and Team and Enterprise add API access for pulling companies and signals into your own tools. See the pricing page for per-plan limits.",
   ],
 ];
 

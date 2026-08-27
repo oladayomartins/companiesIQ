@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { Icon, IconButton, CompanyAvatar, type IconName } from "@/components/ds";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { REGISTER_SIZE } from "@/lib/site";
 
 type NavItem = { id: string; label: string; icon: IconName; href: string; count?: number; role?: "admin" | "partner" };
 
@@ -44,7 +45,7 @@ function TopSearch() {
       }}
     >
       <Icon name="search" size={17} />
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search 5.3M companies, directors, SIC codes…" />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${REGISTER_SIZE} companies, directors, SIC codes…`} />
       <kbd className="kbd">/</kbd>
     </form>
   );
