@@ -43,6 +43,9 @@ export interface OpportunityIntel {
   // Transparent composite of the verified signals above
   score: number; // 0..100
   scoreBasis: string[]; // one line per contributing factor (fully auditable)
+  scoreCategories: ScoreCategory[]; // the same points, grouped so the UI can show the working
+  scoreBand: ScoreBand;
+  scoreVerdict: string; // one plain-English line naming the strongest and weakest group
   // Category 2 — cautious, clearly-labelled inferences
   commonlyInvests: string[]; // "Businesses in this sector commonly invest in:"
   relevantFor: string[]; // "Commonly relevant to these providers:"
@@ -164,41 +167,95 @@ function complianceSignals(c: Company, counts: Counts): OppSignal[] {
 
 // ---- Transparent opportunity score -----------------------------------------
 
+/** One themed group of the score. `available` is the most this group can earn,
+ *  so a bar can show earned-against-possible rather than an unanchored number. */
+export interface ScoreCategory {
+  key: "standing" | "stage" | "digital" | "compliance";
+  label: string;
+  hint: string;
+  earned: number;
+  available: number;
+  /** False when we didn't run the check at all — the digital lookup is paid, so
+   *  for a locked visitor this group is *unmeasured*, not zero. Presenting it
+   *  as zero would understate the company and misprice the upgrade. */
+  measured: boolean;
+  lines: string[];
+}
+
+export type ScoreBand = "Strong signals" | "Mixed signals" | "Limited signals";
+
+export function bandFor(score: number): ScoreBand {
+  if (score >= 70) return "Strong signals";
+  if (score >= 45) return "Mixed signals";
+  return "Limited signals";
+}
+
+/** Names the group carrying the score and the one holding it back. Beats a
+ *  canned sentence per band: it tells the reader where to look. */
+function verdictFor(cats: ScoreCategory[]): string {
+  const scored = cats.filter((c) => c.measured);
+  if (!scored.length) return "Nothing measured yet for this company.";
+  const share = (c: ScoreCategory) => (c.available ? c.earned / c.available : 0);
+  const best = [...scored].sort((a, b) => share(b) - share(a))[0];
+  const worst = [...scored].sort((a, b) => share(a) - share(b))[0];
+  const unmeasured = cats.filter((c) => !c.measured);
+  const tail = unmeasured.length ? ` ${unmeasured.map((c) => c.label).join(" and ")} not checked.` : "";
+  if (best.key === worst.key) return `Scored on ${best.label.toLowerCase()} alone.${tail}`;
+  if (share(best) === 0) return `No positive signals on the register yet.${tail}`;
+  return `Strongest on ${best.label.toLowerCase()}; weakest on ${worst.label.toLowerCase()}.${tail}`;
+}
+
 function scoreFrom(
   c: Company,
   counts: Counts,
   digital: OpportunityIntel["digital"],
   measured: boolean
-): { score: number; basis: string[] } {
-  let score = 0;
+): { score: number; basis: string[]; categories: ScoreCategory[] } {
   const basis: string[] = [];
-  const add = (pts: number, why: string) => {
-    score += pts;
-    basis.push(`${why} (+${pts})`);
+  const cat = (
+    key: ScoreCategory["key"],
+    label: string,
+    hint: string,
+    available: number,
+    isMeasured = true
+  ): ScoreCategory => ({ key, label, hint, earned: 0, available, measured: isMeasured, lines: [] });
+
+  const standing = cat("standing", "Register standing", "Status and officers on the public register", 25);
+  const stage = cat("stage", "Stage", "How recently the company was incorporated", 15);
+  const digitalCat = cat("digital", "Digital presence", "Website, Google Business Profile, reviews and phone", 50, measured);
+  const complianceCat = cat("compliance", "Filing timing", "Accounts and confirmation statement due dates", 15);
+
+  const add = (group: ScoreCategory, pts: number, why: string) => {
+    group.earned += pts;
+    const line = `${why} (+${pts})`;
+    group.lines.push(line);
+    basis.push(line);
   };
 
-  if (isActive(c.status)) add(20, "Active on the register");
+  if (isActive(c.status)) add(standing, 20, "Active on the register");
+  if (counts.directors > 0) add(standing, 5, "Has appointed directors");
 
   const age = ageYears(c.incorporated);
-  if (age != null && age < 2) add(15, "Recently incorporated — early-stage");
+  if (age != null && age < 2) add(stage, 15, "Recently incorporated — early-stage");
 
   // Contactability + digital establishment (only credited when measured).
   if (measured) {
-    if (digital.website.state === "detected") add(15, "Website detected");
-    if (digital.gbp.state === "detected") add(15, "Google Business Profile detected");
-    if (digital.reviews.state === "detected") add(10, "Has Google reviews");
-    if (digital.phone.state === "detected") add(10, "Public phone number");
+    if (digital.website.state === "detected") add(digitalCat, 15, "Website detected");
+    if (digital.gbp.state === "detected") add(digitalCat, 15, "Google Business Profile detected");
+    if (digital.reviews.state === "detected") add(digitalCat, 10, "Has Google reviews");
+    if (digital.phone.state === "detected") add(digitalCat, 10, "Public phone number");
   }
 
   // Compliance-need signals (relevant to accountants/advisers).
-  if (c.accounts?.overdue) add(10, "Accounts overdue");
-  else if ((daysUntil(c.accounts?.nextDue) ?? 999) <= 90) add(6, "Accounts due within 90 days");
-  if (c.confirmationStatement?.overdue) add(5, "Confirmation statement overdue");
-  else if ((daysUntil(c.confirmationStatement?.nextDue) ?? 999) <= 30) add(4, "Confirmation statement due within 30 days");
+  if (c.accounts?.overdue) add(complianceCat, 10, "Accounts overdue");
+  else if ((daysUntil(c.accounts?.nextDue) ?? 999) <= 90) add(complianceCat, 6, "Accounts due within 90 days");
+  if (c.confirmationStatement?.overdue) add(complianceCat, 5, "Confirmation statement overdue");
+  else if ((daysUntil(c.confirmationStatement?.nextDue) ?? 999) <= 30)
+    add(complianceCat, 4, "Confirmation statement due within 30 days");
 
-  if (counts.directors > 0) add(5, "Has appointed directors");
-
-  return { score: Math.max(0, Math.min(100, score)), basis };
+  const categories = [standing, stage, digitalCat, complianceCat];
+  const raw = categories.reduce((n, g) => n + g.earned, 0);
+  return { score: Math.max(0, Math.min(100, raw)), basis, categories };
 }
 
 // ---- Category 2: cautious inferences (always labelled "commonly"/"likely") --
@@ -268,7 +325,7 @@ export function buildOpportunity(c: Company, counts: Counts, enrichment: Company
 
   const { facts, measured, source } = digitalFacts(enrichment);
   const compliance = complianceSignals(c, counts);
-  const { score, basis } = scoreFrom(c, counts, facts, measured);
+  const { score, basis, categories } = scoreFrom(c, counts, facts, measured);
 
   // Headline signal list = the notable facts (good + watch), digital first.
   const signals: OppSignal[] = [];
@@ -289,6 +346,9 @@ export function buildOpportunity(c: Company, counts: Counts, enrichment: Company
     signals,
     score,
     scoreBasis: basis,
+    scoreCategories: categories,
+    scoreBand: bandFor(score),
+    scoreVerdict: verdictFor(categories),
     commonlyInvests: commonInvestmentsFor(sector, category),
     relevantFor: relevantProviders(c, counts, facts, measured),
   };

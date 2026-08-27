@@ -559,3 +559,17 @@
 .app-error-state__links a:hover { color: var(--accent-text); }
 .app-error-state__actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 @media (max-width: 560px) { .app-error-state--inline { padding: 20px 18px; } }
+
+/* ---------- Upgrade-gate skeleton ----------
+   The shape of the screen behind the gate. Deliberately contentless: a CSS
+   blur is not access control, so nothing real is rendered here. */
+.gate-skel { display: flex; flex-direction: column; gap: 12px; }
+.gate-skel--grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.gate-skel__row { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
+.gate-skel__row + .gate-skel__row { border-top: 1px solid var(--border-hair); }
+.gate-skel__dot { width: 28px; height: 28px; border-radius: var(--radius-md); background: color-mix(in srgb, var(--text-strong) 13%, transparent); flex-shrink: 0; }
+.gate-skel__bar { display: block; height: 13px; border-radius: var(--radius-xs); background: color-mix(in srgb, var(--text-strong) 13%, transparent); }
+.gate-skel__bar--sm { height: 10px; margin-left: auto; flex-shrink: 0; }
+.locked-intel__icon { width: 52px; height: 52px; border-radius: var(--radius-xl); background: var(--accent-tint); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 4px; }
+@media (max-width: 900px) { .gate-skel--grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .gate-skel--grid { grid-template-columns: minmax(0, 1fr); } }

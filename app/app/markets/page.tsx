@@ -40,6 +40,7 @@ export default async function MarketsPage() {
   if (!(await hasProAccess(await getCurrentUser()))) {
     return (
       <ProGate
+        shape="grid"
         icon="barChart"
         title="Market intelligence"
         features={["Regional & sector market analytics", "Live formation trends", "Survival & growth benchmarks"]}

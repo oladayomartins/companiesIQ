@@ -18,6 +18,7 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
   if (!(await hasProAccess(await getCurrentUser()))) {
     return (
       <ProGate
+        shape="grid"
         icon="building"
         title="Industry intelligence"
         features={["Sector survival & growth benchmarks", "Regional growth index", "Live companies in the sector"]}

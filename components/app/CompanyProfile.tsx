@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardBody, Tabs, Stat, StatusPill, Badge, Tag, CompanyAvatar, Icon, Button, IconButton } from "@/components/ds";
 import { IntelligenceReport } from "@/components/app/IntelligenceReport";
+import { ScoreSummary } from "@/components/app/ScoreSummary";
 import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
@@ -67,7 +68,7 @@ function LockedIntelligence({
         <Card variant="raised" className="locked-intel__card">
           <CardBody>
             <Badge tone="accent" dot>
-              Full intelligence · Pro
+              Full intelligence report
             </Badge>
             <h2 className="locked-intel__title">Unlock the full report</h2>
             <p className="locked-intel__sub">
@@ -288,6 +289,8 @@ export function CompanyProfile({
       </div>
 
       <p className="profile-summary">{summary}</p>
+
+      {opportunity ? <ScoreSummary opportunity={opportunity} unlocked={unlocked} /> : null}
 
       <div className="profile-kpis">
         <Stat label="SIC code" value={c.sicCodes[0] ?? "—"} sub={c.primaryClassification?.category} />

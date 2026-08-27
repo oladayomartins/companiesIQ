@@ -21,11 +21,27 @@ Fixed and verified on `claude/website-ui-ux-audit-i007v4`:
 | 2 · Pricing | CIQ-04, 05 | tier alignment, Free restored, plan naming, billing control |
 | 3 · Accessibility | CIQ-06, 08, 10, 15 | polymorphic Button, landmarks, skip links, reduced motion |
 | 4 · Truthfulness | CIQ-07, 12, 13 | error states, one register-size constant, KPI band fallback |
+| 5 · Differentiator | CIQ-16 | opportunity score public at the top of the report, upgrade gates show the screen |
 
 Still open: **CIQ-11** (type-scale drift — 32 hardcoded font sizes against a
 12-step token scale) and **CIQ-14** (homepage rhythm and alignment; the mobile
 gutter and pricing-teaser parts were fixed in Block 1, the `.feat-grid` row gap,
 the unused `.band` and the mobile stacking density were not).
+
+### Correction to CIQ-16
+
+The original finding said the four-factor score was "exposed only through the
+native `title` attribute". That is true of `components/app/ScorePill.tsx` — but
+that component is never rendered. `ScorePill`, `KeywordChips` and the whole
+`lib/scoring.ts` engine (`ScoreBreakdown`, `scoreCompany`, `scoreResult`) are
+dead code: nothing imports them.
+
+The score users can actually reach is `opportunity.score` from
+`lib/opportunity.ts`, and the real problem was worse than a tooltip — it lived
+**entirely inside the Pro-gated intelligence report**, so no prospective
+customer ever saw the product's one interpretive output. That is what Block 5
+fixed. The dead scoring engine is left in place: it is complete and documented,
+and deleting someone's unused work is the owner's call, not an audit's.
 
 Two claims were corrected rather than built, on the owner's decision:
 

@@ -11,6 +11,7 @@ export default async function EnrichPage() {
   if (!(await hasProAccess(user))) {
     return (
       <ProGate
+        shape="table"
         icon="download"
         title="Enrich your list"
         features={[

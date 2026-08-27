@@ -305,3 +305,55 @@
 @media (max-width: 720px) { .fin-grid { grid-template-columns: repeat(2, 1fr); } }
 .fin-src { margin: 16px 0 0; font-size: 11px; color: var(--text-faint); line-height: 1.5; }
 .fin-none { margin: 0; font-size: 14px; color: var(--text-muted); line-height: 1.55; }
+
+/* ── Opportunity score summary (top of the company report) ─────── */
+.score-sum { margin: 22px 0 4px; padding: 24px; background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-lg); }
+.score-sum__head { display: grid; grid-template-columns: 176px minmax(0, 1fr); gap: 28px; align-items: start; }
+.score-sum__dial { display: flex; flex-direction: column; gap: 10px; }
+.score-sum__num { font-family: var(--font-grotesk); font-weight: 800; font-size: 52px; line-height: 1; letter-spacing: -0.03em; color: var(--text-strong); font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 3px; }
+.score-sum__den { font-family: var(--font-mono); font-size: 15px; font-weight: 400; color: var(--text-faint); letter-spacing: 0; }
+.score-sum__meter { height: 8px; border-radius: var(--radius-pill); background: var(--surface-sunken); overflow: hidden; }
+.score-sum__meter span { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--text-muted); }
+.score-sum__meter--strong span { background: var(--pos); }
+.score-sum__meter--mixed span { background: var(--warn); }
+.score-sum__meter--limited span { background: var(--text-muted); }
+.score-sum__band { font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.score-sum__band--strong { color: var(--pos); }
+.score-sum__band--mixed { color: var(--warn); }
+.score-sum__band--limited { color: var(--text-muted); }
+.score-sum__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 20px; letter-spacing: -0.02em; color: var(--text-strong); margin: 0 0 8px; }
+.score-sum__verdict { font-size: 16px; line-height: 1.5; color: var(--text-body); margin: 0 0 10px; }
+.score-sum__note { font-size: 13px; line-height: 1.55; color: var(--text-muted); margin: 0; max-width: 60ch; }
+
+.score-cats { list-style: none; margin: 24px 0 0; padding: 20px 0 0; border-top: 1px solid var(--border-hair); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.score-cat { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.score-cat__top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.score-cat__label { font-family: var(--font-sans); font-weight: 600; font-size: 13.5px; color: var(--text-strong); }
+.score-cat__pts { font-size: 13px; color: var(--text-strong); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.score-cat__avail { color: var(--text-faint); }
+.score-cat__bar { height: 5px; border-radius: var(--radius-pill); background: var(--surface-sunken); overflow: hidden; }
+.score-cat__bar span { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--accent); }
+.score-cat__hint { font-size: 12px; line-height: 1.5; color: var(--text-muted); margin: 0; }
+.score-cat--unmeasured .score-cat__pts { color: var(--text-faint); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
+.score-cat--unmeasured .score-cat__bar { background: repeating-linear-gradient(90deg, var(--border-strong) 0 5px, transparent 5px 10px); opacity: 0.7; }
+.score-cat__unlock { font-family: var(--font-sans); font-weight: 600; font-size: 12px; color: var(--accent-text); text-decoration: none; }
+.score-cat__unlock:hover { text-decoration: underline; }
+.score-sum__src { margin: 20px 0 0; padding-top: 14px; border-top: 1px solid var(--border-hair); font-size: 11px; line-height: 1.5; color: var(--text-faint); }
+
+@media (max-width: 900px) { .score-cats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) {
+  .score-sum { padding: 20px 18px; }
+  .score-sum__head { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .score-sum__num { font-size: 44px; }
+  .score-cats { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+}
+
+/* Gate variant: the preview is the message, so keep it legible behind the card. */
+.locked-intel--gate .locked-intel__blur { filter: blur(3.5px); opacity: 0.9; max-height: 520px; }
+.locked-intel--gate .locked-intel__overlay {
+  align-items: center;
+  padding: 24px 16px;
+  background: radial-gradient(ellipse 68% 58% at 50% 50%,
+    color-mix(in srgb, var(--bg-page) 93%, transparent) 0%,
+    color-mix(in srgb, var(--bg-page) 45%, transparent) 100%);
+}
