@@ -23,9 +23,7 @@ export function Placeholder({
         <h2 className="placeholder__title">{title}</h2>
         <p className="placeholder__sub">{sub}</p>
         {cta ? (
-          <Link href={cta.href}>
-            <Button variant="secondary">{cta.label}</Button>
-          </Link>
+          <Button href={cta.href} variant="secondary">{cta.label}</Button>
         ) : null}
       </div>
     </div>

@@ -14,6 +14,7 @@ export default async function IndustriesPage() {
   if (!(await hasProAccess(await getCurrentUser()))) {
     return (
       <ProGate
+        shape="grid"
         icon="building"
         title="Industry intelligence"
         features={["Every UK sector ranked by activity", "Growth & 5-yr survival benchmarks", "Drill into any sector's companies"]}

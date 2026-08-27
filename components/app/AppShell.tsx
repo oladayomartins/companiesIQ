@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
 import { Icon, IconButton, CompanyAvatar, type IconName } from "@/components/ds";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
+import { REGISTER_SIZE } from "@/lib/site";
 
 type NavItem = { id: string; label: string; icon: IconName; href: string; count?: number; role?: "admin" | "partner" };
 
@@ -44,7 +45,7 @@ function TopSearch() {
       }}
     >
       <Icon name="search" size={17} />
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search 5.3M companies, directors, SIC codes…" />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${REGISTER_SIZE} companies, directors, SIC codes…`} />
       <kbd className="kbd">/</kbd>
     </form>
   );
@@ -90,6 +91,9 @@ export function AppShell({
   }, [menuOpen]);
   return (
     <div className={"app-root ciq-dark" + (menuOpen ? " app-root--menu-open" : "")}>
+      <a className="skip-link" href="#app-content">
+        Skip to content
+      </a>
       <button
         type="button"
         className="nav-scrim"
@@ -104,9 +108,14 @@ export function AppShell({
             Companies<span className="brand__iq">IQ</span>
           </span>
         </Link>
-        <nav className="side-nav">
+        <nav className="side-nav" aria-label="Sections">
           {nav.map((n) => (
-            <Link key={n.id} className={"side-item" + (isActive(pathname, n.href) ? " side-item--active" : "")} href={n.href}>
+            <Link
+              key={n.id}
+              className={"side-item" + (isActive(pathname, n.href) ? " side-item--active" : "")}
+              href={n.href}
+              aria-current={isActive(pathname, n.href) ? "page" : undefined}
+            >
               <Icon name={n.icon} size={18} />
               <span className="side-item__label">{n.label}</span>
               {n.count != null ? <span className="side-item__count">{n.count}</span> : null}
@@ -114,7 +123,11 @@ export function AppShell({
           ))}
         </nav>
         <div className="side-foot">
-          <Link className={"side-item" + (pathname.startsWith("/app/settings") ? " side-item--active" : "")} href="/app/settings">
+          <Link
+            className={"side-item" + (pathname.startsWith("/app/settings") ? " side-item--active" : "")}
+            href="/app/settings"
+            aria-current={pathname.startsWith("/app/settings") ? "page" : undefined}
+          >
             <Icon name="settings" size={18} />
             <span className="side-item__label">Settings</span>
           </Link>
@@ -127,8 +140,8 @@ export function AppShell({
             {email ? (
               <IconButton icon="external" label="Sign out" size="sm" onClick={signOut} />
             ) : (
-              <Link href="/sign-in" className="side-user__signin">
-                <Icon name="arrowRight" size={16} />
+              <Link href="/sign-in" className="side-user__signin" aria-label="Sign in">
+                <Icon name="arrowRight" size={16} aria-hidden />
               </Link>
             )}
           </div>
@@ -164,7 +177,9 @@ export function AppShell({
             <IconButton icon="download" label="Search &amp; export companies" onClick={() => router.push("/app/companies")} />
           </div>
         </header>
-        <div className="app-scroll">{children}</div>
+        <main className="app-scroll" id="app-content" tabIndex={-1}>
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -55,7 +55,7 @@ export default async function UseCasePage({ params }: { params: Promise<{ person
   };
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd
         data={[
           webPageLd({ name: `${uc.metaTitle} — CompaniesIQ`, path, description: uc.metaDescription }),
@@ -86,16 +86,12 @@ export default async function UseCasePage({ params }: { params: Promise<{ person
           <Badge tone="neutral">Export to CSV</Badge>
         </div>
         <div className="hero__actions" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 26 }}>
-          <Link href={uc.ctaHref}>
-            <Button variant="primary" size="lg" iconRight="arrowRight">
-              {uc.ctaLabel}
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button variant="secondary" size="lg">
-              See pricing
-            </Button>
-          </Link>
+          <Button href={uc.ctaHref} variant="primary" size="lg" iconRight="arrowRight">
+            {uc.ctaLabel}
+          </Button>
+          <Button href="/pricing" variant="secondary" size="lg">
+            See pricing
+          </Button>
         </div>
       </section>
 
@@ -177,7 +173,7 @@ export default async function UseCasePage({ params }: { params: Promise<{ person
 
       <section className="section">
         <div className="prose" style={{ textAlign: "center" }}>
-          <p style={{ fontSize: 14 }}>
+          <p style={{ fontSize: "var(--text-ui)" }}>
             Explore more <Link href="/use-cases">use cases</Link>, or see the{" "}
             <Link href="/business-leads">business leads</Link> and{" "}
             <Link href="/company-database">company database</Link> pages.
@@ -190,16 +186,12 @@ export default async function UseCasePage({ params }: { params: Promise<{ person
           <h2 className="cta__title">{uc.ctaTitle}</h2>
           <p className="cta__sub">{uc.ctaSub}</p>
           <div className="cta__actions">
-            <Link href={uc.ctaHref}>
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                {uc.ctaLabel}
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href={uc.ctaHref} variant="primary" size="lg" iconRight="arrowRight">
+              {uc.ctaLabel}
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

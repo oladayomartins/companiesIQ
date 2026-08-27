@@ -14,8 +14,8 @@
   --orange-200: #F6B488;
   --orange-300: #F38E50;
   --orange-400: #F0641E;   /* primary accent (on dark) */
-  --orange-500: #D9531F;   /* primary accent (on light) */
-  --orange-600: #C8452A;   /* terracotta — editorial accent */
+  --orange-500: #C4471E;   /* primary accent (on light) — white on this is 4.9:1 */
+  --orange-600: #B93E1E;   /* terracotta — accent as TEXT on paper, 5.2:1 */
   --orange-700: #A1361F;
   --orange-800: #6E2614;
   --orange-900: #3A1A11;
@@ -28,8 +28,9 @@
   --warm-150: #E2D8C8;   /* paper hairline */
   --warm-200: #D6C9B6;
   --warm-300: #B8A892;
-  --warm-400: #948472;
-  --warm-500: #7A7065;   /* muted text on paper */
+  --warm-400: #948472;   /* faint text on INK (5.2:1) — do not darken */
+  --warm-450: #726758;   /* faint text on paper (4.8:1) */
+  --warm-500: #655C52;   /* muted text on paper (5.6:1) */
   --warm-600: #5A5048;
   --warm-700: #3D362F;
   --warm-800: #2A241F;
@@ -38,13 +39,13 @@
   --warm-950: #14110F;   /* ink base */
 
   /* ---- Data / status hues ---------------------------------- */
-  --green-500:  #2F7D5B;  /* positive — on light */
+  --green-500:  #2A7052;  /* positive — on light */
   --green-400:  #4FB286;  /* positive — on dark */
   --green-50:   #E4F1EA;
   --red-500:    #C0382B;  /* negative / dissolved */
   --red-400:    #E5705F;
   --red-50:     #F8E5E2;
-  --amber-500:  #B5821B;  /* caution / dormant */
+  --amber-500:  #8F6512;  /* caution / dormant */
   --amber-400:  #E0A93B;
   --amber-50:   #F8EFD8;
   --blue-500:   #2E5E8C;  /* informational / links-data */
@@ -59,6 +60,10 @@
   --accent-press:      var(--orange-700);
   --accent-contrast:   #FFFFFF;
   --accent-tint:       var(--orange-50);
+  /* The accent as TEXT. The fill above is tuned so white sits on it at AA;
+     orange that size-for-size carries a sentence has to be darker again. */
+  --accent-text:       var(--orange-600);
+  --accent-text-hover: var(--orange-700);
 
   --bg-page:           var(--warm-25);
   --surface-card:      var(--warm-0);
@@ -69,7 +74,7 @@
   --text-strong:       var(--warm-950);
   --text-body:         var(--warm-700);
   --text-muted:        var(--warm-500);
-  --text-faint:        var(--warm-400);
+  --text-faint:        var(--warm-450);
   --text-on-accent:    #FFFFFF;
   --text-inverse:      var(--warm-25);
 
@@ -100,6 +105,8 @@
   --accent-press:      var(--orange-500);
   --accent-contrast:   var(--warm-950);
   --accent-tint:       var(--orange-900);
+  --accent-text:       var(--orange-400);
+  --accent-text-hover: var(--orange-300);
 
   --bg-page:           var(--warm-950);
   --surface-card:      var(--warm-900);

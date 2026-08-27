@@ -98,11 +98,11 @@ const FAQS: [string, string][] = [
   ],
   [
     "Can I export the data or use an API?",
-    "Yes. Any search, report or list exports to CSV, and Pro plans include API access so you can pull companies and signals straight into your CRM, spreadsheet or model. See the pricing page for limits by plan.",
+    "Yes. Any search, report or list exports to CSV, and Team and Enterprise include API access so you can pull companies and signals straight into your CRM, spreadsheet or model. See the pricing page for limits by plan.",
   ],
   [
     "Is there a free plan?",
-    "Yes — you can search all 5.5M companies, view public profiles and read one full intelligence report a month for free, with no card required. Upgrade to Pro when you need unlimited reports, real-time alerts, watchlists and export.",
+    "Yes — you can search all 5.5M companies, view public company profiles and read the trend dashboards for free, with no card required. Upgrade to Analyst when you need full intelligence reports, 10-year filing history and CSV export.",
   ],
 ];
 
@@ -139,7 +139,7 @@ const SOFTWARE = {
     "@type": "Offer",
     price: "0",
     priceCurrency: "GBP",
-    description: "Free plan — search, public profiles and one full report a month, no card required.",
+    description: "Free plan — search, public company profiles and trend dashboards, no card required.",
     url: `${SITE_URL}/pricing`,
   },
 };
@@ -156,7 +156,7 @@ const FAQ_SCHEMA = {
 
 export default function ProductPage() {
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd data={[WEBPAGE, SOFTWARE, BREADCRUMB, FAQ_SCHEMA]} />
 
       <section className="pricing-hero">
@@ -167,16 +167,12 @@ export default function ProductPage() {
           on any of them, track new formations, and get alerted the moment the register changes.
         </p>
         <div className="hero__actions" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link href="/sign-in">
-            <Button variant="primary" size="lg" iconRight="arrowRight">
-              Start free
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button variant="secondary" size="lg">
-              See pricing
-            </Button>
-          </Link>
+          <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+            Start free
+          </Button>
+          <Button href="/pricing" variant="secondary" size="lg">
+            See pricing
+          </Button>
         </div>
       </section>
 
@@ -275,16 +271,12 @@ export default function ProductPage() {
           <h2 className="cta__title">See new UK businesses before everyone else.</h2>
           <p className="cta__sub">Free to search. No card required. Upgrade when you&apos;re ready to track, alert and export.</p>
           <div className="cta__actions">
-            <Link href="/sign-in">
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                Start free
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+              Start free
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

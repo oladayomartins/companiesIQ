@@ -12,6 +12,7 @@ export default async function WatchlistsPage() {
   if (!(await hasProAccess(user))) {
     return (
       <ProGate
+        shape="list"
         icon="bookmark"
         title="Watchlists"
         features={["Track companies you care about", "Jump back into any report", "One place for every saved company"]}

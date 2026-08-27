@@ -121,7 +121,7 @@ export function GrowthReport({
   }
 
   return (
-    <main className="gr">
+    <main className="gr" id="main-content" tabIndex={-1}>
       {purchased ? (
         <div className="gr-verified">✓ Payment received — thank you! {partner.name} will be in touch to get started.</div>
       ) : verified ? (

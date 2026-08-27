@@ -132,11 +132,9 @@ export function SettingsScreen({ email, fullName, billing, comped = false }: { e
                   {busy === "portal" ? "Opening…" : "Manage billing"}
                 </Button>
               ) : compedOnly ? null : (
-                <Link href="/app/upgrade">
-                  <Button variant="primary" iconRight="arrowRight">
-                    Upgrade to Pro
-                  </Button>
-                </Link>
+                <Button href="/app/upgrade" variant="primary" iconRight="arrowRight">
+                  See plans
+                </Button>
               )}
             </div>
           </div>

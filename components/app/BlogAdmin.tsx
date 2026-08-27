@@ -25,11 +25,9 @@ export function BlogAdmin({ posts }: { posts: Post[] }) {
           <div className="app-eyebrow">Content</div>
           <h1 className="screen-title">Blog</h1>
         </div>
-        <Link href="/app/blog/new">
-          <Button variant="primary" iconLeft="plus">
-            New post
-          </Button>
-        </Link>
+        <Button href="/app/blog/new" variant="primary" iconLeft="plus">
+          New post
+        </Button>
       </div>
 
       <div className="table-scroll">

@@ -1,20 +1,31 @@
 "use client";
 import { useState } from "react";
-import { Button, Badge, Icon, Switch, Card } from "@/components/ds";
+import { Button, Badge, Icon, Card } from "@/components/ds";
 import { SiteFooter } from "@/components/marketing/Footer";
-import { MARKETING_TIERS, type Plan } from "@/lib/subscription";
+import { BillingToggle } from "@/components/marketing/BillingToggle";
+import { PRICING_TIERS, type Plan } from "@/lib/subscription";
 import { FAQS } from "@/lib/pricing-faqs";
 
 function PricingTier({ tier, annual, onChoose, busy }: { tier: Plan; annual: boolean; onChoose: () => void; busy: boolean }) {
   const custom = tier.monthly === null;
+  const free = tier.monthly === 0;
+  // What it actually costs to say out loud, rather than only the /mo equivalent.
+  const billed = custom
+    ? "Annual contract"
+    : free
+      ? "free forever · no card"
+      : annual
+        ? tier.annualTotal
+          ? `£${tier.annualTotal.toLocaleString("en-GB")} per user, billed once a year`
+          : "billed annually"
+        : "billed monthly";
   return (
     <Card className={"tier" + (tier.popular ? " tier--popular" : "")} variant={tier.popular ? "raised" : "default"}>
       <div className="tier__inner">
-        {tier.popular ? (
-          <div className="tier__flag">
-            <Badge tone="accent">Most popular</Badge>
-          </div>
-        ) : null}
+        {/* Rendered on every card, badge or not: when only the popular card
+            carried it, that column's name, price and CTA sat 38px lower than
+            its neighbours' and the row could not be read across. */}
+        <div className="tier__flag">{tier.popular ? <Badge tone="accent">Most popular</Badge> : null}</div>
         <div className="tier__name">{tier.name}</div>
         <div className="tier__tag">{tier.tagline}</div>
         <div className="tier__price">
@@ -23,11 +34,11 @@ function PricingTier({ tier, annual, onChoose, busy }: { tier: Plan; annual: boo
           ) : (
             <>
               <span className="tier__amt">£{annual ? tier.annual : tier.monthly}</span>
-              <span className="tier__per mono">/user/mo</span>
+              {free ? null : <span className="tier__per mono">/user/mo</span>}
             </>
           )}
         </div>
-        <div className="tier__billed mono">{custom ? "Annual contract" : annual ? "billed annually" : "billed monthly"}</div>
+        <div className="tier__billed mono">{billed}</div>
         <Button variant={tier.ctaVariant} block iconRight={custom ? undefined : "arrowRight"} onClick={onChoose} disabled={busy}>
           {busy ? "One moment…" : tier.cta}
         </Button>
@@ -53,6 +64,11 @@ export function PricingScreen() {
     // Enterprise is sales-led — no self-serve checkout.
     if (tier.monthly === null) {
       window.location.href = "mailto:sales@companiesiq.co.uk?subject=CompaniesIQ%20Enterprise";
+      return;
+    }
+    // Free has nothing to charge for — it just needs an account.
+    if (tier.monthly === 0) {
+      window.location.href = "/sign-in?next=/app";
       return;
     }
     setBusy(tier.id);
@@ -81,21 +97,16 @@ export function PricingScreen() {
   }
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <section className="pricing-hero">
         <span className="eyebrow">Pricing</span>
         <h1 className="pricing-hero__title">Plans that scale with the register.</h1>
         <p className="pricing-hero__sub">Start free. Upgrade when you need to track companies, get signals and export at scale.</p>
-        <div className="bill-toggle">
-          <span className={!annual ? "is-on" : ""}>Monthly</span>
-          <Switch checked={annual} onChange={(e) => setAnnual(e.target.checked)} />
-          <span className={annual ? "is-on" : ""}>Annual</span>
-          <Badge tone="pos">Save 20%</Badge>
-        </div>
+        <BillingToggle annual={annual} onChange={setAnnual} />
       </section>
 
       <section className="tiers">
-        {MARKETING_TIERS.map((t) => (
+        {PRICING_TIERS.map((t) => (
           <PricingTier key={t.id} tier={t} annual={annual} onChoose={() => choose(t)} busy={busy === t.id} />
         ))}
       </section>

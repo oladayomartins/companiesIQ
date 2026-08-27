@@ -74,6 +74,7 @@ export default function SicIndexPage() {
               <CardHeader
                 subtitle={`${g.codes.length} codes`}
                 title={g.sector}
+                titleAs="h2"
                 action={
                   <Link href={`/industry/${slugify(g.sector)}`} className="rep-head__link">
                     {g.sector} companies →

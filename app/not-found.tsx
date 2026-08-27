@@ -18,7 +18,7 @@ const LINKS: [string, string][] = [
 
 export default function NotFound() {
   return (
-    <main className="site notfound">
+    <main className="site notfound" id="main-content" tabIndex={-1}>
       <Link className="notfound__brand site-logo" href="/">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo/ciq-mark.svg" width={28} height={28} alt="" />
@@ -34,14 +34,10 @@ export default function NotFound() {
           The page you&rsquo;re looking for doesn&rsquo;t exist or may have moved. Let&rsquo;s get you back to the data.
         </p>
         <div className="notfound__cta">
-          <Link href="/">
-            <Button variant="primary" iconRight="arrowRight">
-              Back to home
-            </Button>
-          </Link>
-          <Link href="/sign-in">
-            <Button variant="secondary">Sign in</Button>
-          </Link>
+          <Button href="/" variant="primary" iconRight="arrowRight">
+            Back to home
+          </Button>
+          <Button href="/sign-in" variant="secondary">Sign in</Button>
         </div>
         <div className="notfound__links">
           <span className="notfound__links-label mono">Explore</span>

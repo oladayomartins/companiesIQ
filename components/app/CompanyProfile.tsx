@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardBody, Tabs, Stat, StatusPill, Badge, Tag, CompanyAvatar, Icon, Button, IconButton } from "@/components/ds";
 import { IntelligenceReport } from "@/components/app/IntelligenceReport";
+import { ScoreSummary } from "@/components/app/ScoreSummary";
 import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
@@ -41,7 +42,7 @@ function OfficerRow({ p, unlocked }: { p: Officer; unlocked: boolean }) {
 }
 
 // Locked Intelligence — the real report rendered BLURRED behind a centred
-// "Go Pro" card. Free/anonymous visitors get the public profile (Overview,
+// upgrade card. Free/anonymous visitors get the public profile (Overview,
 // People, Filings, Charges) but never the intelligence itself.
 function LockedIntelligence({
   report,
@@ -67,23 +68,19 @@ function LockedIntelligence({
         <Card variant="raised" className="locked-intel__card">
           <CardBody>
             <Badge tone="accent" dot>
-              Full intelligence · Pro
+              Full intelligence report
             </Badge>
-            <h2 className="locked-intel__title">Go Pro to unlock the full report</h2>
+            <h2 className="locked-intel__title">Unlock the full report</h2>
             <p className="locked-intel__sub">
               Competitor analysis, opportunity signals, market density, regional &amp; keyword intelligence — plus CSV
               exports, alerts and watchlists across every UK company.
             </p>
             <div className="locked-intel__cta">
-              <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
-                <Button variant="primary" iconRight="arrowRight">
-                  Go Pro
-                </Button>
-              </Link>
+              <Button href={signedIn ? "/app/upgrade" : "/pricing"} variant="primary" iconRight="arrowRight">
+                See plans
+              </Button>
               {!signedIn ? (
-                <Link href="/sign-in">
-                  <Button variant="secondary">Sign in</Button>
-                </Link>
+                <Button href="/sign-in" variant="secondary">Sign in</Button>
               ) : null}
             </div>
           </CardBody>
@@ -284,16 +281,16 @@ export function CompanyProfile({
               </Button>
             </>
           ) : (
-            <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
-              <Button variant="primary" iconRight="arrowRight">
-                Go Pro
-              </Button>
-            </Link>
+            <Button href={signedIn ? "/app/upgrade" : "/pricing"} variant="primary" iconRight="arrowRight">
+              See plans
+            </Button>
           )}
         </div>
       </div>
 
       <p className="profile-summary">{summary}</p>
+
+      {opportunity ? <ScoreSummary opportunity={opportunity} unlocked={unlocked} /> : null}
 
       <div className="profile-kpis">
         <Stat label="SIC code" value={c.sicCodes[0] ?? "—"} sub={c.primaryClassification?.category} />
