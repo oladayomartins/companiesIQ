@@ -153,3 +153,32 @@
 }
 .dx-action:hover { text-decoration: underline; }
 .signal-chip__n { margin-left: 8px; color: var(--text-faint); font-size: var(--text-2xs); }
+
+/* ---- Quarterly bars ------------------------------------------------------ */
+/* The plot is a fixed-height track and the axis is its own grid row, so bar
+   height is always a percentage of something explicit and labels can never be
+   displaced by the data. */
+.qb { margin: 0; }
+.qb__plot { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; height: 132px; align-items: end; }
+.qb__col { height: 100%; display: flex; align-items: flex-end; }
+.qb__track { width: 100%; height: 100%; display: flex; align-items: flex-end; }
+.qb__bar {
+  width: 100%; border-radius: 4px 4px 0 0; background: var(--accent);
+  transform-origin: bottom;
+  animation: qb-grow 420ms cubic-bezier(.2, .7, .3, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+.qb__col:last-child .qb__bar { background: var(--accent); }
+.qb__col:not(:last-child) .qb__bar { background: color-mix(in srgb, var(--accent) 45%, var(--surface-sunken)); }
+.qb__axis { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; margin-top: 8px; }
+.qb__tick { font-size: var(--text-2xs); color: var(--text-faint); text-align: center; white-space: nowrap; }
+.qb__cap { margin-top: 10px; font-size: var(--text-2xs); color: var(--text-muted); }
+
+@keyframes qb-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qb__bar { animation: none !important; }
+}

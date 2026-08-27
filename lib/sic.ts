@@ -209,3 +209,22 @@ export const FEATURED_SECTORS = [
   "Retail & wholesale",
   "Healthcare & social",
 ];
+
+/**
+ * The curated SIC codes we track inside a sector.
+ *
+ * Sectors are SIC division RANGES, but Companies House advanced search can only
+ * filter on an explicit list of codes — it has no notion of a range. So a query
+ * "for this sector" is really a query for the codes we happen to track in it,
+ * which is a subset of the division. Anything built on this must say so; see
+ * getSectorFormationTrend, which labels its chart with the code count rather
+ * than presenting a partial total as the sector's.
+ */
+export function sicCodesForSector(sector: string, limit = 25): string[] {
+  const section = SECTIONS.find((s) => s.sector === sector);
+  if (!section) return [];
+  return CURATED_SIC_CODES.filter((code) => {
+    const div = Number(code.slice(0, 2));
+    return Number.isFinite(div) && div >= section.min && div <= section.max;
+  }).slice(0, limit);
+}

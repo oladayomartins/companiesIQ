@@ -11,6 +11,7 @@ import { getRegisterAsOf } from "@/lib/live-stats";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
 import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
 import { SectorExplorer } from "@/components/public/SectorExplorer";
+import { CountUp } from "@/components/public/CountUp";
 import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -34,9 +35,11 @@ export default async function IndustriesIndex() {
   const totalNew = sectors.reduce((n, s) => n + s.newLastYear, 0);
   const fastest = sectors.reduce((a, b) => (b.annualGrowth > a.annualGrowth ? b : a));
 
-  const headline = [
-    { label: "Active companies", value: fmtNumber(totalActive), note: "across all sectors" },
-    { label: "New · 12 months", value: fmtNumber(totalNew), note: "incorporations" },
+  // `count` carries the raw number so the figure can animate from the value the
+  // server already painted; `value` is the string that renders without JS.
+  const headline: { label: string; value: string; note: string; count?: number }[] = [
+    { label: "Active companies", value: fmtNumber(totalActive), note: "across all sectors", count: totalActive },
+    { label: "New · 12 months", value: fmtNumber(totalNew), note: "incorporations", count: totalNew },
     { label: "Sectors", value: String(sectors.length), note: "SIC groupings" },
     // The figure slot stays numeric across all four — a long sector name set at
     // 34px breaks the rhythm and wraps unpredictably. The name is the caption.
@@ -75,7 +78,9 @@ export default async function IndustriesIndex() {
           {headline.map((s) => (
             <div className="dx-stat" key={s.label}>
               <span className="dx-stat__k mono">{s.label}</span>
-              <span className="dx-stat__v">{s.value}</span>
+              <span className="dx-stat__v">
+                {s.count != null ? <CountUp value={s.count} /> : s.value}
+              </span>
               <span className="dx-stat__n">{s.note}</span>
             </div>
           ))}

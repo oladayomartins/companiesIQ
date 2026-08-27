@@ -14,6 +14,8 @@ import { fmtNumber, fmtDelta, fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 import { isPrioritySector, priorityCitiesFor } from "@/lib/sector-city";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
+import { QuarterBars } from "@/components/public/QuarterBars";
+import { getSectorFormationTrend } from "@/lib/sector-trend";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForSector } from "@/lib/guides";
 import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
@@ -51,6 +53,7 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
   const stat = statForSlug(slug);
   if (!stat) notFound();
 
+  const trend = await getSectorFormationTrend(stat.sector).catch(() => null);
   const regions = regionBreakdown().slice(0, 6);
   // Sibling links: a handful of genuinely comparable sectors (nearest in size),
   // not every sector on every page — the crawl budget matters more than the
@@ -101,6 +104,28 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
           <Stat label="1-yr survival" value={`${stat.survival.oneYear.toFixed(1)}%`} />
           <Stat label="5-yr survival" value={`${stat.survival.fiveYear.toFixed(1)}%`} />
         </div>
+
+        {trend ? (
+          <div style={{ marginTop: 18 }}>
+            <Card>
+              <CardHeader
+                subtitle="Companies House · last 12 quarters"
+                title="New incorporations"
+                action={<Badge tone="neutral">{trend.codeCount} SIC codes</Badge>}
+              />
+              <CardBody>
+                <QuarterBars
+                  points={trend.points}
+                  label={`Quarterly incorporations across the ${trend.codeCount} SIC codes tracked in ${stat.sector}`}
+                />
+                <div className="source">
+                  <span className="source__dot">●</span> Counted across the {trend.codeCount} SIC codes we track in this
+                  sector, not the whole SIC division — a trend, not a sector total.
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        ) : null}
 
         <div className="profile-grid" style={{ marginTop: 18 }}>
           <Card>
