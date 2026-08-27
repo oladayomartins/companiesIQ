@@ -52,6 +52,13 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
   if (!stat) notFound();
 
   const regions = regionBreakdown().slice(0, 6);
+  // Sibling links: a handful of genuinely comparable sectors (nearest in size),
+  // not every sector on every page — the crawl budget matters more than the
+  // link count.
+  const siblings = Object.values(SECTOR_STATS)
+    .filter((x) => x.sector !== stat.sector)
+    .sort((a, b) => Math.abs(a.businesses - stat.businesses) - Math.abs(b.businesses - stat.businesses))
+    .slice(0, 5);
 
   let recent: EnrichedResult[] = [];
   try {
@@ -78,9 +85,14 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
             <div className="app-eyebrow">UK industry intelligence</div>
             <h1 className="screen-title">{stat.sector}</h1>
           </div>
-          <Badge tone={stat.annualGrowth >= 5 ? "pos" : "neutral"} dot>
-            {fmtDelta(stat.annualGrowth)} annual growth
-          </Badge>
+          <div className="dx-head__actions">
+            <Badge tone={stat.annualGrowth >= 5 ? "pos" : "neutral"} dot>
+              {fmtDelta(stat.annualGrowth)} annual growth
+            </Badge>
+            <Link className="dx-action" href={`/search?q=${encodeURIComponent(stat.sector)}`}>
+              Search {stat.sector} companies <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
 
         <div className="profile-kpis">
@@ -202,7 +214,28 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
           </div>
         ) : null}
 
+        <div style={{ marginTop: 18 }}>
+          <Card>
+            <CardHeader subtitle="Related sectors" title="Compare with a neighbouring sector" />
+            <CardBody>
+              <div className="signal-chips">
+                {siblings.map((sib) => (
+                  <Link key={sib.sector} href={`/industry/${slugify(sib.sector)}`} className="signal-chip">
+                    {sib.sector}
+                    <span className="signal-chip__n mono">{fmtNumber(sib.businesses)}</span>
+                  </Link>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+
         <RelatedGuides guides={guidesForSector(stat.sector)} />
+
+        <p className="dx-source mono">
+          Source · Companies House register, reused under the Open Government Licence v3.0 · sector totals, growth and
+          survival from ONS business demography · regional context from Nomis
+        </p>
 
         <PublicCta
           title={`Track the ${stat.sector} sector`}
