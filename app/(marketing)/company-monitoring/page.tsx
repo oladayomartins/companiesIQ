@@ -90,7 +90,7 @@ export default async function CompanyMonitoringPage() {
   const kpis = await getRegisterKpis(30).catch(() => null);
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd
         data={[
           webPageLd({
@@ -123,16 +123,12 @@ export default async function CompanyMonitoringPage() {
           <Badge tone="neutral">Updated within 24h</Badge>
         </div>
         <div className="hero__actions" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 26 }}>
-          <Link href="/free-alerts">
-            <Button variant="primary" size="lg" iconRight="arrowRight">
-              Set up free alerts
-            </Button>
-          </Link>
-          <Link href="/sign-in">
-            <Button variant="secondary" size="lg">
-              Create a watchlist
-            </Button>
-          </Link>
+          <Button href="/free-alerts" variant="primary" size="lg" iconRight="arrowRight">
+            Set up free alerts
+          </Button>
+          <Button href="/sign-in" variant="secondary" size="lg">
+            Create a watchlist
+          </Button>
         </div>
       </section>
 
@@ -231,16 +227,12 @@ export default async function CompanyMonitoringPage() {
           <h2 className="cta__title">Let the register do the watching.</h2>
           <p className="cta__sub">Start with free new-formation alerts. Upgrade to monitor directors, filings and changes on a watchlist.</p>
           <div className="cta__actions">
-            <Link href="/free-alerts">
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                Set up free alerts
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href="/free-alerts" variant="primary" size="lg" iconRight="arrowRight">
+              Set up free alerts
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

@@ -23,18 +23,21 @@ export function Card({ children, variant = "default", interactive = false, class
 
 export interface CardHeaderProps {
   title?: React.ReactNode;
+  /** Heading level for `title`. Defaults to 3; pass 2 when the card sits
+   *  directly under the page's h1, so the outline doesn't skip a level. */
+  titleAs?: "h2" | "h3" | "h4";
   subtitle?: React.ReactNode;
   action?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-export function CardHeader({ title, subtitle, action, children }: CardHeaderProps) {
+export function CardHeader({ title, titleAs: TitleTag = "h3", subtitle, action, children }: CardHeaderProps) {
   return (
     <div className="ciq-card__head">
       {children || (
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {subtitle ? <span className="ciq-card__sub">{subtitle}</span> : null}
-          {title ? <h3 className="ciq-card__title">{title}</h3> : null}
+          {title ? <TitleTag className="ciq-card__title">{title}</TitleTag> : null}
         </div>
       )}
       {action ? <div className="ciq-card__action">{action}</div> : null}

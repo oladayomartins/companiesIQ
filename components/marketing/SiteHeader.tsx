@@ -67,21 +67,17 @@ export function SiteHeader() {
         </nav>
         <div className="site-head__cta">
           {signedIn ? (
-            <Link href="/app">
-              <Button variant="primary" iconRight="arrowRight">
-                Open app
-              </Button>
-            </Link>
+            <Button href="/app" variant="primary" iconRight="arrowRight">
+              Open app
+            </Button>
           ) : (
             <>
               <Link className="site-nav__link" href="/sign-in">
                 Sign in
               </Link>
-              <Link href="/app">
-                <Button variant="primary" iconRight="arrowRight">
-                  Get started
-                </Button>
-              </Link>
+              <Button href="/app" variant="primary" iconRight="arrowRight">
+                Get started
+              </Button>
             </>
           )}
         </div>
@@ -116,19 +112,17 @@ export function SiteHeader() {
         </nav>
         <div className="site-menu__foot">
           {signedIn ? (
-            <Link className="ciq-btn ciq-btn--primary ciq-btn--md ciq-btn--block" href="/app">
-              <span>Open app</span>
-              <Icon name="arrowRight" size={17} />
-            </Link>
+            <Button href="/app" variant="primary" iconRight="arrowRight" block>
+              Open app
+            </Button>
           ) : (
             <>
-              <Link className="ciq-btn ciq-btn--secondary ciq-btn--md ciq-btn--block" href="/sign-in">
-                <span>Sign in</span>
-              </Link>
-              <Link className="ciq-btn ciq-btn--primary ciq-btn--md ciq-btn--block" href="/app">
-                <span>Get started</span>
-                <Icon name="arrowRight" size={17} />
-              </Link>
+              <Button href="/sign-in" variant="secondary" block>
+                Sign in
+              </Button>
+              <Button href="/app" variant="primary" iconRight="arrowRight" block>
+                Get started
+              </Button>
             </>
           )}
         </div>

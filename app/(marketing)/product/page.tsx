@@ -156,7 +156,7 @@ const FAQ_SCHEMA = {
 
 export default function ProductPage() {
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd data={[WEBPAGE, SOFTWARE, BREADCRUMB, FAQ_SCHEMA]} />
 
       <section className="pricing-hero">
@@ -167,16 +167,12 @@ export default function ProductPage() {
           on any of them, track new formations, and get alerted the moment the register changes.
         </p>
         <div className="hero__actions" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link href="/sign-in">
-            <Button variant="primary" size="lg" iconRight="arrowRight">
-              Start free
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button variant="secondary" size="lg">
-              See pricing
-            </Button>
-          </Link>
+          <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+            Start free
+          </Button>
+          <Button href="/pricing" variant="secondary" size="lg">
+            See pricing
+          </Button>
         </div>
       </section>
 
@@ -275,16 +271,12 @@ export default function ProductPage() {
           <h2 className="cta__title">See new UK businesses before everyone else.</h2>
           <p className="cta__sub">Free to search. No card required. Upgrade when you&apos;re ready to track, alert and export.</p>
           <div className="cta__actions">
-            <Link href="/sign-in">
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                Start free
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+              Start free
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

@@ -103,7 +103,7 @@ export function SignIn() {
   }
 
   return (
-    <main className="auth-wrap">
+    <main className="auth-wrap" id="main-content" tabIndex={-1}>
       <div className="auth-card">
         <Link className="site-logo" href="/" style={{ justifyContent: "center", marginBottom: 24 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -125,11 +125,9 @@ export function SignIn() {
               Supabase isn&apos;t configured, so sign-in is disabled. You can still explore the full product with the
               live register and sample data.
             </p>
-            <Link href={next}>
-              <Button variant="primary" block iconRight="arrowRight">
-                Enter the app
-              </Button>
-            </Link>
+            <Button href={next} variant="primary" block iconRight="arrowRight">
+              Enter the app
+            </Button>
           </div>
         ) : step === "code" ? (
           <form onSubmit={verifyCode} className="auth-form">

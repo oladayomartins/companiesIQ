@@ -97,7 +97,7 @@ export function PricingScreen() {
   }
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <section className="pricing-hero">
         <span className="eyebrow">Pricing</span>
         <h1 className="pricing-hero__title">Plans that scale with the register.</h1>

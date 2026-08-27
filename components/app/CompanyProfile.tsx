@@ -75,15 +75,11 @@ function LockedIntelligence({
               exports, alerts and watchlists across every UK company.
             </p>
             <div className="locked-intel__cta">
-              <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
-                <Button variant="primary" iconRight="arrowRight">
-                  Go Pro
-                </Button>
-              </Link>
+              <Button href={signedIn ? "/app/upgrade" : "/pricing"} variant="primary" iconRight="arrowRight">
+                Go Pro
+              </Button>
               {!signedIn ? (
-                <Link href="/sign-in">
-                  <Button variant="secondary">Sign in</Button>
-                </Link>
+                <Button href="/sign-in" variant="secondary">Sign in</Button>
               ) : null}
             </div>
           </CardBody>
@@ -284,11 +280,9 @@ export function CompanyProfile({
               </Button>
             </>
           ) : (
-            <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
-              <Button variant="primary" iconRight="arrowRight">
-                Go Pro
-              </Button>
-            </Link>
+            <Button href={signedIn ? "/app/upgrade" : "/pricing"} variant="primary" iconRight="arrowRight">
+              Go Pro
+            </Button>
           )}
         </div>
       </div>

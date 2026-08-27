@@ -13,9 +13,9 @@ export function ProGate({ icon, title, features }: { icon: IconName; title: stri
         <span className="placeholder__icon">
           <Icon name={icon} size={28} />
         </span>
-        <h2 className="placeholder__title">
+        <h1 className="placeholder__title">
           {title} is included in {ENTRY_PAID_PLAN.name}
-        </h2>
+        </h1>
         <p className="placeholder__sub">
           Upgrade to {ENTRY_PAID_PLAN.name} to unlock {title.toLowerCase()} — plus full intelligence reports, CSV exports and 10-year filing history.
         </p>
@@ -26,11 +26,9 @@ export function ProGate({ icon, title, features }: { icon: IconName; title: stri
             </li>
           ))}
         </ul>
-        <Link href="/app/upgrade">
-          <Button variant="primary" iconRight="arrowRight">
-            See plans
-          </Button>
-        </Link>
+        <Button href="/app/upgrade" variant="primary" iconRight="arrowRight">
+          See plans
+        </Button>
       </div>
     </div>
   );

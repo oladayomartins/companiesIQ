@@ -90,6 +90,9 @@ export function AppShell({
   }, [menuOpen]);
   return (
     <div className={"app-root ciq-dark" + (menuOpen ? " app-root--menu-open" : "")}>
+      <a className="skip-link" href="#app-content">
+        Skip to content
+      </a>
       <button
         type="button"
         className="nav-scrim"
@@ -104,9 +107,14 @@ export function AppShell({
             Companies<span className="brand__iq">IQ</span>
           </span>
         </Link>
-        <nav className="side-nav">
+        <nav className="side-nav" aria-label="Sections">
           {nav.map((n) => (
-            <Link key={n.id} className={"side-item" + (isActive(pathname, n.href) ? " side-item--active" : "")} href={n.href}>
+            <Link
+              key={n.id}
+              className={"side-item" + (isActive(pathname, n.href) ? " side-item--active" : "")}
+              href={n.href}
+              aria-current={isActive(pathname, n.href) ? "page" : undefined}
+            >
               <Icon name={n.icon} size={18} />
               <span className="side-item__label">{n.label}</span>
               {n.count != null ? <span className="side-item__count">{n.count}</span> : null}
@@ -114,7 +122,11 @@ export function AppShell({
           ))}
         </nav>
         <div className="side-foot">
-          <Link className={"side-item" + (pathname.startsWith("/app/settings") ? " side-item--active" : "")} href="/app/settings">
+          <Link
+            className={"side-item" + (pathname.startsWith("/app/settings") ? " side-item--active" : "")}
+            href="/app/settings"
+            aria-current={pathname.startsWith("/app/settings") ? "page" : undefined}
+          >
             <Icon name="settings" size={18} />
             <span className="side-item__label">Settings</span>
           </Link>
@@ -127,8 +139,8 @@ export function AppShell({
             {email ? (
               <IconButton icon="external" label="Sign out" size="sm" onClick={signOut} />
             ) : (
-              <Link href="/sign-in" className="side-user__signin">
-                <Icon name="arrowRight" size={16} />
+              <Link href="/sign-in" className="side-user__signin" aria-label="Sign in">
+                <Icon name="arrowRight" size={16} aria-hidden />
               </Link>
             )}
           </div>
@@ -164,7 +176,9 @@ export function AppShell({
             <IconButton icon="download" label="Search &amp; export companies" onClick={() => router.push("/app/companies")} />
           </div>
         </header>
-        <div className="app-scroll">{children}</div>
+        <main className="app-scroll" id="app-content" tabIndex={-1}>
+          {children}
+        </main>
       </div>
     </div>
   );

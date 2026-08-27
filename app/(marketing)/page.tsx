@@ -79,7 +79,7 @@ export default async function LandingPage() {
     kpis && kpis.prevIncorporations > 0 ? ((kpis.incorporations - kpis.prevIncorporations) / kpis.prevIncorporations) * 100 : null;
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       {/* Hero */}
       <section className="hero" id="product">
         <div className="hero__copy">
@@ -249,11 +249,9 @@ export default async function LandingPage() {
           </div>
         </div>
         <div className="price-teaser__cta">
-          <Link href="/pricing">
-            <Button variant="secondary" iconRight="arrowRight">
-              See full pricing
-            </Button>
-          </Link>
+          <Button href="/pricing" variant="secondary" iconRight="arrowRight">
+            See full pricing
+          </Button>
         </div>
       </section>
 
@@ -263,16 +261,12 @@ export default async function LandingPage() {
           <h2 className="cta__title">See new UK businesses before everyone else.</h2>
           <p className="cta__sub">Free to search. No card required. Upgrade when you&apos;re ready to track, alert and export.</p>
           <div className="cta__actions">
-            <Link href="/sign-in">
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                Start free
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+              Start free
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

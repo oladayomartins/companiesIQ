@@ -38,7 +38,7 @@ export default async function AlternativePage({ params }: { params: Promise<{ co
   const kpis = await getRegisterKpis(30).catch(() => null);
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd
         data={[
           webPageLd({ name: `${c.metaTitle} — CompaniesIQ`, path, description: c.metaDescription }),
@@ -63,16 +63,12 @@ export default async function AlternativePage({ params }: { params: Promise<{ co
           <Badge tone="neutral">Free to search</Badge>
         </div>
         <div className="hero__actions" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 26 }}>
-          <Link href="/sign-in">
-            <Button variant="primary" size="lg" iconRight="arrowRight">
-              Try CompaniesIQ free
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button variant="secondary" size="lg">
-              See pricing
-            </Button>
-          </Link>
+          <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+            Try CompaniesIQ free
+          </Button>
+          <Button href="/pricing" variant="secondary" size="lg">
+            See pricing
+          </Button>
         </div>
       </section>
 
@@ -195,16 +191,12 @@ export default async function AlternativePage({ params }: { params: Promise<{ co
           <h2 className="cta__title">See why teams pick CompaniesIQ.</h2>
           <p className="cta__sub">Search 5.5M UK companies free. Upgrade to track, alert and export the data that matters.</p>
           <div className="cta__actions">
-            <Link href="/sign-in">
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                Try CompaniesIQ free
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+              Try CompaniesIQ free
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

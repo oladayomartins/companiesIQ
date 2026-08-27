@@ -39,7 +39,7 @@ const ITEMLIST = {
 
 export default function UseCasesIndexPage() {
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd
         data={[
           webPageLd({
@@ -64,16 +64,12 @@ export default function UseCasesIndexPage() {
           build targeted prospect lists, and act on new-formation signals — here&apos;s how each team does it.
         </p>
         <div className="hero__actions" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 22 }}>
-          <Link href="/sign-in">
-            <Button variant="primary" size="lg" iconRight="arrowRight">
-              Start free
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button variant="secondary" size="lg">
-              See pricing
-            </Button>
-          </Link>
+          <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+            Start free
+          </Button>
+          <Button href="/pricing" variant="secondary" size="lg">
+            See pricing
+          </Button>
         </div>
       </section>
 
@@ -103,16 +99,12 @@ export default function UseCasesIndexPage() {
           <h2 className="cta__title">Put the UK register to work.</h2>
           <p className="cta__sub">Search 5.5M companies free. Upgrade to build, track and export the data your job needs.</p>
           <div className="cta__actions">
-            <Link href="/sign-in">
-              <Button variant="primary" size="lg" iconRight="arrowRight">
-                Start free
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button variant="ghost" size="lg">
-                See pricing
-              </Button>
-            </Link>
+            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
+              Start free
+            </Button>
+            <Button href="/pricing" variant="ghost" size="lg">
+              See pricing
+            </Button>
           </div>
         </div>
       </section>

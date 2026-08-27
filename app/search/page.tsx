@@ -108,11 +108,13 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                       ? "Your free account previews the top 3. Upgrade for the full result set, filters, exports and alerts."
                       : "Create a free account to preview results — then upgrade to Pro for the full set, exports and alerts."}
                   </p>
-                  <Link href={signedIn ? "/app/upgrade" : `/sign-in?next=${next}`}>
-                    <Button variant="primary" iconRight="arrowRight">
-                      {signedIn ? "Go Pro" : "Sign in to view"}
-                    </Button>
-                  </Link>
+                  <Button
+                    href={signedIn ? "/app/upgrade" : `/sign-in?next=${next}`}
+                    variant="primary"
+                    iconRight="arrowRight"
+                  >
+                    {signedIn ? "Go Pro" : "Sign in to view"}
+                  </Button>
                 </div>
               </div>
             ) : null}

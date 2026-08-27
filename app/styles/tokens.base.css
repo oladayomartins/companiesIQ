@@ -21,6 +21,16 @@ body {
 a { color: var(--accent-text); text-decoration: none; }
 a:hover { color: var(--accent-text-hover); }
 
+/* A link inside running text has to be distinguishable by more than colour
+   (WCAG 1.4.1). Component links carry their own class and style themselves;
+   these are the bare ones written inline in copy. */
+p a:not([class]),
+li a:not([class]) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
 /* Tabular numbers everywhere data appears */
 .ciq-tnum { font-variant-numeric: tabular-nums lining-nums; }
 

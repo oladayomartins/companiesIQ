@@ -45,3 +45,43 @@ html, body { margin: 0; padding: 0; }
   .prospects__new input,
   .fa-select { font-size: 16px; }
 }
+
+/* Skip link — off-screen until focused, then pinned to the top-left. First
+   tab stop on every surface, so keyboard users aren't walked through the
+   whole sidebar or header before reaching the page. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: 0 0 var(--radius-md) 0;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 0;
+  color: var(--text-on-accent);
+}
+/* The skip target takes focus programmatically; it should not draw a ring. */
+[id="main-content"]:focus,
+[id="app-content"]:focus { outline: none; }
+
+/* Honour the OS "reduce motion" setting. The design leans on hover lifts,
+   card translations and a rotated hero preview; none of it carries meaning. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .pv-frame { transform: none; }
+  .live-stat--link:hover { transform: none; }
+}

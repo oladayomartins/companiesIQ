@@ -15,6 +15,9 @@ export function PublicReportChrome({
 }) {
   return (
     <div className="ciq-dark report-public">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <header className="rep-head">
         <Link className="rep-head__logo" href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -25,38 +28,34 @@ export function PublicReportChrome({
         </Link>
         <div className="rep-head__cta">
           {unlocked ? (
-            <Link href="/app">
-              <Button variant="secondary" iconRight="arrowRight">
-                Open dashboard
-              </Button>
-            </Link>
+            <Button href="/app" variant="secondary" iconRight="arrowRight">
+              Open dashboard
+            </Button>
           ) : signedIn ? (
             <>
               <Link className="rep-head__link" href="/app">
                 Dashboard
               </Link>
-              <Link href="/pricing">
-                <Button variant="primary" iconRight="arrowRight">
-                  Upgrade
-                </Button>
-              </Link>
+              <Button href="/pricing" variant="primary" iconRight="arrowRight">
+                Upgrade
+              </Button>
             </>
           ) : (
             <>
               <Link className="rep-head__link" href="/sign-in">
                 Sign in
               </Link>
-              <Link href="/pricing">
-                <Button variant="primary" iconRight="arrowRight">
-                  Get full access
-                </Button>
-              </Link>
+              <Button href="/pricing" variant="primary" iconRight="arrowRight">
+                Get full access
+              </Button>
             </>
           )}
         </div>
       </header>
 
-      <main>{children}</main>
+      <main id="main-content" tabIndex={-1}>
+        {children}
+      </main>
 
       <footer className="rep-foot">
         <div className="rep-foot__inner">

@@ -106,7 +106,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
       : null;
 
   return (
-    <main className="site">
+    <main className="site" id="main-content" tabIndex={-1}>
       <JsonLd data={faqSchema ? [articleSchema, breadcrumb, faqSchema] : [articleSchema, breadcrumb]} />
       <article className="blog-post blog-article">
         <Link className="back" href="/blog">
