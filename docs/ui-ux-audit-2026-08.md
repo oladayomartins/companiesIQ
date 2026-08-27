@@ -23,11 +23,38 @@ Fixed and verified on `claude/website-ui-ux-audit-i007v4`:
 | 4 · Truthfulness | CIQ-07, 12, 13 | error states, one register-size constant, KPI band fallback |
 | 5 · Differentiator | CIQ-16 | opportunity score public at the top of the report, upgrade gates show the screen |
 | 6 · Token drift | CIQ-11 | UI type scale closed and tokenised, radii tokenised, wrong fallbacks removed |
+| 7 · Rhythm | CIQ-14 | feature-grid row gap, pricing-teaser alignment, dead `.band` removed |
 
-Still open: **CIQ-14** (homepage rhythm and alignment; the mobile gutter and
-pricing-teaser parts were fixed in Block 1, the `.feat-grid` row gap, the unused
-`.band` and the mobile stacking density were not), and the display half of
-CIQ-11 — see below.
+Still open: the display half of **CIQ-11** — see below. Everything else in the
+original 16 is closed.
+
+### Correction to CIQ-14
+
+The audit claimed two-up cards on mobile would "cut roughly a third of the
+scroll". That was extrapolated from the 8,104px measurement, which was inflated
+by the 32px gutters Block 1 had not yet fixed. Measured properly on the current
+page (6,601px):
+
+| Change | Page height | Cost |
+|---|---|---|
+| one column (current) | 6,601px | — |
+| two-up `.feat-grid` + `.use-grid` | 6,056px (−8%) | feature titles go from 1 line to 2–3 |
+| two-up `.use-grid` only | 6,445px (−2.4%) | one title wraps; a 5-card grid leaves an orphan |
+
+8% is not a third, and it costs real legibility in a 172px column. **Not
+changed** — the remaining length is content, not padding. The three genuine
+items in CIQ-14 (row gap tighter than column gap, three alignments in the
+pricing teaser, and the fully-styled-but-unused `.band`) are fixed.
+
+### Found while verifying: /sign-in rendered empty on the server
+
+Not in the original 16. `<Suspense fallback={null}>` wrapped the whole sign-in
+page because `SignIn` calls `useSearchParams()`, so the server-rendered HTML
+contained no `<main>`, no `<h1>` and no copy — a blank screen until hydration,
+and nothing for a crawler or a no-JS client. Block 3 recorded this route as
+passing because it was measured in dev, where it hydrated fast enough to look
+fine; it only showed up against a production build. The shell now renders on the
+server and only the form suspends.
 
 ### CIQ-11 — what was done, and what deliberately wasn't
 

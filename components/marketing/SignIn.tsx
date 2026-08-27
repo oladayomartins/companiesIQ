@@ -13,7 +13,12 @@ import { track } from "@/lib/track";
 // user's click (see the auth debugging in the git history). Flow:
 //   1. enter email  -> signInWithOtp() emails a code
 //   2. enter code   -> verifyOtp() sets the session, then we navigate to `next`
-export function SignIn() {
+//
+// Only the form lives here. useSearchParams() forces a Suspense boundary, and
+// when that boundary wrapped the whole page the server-rendered HTML for
+// /sign-in was empty — no <main>, no <h1>, nothing to read before hydration.
+// The page shell renders on the server; this suspends alone.
+export function SignInForm() {
   const configured = isSupabaseConfigured();
   const params = useSearchParams();
   const next = params.get("next") || "/app";
@@ -103,22 +108,8 @@ export function SignIn() {
   }
 
   return (
-    <main className="auth-wrap" id="main-content" tabIndex={-1}>
-      <div className="auth-card">
-        <Link className="site-logo" href="/" style={{ justifyContent: "center", marginBottom: 24 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/ciq-mark.svg" width={32} height={32} alt="" />
-          <span className="site-logo__word">
-            Companies<span className="site-logo__iq">IQ</span>
-          </span>
-        </Link>
-        <h1 className="auth-title">Sign in or sign up</h1>
-        <p className="auth-sub">
-          One email field — no password. We&apos;ll email you a one-time sign-in code. New to CompaniesIQ? Your account is
-          created automatically the first time.
-        </p>
-
-        {!configured ? (
+    <>
+      {!configured ? (
           <div className="auth-note">
             <Badge tone="warn">Demo mode</Badge>
             <p>
@@ -206,10 +197,9 @@ export function SignIn() {
           </form>
         )}
 
-        <p className="auth-foot">
-          Free to search · no card required · <Link href="/pricing">see plans</Link>
-        </p>
-      </div>
-    </main>
+      <p className="auth-foot">
+        Free to search · no card required · <Link href="/pricing">see plans</Link>
+      </p>
+    </>
   );
 }

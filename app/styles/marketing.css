@@ -63,17 +63,13 @@
 .pv-sic { font-family: var(--font-mono); font-size: var(--text-2xs); color: #A89D90; text-align: right; }
 .pv-rev { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--warm-25); text-align: right; font-variant-numeric: tabular-nums; }
 
-/* ---------- Trust band ---------- */
-.band { border-top: 1px solid var(--border-hair); border-bottom: 1px solid var(--border-hair); background: var(--surface-sunken); }
-.band__inner { max-width: var(--container-lg); margin: 0 auto; padding: 36px 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; }
-
 /* ---------- Sections ---------- */
 .section { max-width: var(--container-xl); margin: 0 auto; padding: 84px 32px; }
 .section--alt { background: transparent; }
 .section__head { max-width: 640px; margin-bottom: 44px; }
 .section__title { font-family: var(--font-serif); font-weight: 500; font-size: 40px; line-height: 1.05; letter-spacing: -0.015em; color: var(--text-strong); margin: 12px 0 0; text-wrap: balance; }
 
-.feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 40px; }
+.feat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 52px 40px; }
 .feat { padding: 4px 0; }
 .feat__icon { width: 44px; height: 44px; border-radius: var(--radius-lg); background: var(--accent-tint); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; }
 .feat__title { font-family: var(--font-grotesk); font-weight: 700; font-size: var(--text-card); letter-spacing: -0.015em; color: var(--text-strong); margin: 0 0 8px; }
@@ -177,6 +173,7 @@
 .auth-title { font-family: var(--font-serif); font-weight: 500; font-size: var(--text-2xl); letter-spacing: -0.02em; color: var(--text-strong); margin: 0 0 6px; text-align: center; }
 .auth-sub { font-size: var(--text-ui); color: var(--text-muted); text-align: center; margin: 0 0 26px; }
 .auth-form { display: flex; flex-direction: column; gap: 16px; }
+.auth-form--pending { min-height: 132px; }
 .auth-note { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
 .auth-note p { font-size: var(--text-ui); color: var(--text-body); line-height: 1.55; margin: 0; }
 .auth-note > a { width: 100%; }
@@ -190,8 +187,8 @@
      the viewport — a 1fr track floors at min-content by default. */
   .hero { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .hero__title { font-size: 44px; }
-  .band__inner { grid-template-columns: repeat(2, 1fr); }
   .feat-grid, .steps, .use-grid, .faq-grid { grid-template-columns: minmax(0, 1fr); }
+  .feat-grid { gap: 34px; }
   .tiers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .site-foot__inner { grid-template-columns: 1fr; }
   .site-foot__cols { grid-template-columns: repeat(2, 1fr); }
@@ -269,7 +266,7 @@
 @media (max-width: 560px) { .live-band { padding: 8px 16px; } .live-grid { grid-template-columns: 1fr; } }
 
 /* Pricing teaser */
-.price-teaser { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; max-width: 760px; margin: 0 auto; }
+.price-teaser { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; max-width: 760px; }
 .price-teaser__card { position: relative; background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-lg); padding: 28px; }
 .price-teaser__card--pro { border-color: color-mix(in srgb, var(--accent) 55%, var(--border-hair)); box-shadow: 0 8px 30px color-mix(in srgb, var(--accent) 10%, transparent); }
 .price-teaser__flag { position: absolute; top: -12px; right: 20px; }
@@ -278,5 +275,5 @@
 .price-teaser__per { font-size: var(--text-ui); font-weight: 500; color: var(--text-muted); margin-left: 4px; }
 .price-teaser__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .price-teaser__list li { display: flex; align-items: center; gap: 8px; font-size: var(--text-ui); color: var(--text-body); }
-.price-teaser__cta { text-align: center; margin-top: 22px; }
+.price-teaser__cta { margin-top: 22px; }
 @media (max-width: 560px) { .price-teaser { grid-template-columns: 1fr; } }
