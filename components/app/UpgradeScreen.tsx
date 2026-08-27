@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { Button, Badge, Icon, Switch } from "@/components/ds";
+import { Button, Badge, Icon } from "@/components/ds";
+import { BillingToggle } from "@/components/marketing/BillingToggle";
 import { MARKETING_TIERS, type Plan } from "@/lib/subscription";
 import { toast } from "@/lib/toast";
 import { track, getGaIds } from "@/lib/track";
@@ -58,12 +59,7 @@ export function UpgradeScreen() {
           <div className="app-eyebrow">Upgrade</div>
           <h1 className="screen-title">Unlock the full platform</h1>
         </div>
-        <div className="bill-toggle">
-          <span className={!annual ? "is-on" : ""}>Monthly</span>
-          <Switch checked={annual} onChange={(e) => setAnnual(e.target.checked)} />
-          <span className={annual ? "is-on" : ""}>Annual</span>
-          <Badge tone="pos">Save 20%</Badge>
-        </div>
+        <BillingToggle annual={annual} onChange={setAnnual} />
       </div>
 
       {error ? <div className="editor-alert editor-alert--error">{error}</div> : null}
@@ -73,11 +69,7 @@ export function UpgradeScreen() {
           const custom = t.monthly === null;
           return (
             <div className={"upgrade-tier" + (t.popular ? " upgrade-tier--pop" : "")} key={t.id}>
-              {t.popular ? (
-                <div className="upgrade-tier__flag">
-                  <Badge tone="accent">Most popular</Badge>
-                </div>
-              ) : null}
+              <div className="upgrade-tier__flag">{t.popular ? <Badge tone="accent">Most popular</Badge> : null}</div>
               <div className="upgrade-tier__name">{t.name}</div>
               <div className="upgrade-tier__tag">{t.tagline}</div>
               <div className="upgrade-tier__price">
@@ -89,6 +81,15 @@ export function UpgradeScreen() {
                     <span className="upgrade-tier__per mono">/user/mo</span>
                   </>
                 )}
+              </div>
+              <div className="upgrade-tier__billed mono">
+                {custom
+                  ? "Annual contract"
+                  : annual
+                    ? t.annualTotal
+                      ? `£${t.annualTotal.toLocaleString("en-GB")} per user, billed once a year`
+                      : "billed annually"
+                    : "billed monthly"}
               </div>
               <Button variant={t.popular ? "primary" : "secondary"} block onClick={() => choose(t)} disabled={busy === t.id}>
                 {busy === t.id ? "One moment…" : custom ? "Contact sales" : `Subscribe to ${t.name}`}

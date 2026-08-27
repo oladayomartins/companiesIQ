@@ -6,6 +6,7 @@ import { fmtNumber, fmtDelta } from "@/lib/format";
 import { getRegisterKpis, getQuickInsights } from "@/lib/live-stats";
 import { slugify } from "@/lib/slug";
 import { SITE_DESCRIPTION } from "@/lib/site";
+import { planById } from "@/lib/subscription";
 
 export const metadata = {
   description: SITE_DESCRIPTION,
@@ -13,6 +14,9 @@ export const metadata = {
 };
 
 export const revalidate = 3600;
+
+const FREE_PLAN = planById("free");
+const PAID_PLAN = planById("analyst");
 
 function PreviewRow({ name, no, status, sic, rev }: { name: string; no: string; status: string; sic: string; rev: string }) {
   return (
@@ -219,24 +223,28 @@ export default async function LandingPage() {
         </div>
         <div className="price-teaser">
           <div className="price-teaser__card">
-            <div className="price-teaser__name">Free</div>
+            <div className="price-teaser__name">{FREE_PLAN.name}</div>
             <div className="price-teaser__price">£0</div>
             <ul className="price-teaser__list">
-              <li><Icon name="check" size={15} color="var(--accent)" /> Search 5.5M companies</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> Public company profiles</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> 1 full intelligence report / month</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> Industry, market &amp; signal pages</li>
+              {FREE_PLAN.features.map((f) => (
+                <li key={f}>
+                  <Icon name="check" size={15} color="var(--accent)" /> {f}
+                </li>
+              ))}
             </ul>
           </div>
           <div className="price-teaser__card price-teaser__card--pro">
             <div className="price-teaser__flag"><Badge tone="accent">Most popular</Badge></div>
-            <div className="price-teaser__name">Pro</div>
-            <div className="price-teaser__price">from £39<span className="price-teaser__per mono">/mo</span></div>
+            <div className="price-teaser__name">{PAID_PLAN.name}</div>
+            <div className="price-teaser__price">
+              from £{PAID_PLAN.annual}<span className="price-teaser__per mono">/user/mo</span>
+            </div>
             <ul className="price-teaser__list">
-              <li><Icon name="check" size={15} color="var(--accent)" /> Unlimited intelligence reports</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> Real-time formation &amp; filing alerts</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> Watchlists &amp; saved searches</li>
-              <li><Icon name="check" size={15} color="var(--accent)" /> CSV export &amp; API</li>
+              {PAID_PLAN.features.slice(1, 5).map((f) => (
+                <li key={f}>
+                  <Icon name="check" size={15} color="var(--accent)" /> {f}
+                </li>
+              ))}
             </ul>
           </div>
         </div>
