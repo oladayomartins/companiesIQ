@@ -18,8 +18,8 @@ body {
   background: color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
-a { color: var(--accent); text-decoration: none; }
-a:hover { color: var(--accent-hover); }
+a { color: var(--accent-text); text-decoration: none; }
+a:hover { color: var(--accent-text-hover); }
 
 /* Tabular numbers everywhere data appears */
 .ciq-tnum { font-variant-numeric: tabular-nums lining-nums; }

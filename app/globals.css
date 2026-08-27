@@ -23,3 +23,25 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body { margin: 0; padding: 0; }
+
+/* iOS Safari zooms the viewport — and does not zoom back out — whenever a
+   focused field is under 16px. Every field in the design sits at 13–15px, so
+   on touch widths they are floored at 16px. The desktop scale is untouched. */
+@media (max-width: 768px) {
+  input, select, textarea { font-size: 16px; }
+  /* The fields above are set by component rules whose selectors outrank a bare
+     element selector, so each is named here. Keep this list in step with any
+     new `<selector> input { font-size: … }` rule. */
+  .ciq-input > input,
+  .ciq-select > select,
+  .ciq-select--sm > select,
+  .hero__search input,
+  .topsearch input,
+  .nl-bar input,
+  .qr-input,
+  .editor-input,
+  .editor-textarea,
+  .enrich-input,
+  .prospects__new input,
+  .fa-select { font-size: 16px; }
+}

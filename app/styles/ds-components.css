@@ -113,7 +113,7 @@
 .ciq-badge--neg { color: var(--neg); background: var(--neg-bg); }
 .ciq-badge--warn { color: var(--warn); background: var(--warn-bg); }
 .ciq-badge--info { color: var(--info); background: var(--info-bg); }
-.ciq-badge--accent { color: var(--accent); background: var(--accent-tint); }
+.ciq-badge--accent { color: var(--accent-text); background: var(--accent-tint); }
 .ciq-badge--solid { border: 0; }
 
 /* ---------- Stat ---------- */

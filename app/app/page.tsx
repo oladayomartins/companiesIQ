@@ -144,7 +144,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </div>
       </div>
       {asOf ? (
-        <div className="app-eyebrow" style={{ marginTop: -6, marginBottom: 14, opacity: 0.7 }}>
+        <div className="app-eyebrow" style={{ marginTop: -6, marginBottom: 14, color: "var(--text-faint)" }}>
           Incorporations published to {fmtDate(asOf)} · Companies House updates the register a few days in arrears
         </div>
       ) : null}
