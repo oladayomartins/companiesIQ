@@ -298,3 +298,16 @@
 /* The score sits alone above the gate, so it gets the full width rather than
    half of a two-up row that no longer has a second column. */
 .intel__solo { display: grid; grid-template-columns: minmax(0, 620px); }
+
+/* Metered-access notice. Quiet by design — it is information, not a CTA
+   competing with the ones further down the page. */
+.meter-note {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 13px; margin: 0 0 4px;
+  border: 1px solid var(--border-hair); border-radius: var(--radius-md, 10px);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5;
+}
+.meter-note svg { color: var(--accent); flex: none; }
+.meter-note strong { color: var(--text-strong); font-weight: 650; }
+.meter-note a { color: var(--accent); }

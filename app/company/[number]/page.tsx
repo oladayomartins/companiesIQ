@@ -4,6 +4,7 @@
 // inline; logged-out visitors (and Googlebot) see the free preview + an
 // "Unlock full intelligence" gate.
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCompanyBundle } from "@/lib/data";
@@ -115,6 +116,14 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   // recent window instead. The FULL list still reaches the scorer below — the
   // opportunity score must not change with the reader's plan.
   const fullHistory = await canUseHistoricalData(user);
+
+  // Metered free access, decided in middleware (a page cannot set cookies during
+  // render). A logged-out visitor reads a few full reports before the gate
+  // appears — Google's flexible-sampling guidance prefers that to a hard lead-in
+  // gate, and a search visitor who lands on a blur just goes back to the SERP.
+  const h = await headers();
+  const metered = !signedIn && h.get("x-ciq-meter") === "allow";
+  const meterLeft = Number(h.get("x-ciq-meter-left") ?? 0) || 0;
 
   const [economicLive, similar, enrichment, network, financials] = await Promise.all([
     getRegionLive(c.geo?.region),
@@ -241,6 +250,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           watched={watched}
           network={network}
           savedLens={savedLens}
+          metered={metered}
+          meterLeft={meterLeft}
         />
         {/* The free-alerts band sits BELOW the report now, not above the company
             name. It predates the registration gate, and with the gate in place

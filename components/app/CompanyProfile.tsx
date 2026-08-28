@@ -42,6 +42,7 @@ import { buildBrief, buildEvidence, buildActions, buildLensCard, relevantTo } fr
 import { LensBar, useLensProfile } from "@/components/app/LensBar";
 import { LensScoreCard, Fingerprint, type FingerprintCell } from "@/components/app/LensScore";
 import { IntelGate } from "@/components/app/IntelGate";
+import { METER_ALLOWANCE } from "@/lib/meter";
 
 const DAY = 86_400_000;
 const num = (n: number) => n.toLocaleString("en-GB");
@@ -130,6 +131,8 @@ export function CompanyProfile({
   network = null,
   savedLens = null,
   filingLimit = null,
+  metered = false,
+  meterLeft = 0,
 }: {
   company: Company;
   officers: Officer[];
@@ -148,6 +151,9 @@ export function CompanyProfile({
   savedLens?: string | null;
   /** How many filings to DISPLAY; null = the full history. Scoring always uses all of them. */
   filingLimit?: number | null;
+  /** This logged-out visitor still has free reports left, so show it ungated. */
+  metered?: boolean;
+  meterLeft?: number;
 }) {
   const c = company;
   const router = useRouter();
@@ -548,14 +554,18 @@ export function CompanyProfile({
   // One gate, used for the Intelligence tab's evidence and for whole tabs.
   // Signed in: render as-is. Anonymous: blur it, make it inert, and put the
   // free-account CTA over it.
+  // Signed in, or spending a metered free read: show it. The gate is for the
+  // visitor who has used their allowance.
+  const openToReader = signedIn || metered;
+
   const gate = (node: React.ReactNode, what?: string) =>
-    signedIn ? (
+    openToReader ? (
       node
     ) : (
       <IntelGate
         badge="Free account"
-        title={`See the full picture on ${c.name}`}
-        sub={`${what ?? DEFAULT_GATE_WHAT}. Free to create, no card.`}
+        title={`You've used your ${METER_ALLOWANCE} free reports this month`}
+        sub={`A free account keeps this open: ${(what ?? DEFAULT_GATE_WHAT).charAt(0).toLowerCase()}${(what ?? DEFAULT_GATE_WHAT).slice(1)}. No card.`}
         ctaLabel="Create free account"
         ctaHref={`/sign-in?next=${encodeURIComponent(`/company/${c.number}`)}`}
         secondary={{ label: "See plans", href: "/pricing" }}
@@ -629,6 +639,30 @@ export function CompanyProfile({
       </div>
 
       <p className="profile-summary">{summary}</p>
+
+      {/* Tell them the meter exists. Hitting a gate on the fourth report with no
+          warning reads as arbitrary; a visible count makes the ask expected. */}
+      {metered ? (
+        <div className="meter-note">
+          <Icon name="shield" size={14} />
+          <span>
+            {meterLeft === 0 ? (
+              <strong>This is your last free report this month.</strong>
+            ) : (
+              <>
+                <strong>
+                  {meterLeft} more free {meterLeft === 1 ? "report" : "reports"}
+                </strong>{" "}
+                this month.
+              </>
+            )}{" "}
+            <Link href={`/sign-in?next=${encodeURIComponent(`/company/${c.number}`)}`}>
+              Create a free account
+            </Link>{" "}
+            to keep reading without a limit.
+          </span>
+        </div>
+      ) : null}
 
       <LensBar
         profileKey={profileKey}
