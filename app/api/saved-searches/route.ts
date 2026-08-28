@@ -11,6 +11,7 @@ import { getCurrentUser, getSupabaseAdmin } from "@/lib/supabase/server";
 import { getUserPlan } from "@/lib/access";
 import { planById, type PlanId } from "@/lib/subscription";
 import { isAdmin, isPartner } from "@/lib/admin";
+import { audit } from "@/lib/audit";
 import type { User } from "@supabase/supabase-js";
 
 const MAX_SAVED = 50;
@@ -78,6 +79,15 @@ export async function POST(req: Request) {
     .select("id,label,query,created_at")
     .single();
   if (error) return NextResponse.json({ error: "Save failed" }, { status: 500 });
+
+  await audit({
+    userId: user.id,
+    actorEmail: user.email ?? null,
+    action: "search.save",
+    subject: (data as { id?: string } | null)?.id ?? null,
+    meta: { label },
+    req,
+  });
 
   return NextResponse.json({ ok: true, search: data });
 }

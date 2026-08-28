@@ -4,6 +4,7 @@
 // inline; logged-out visitors (and Googlebot) see the free preview + an
 // "Unlock full intelligence" gate.
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCompanyBundle } from "@/lib/data";
@@ -14,7 +15,7 @@ import { getRegionLive } from "@/lib/nomis";
 import { enrichCompany, type CompanyEnrichment } from "@/lib/enrichment";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { isPartner } from "@/lib/admin";
-import { hasProAccess } from "@/lib/access";
+import { hasProAccess, canUseHistoricalData, FREE_FILING_WINDOW } from "@/lib/access";
 import { isWatched } from "@/lib/watchlist";
 import { getSavedLens } from "@/lib/profile";
 import { getDirectorNetwork } from "@/lib/network";
@@ -111,6 +112,18 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   const subscribed = await hasProAccess(user);
   const unlocked = subscribed;
   const partner = isPartner(user);
+  // "Complete filing history" is an Analyst feature. Free accounts see the most
+  // recent window instead. The FULL list still reaches the scorer below — the
+  // opportunity score must not change with the reader's plan.
+  const fullHistory = await canUseHistoricalData(user);
+
+  // Metered free access, decided in middleware (a page cannot set cookies during
+  // render). A logged-out visitor reads a few full reports before the gate
+  // appears — Google's flexible-sampling guidance prefers that to a hard lead-in
+  // gate, and a search visitor who lands on a blur just goes back to the SERP.
+  const h = await headers();
+  const metered = !signedIn && h.get("x-ciq-meter") === "allow";
+  const meterLeft = Number(h.get("x-ciq-meter-left") ?? 0) || 0;
 
   const [economicLive, similar, enrichment, network, financials] = await Promise.all([
     getRegionLive(c.geo?.region),
@@ -144,14 +157,69 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   const orgSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    // A stable @id, because the layout also emits an Organization for
+    // CompaniesIQ itself. Two unlabelled Organization nodes leave a parser
+    // guessing which one the page is actually about; this one is named as the
+    // page's mainEntity below.
+    "@id": `${SITE_URL}/company/${c.number}#organization`,
     name: c.name,
     identifier: c.number,
     url: `${SITE_URL}/company/${c.number}`,
-    ...(c.geo?.region && c.geo.region !== "Unknown"
-      ? { address: { "@type": "PostalAddress", addressRegion: c.geo.region, addressCountry: "GB" } }
+    // The full registered office, not just the region. Rich Results flagged
+    // streetAddress, addressLocality and postalCode as missing-but-optional —
+    // and we hold all three, from the same Companies House record the page
+    // already renders them from. A complete PostalAddress is what lets an
+    // answer engine place the company, so partial data here was a straight loss.
+    ...(c.address || (c.geo?.region && c.geo.region !== "Unknown")
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            ...(c.address?.line1
+              ? { streetAddress: [c.address.line1, c.address.line2].filter(Boolean).join(", ") }
+              : {}),
+            ...(c.address?.locality ? { addressLocality: c.address.locality } : {}),
+            ...(c.geo?.region && c.geo.region !== "Unknown" ? { addressRegion: c.geo.region } : {}),
+            ...(c.address?.postcode ? { postalCode: c.address.postcode } : {}),
+            addressCountry: "GB",
+          },
+        }
       : {}),
     ...(c.incorporated ? { foundingDate: c.incorporated } : {}),
+    // Answer engines quote status and dates directly; make both machine-readable
+    // rather than leaving them to be parsed out of the prose.
+    ...(c.dissolved ? { dissolutionDate: c.dissolved } : {}),
+    ...(c.primaryClassification?.sector ? { knowsAbout: c.primaryClassification.sector } : {}),
   };
+  // Paywall declaration — REQUIRED, not optional polish.
+  //
+  // We serve the gated intelligence to Googlebot in full (it is in the DOM,
+  // blurred by CSS) while a logged-out human has to register to read it.
+  // Google treats exactly that as cloaking unless the gated section is declared
+  // with isAccessibleForFree:false and a hasPart cssSelector pointing at it —
+  // and the documented penalty is the page not appearing in search at all.
+  //
+  // Only emitted when the page is actually gated. A signed-in reader has the
+  // content, so claiming otherwise would be its own inaccuracy.
+  // https://developers.google.com/search/docs/appearance/structured-data/paywalled-content
+  const paywallSchema = !signedIn
+    ? {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": `${SITE_URL}/company/${c.number}`,
+        url: `${SITE_URL}/company/${c.number}`,
+        name: `${c.name} — company report`,
+        mainEntity: { "@id": `${SITE_URL}/company/${c.number}#organization` },
+        isAccessibleForFree: false,
+        hasPart: {
+          "@type": "WebPageElement",
+          isAccessibleForFree: false,
+          // Must match the class on the wrapper around the gated content
+          // (components/app/IntelGate.tsx). Google accepts .class selectors only.
+          cssSelector: ".intelgate__veil",
+        },
+      }
+    : null;
+
   const breadcrumb = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -163,13 +231,13 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
 
   return (
     <>
-      <JsonLd data={[orgSchema, breadcrumb]} />
+      <JsonLd data={[orgSchema, breadcrumb, ...(paywallSchema ? [paywallSchema] : [])]} />
       <PublicReportChrome unlocked={unlocked} signedIn={signedIn}>
-        {!signedIn ? <TrackCompanyCta company={c.name} number={c.number} sector={c.primaryClassification?.sector} /> : null}
         <CompanyProfile
           company={c}
           officers={bundle.officers}
           filings={bundle.filings}
+          filingLimit={fullHistory ? null : FREE_FILING_WINDOW}
           charges={bundle.charges}
           pscs={bundle.pscs}
           report={report}
@@ -182,7 +250,18 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           watched={watched}
           network={network}
           savedLens={savedLens}
+          metered={metered}
+          meterLeft={meterLeft}
         />
+        {/* The free-alerts band sits BELOW the report now, not above the company
+            name. It predates the registration gate, and with the gate in place
+            two orange asks 400px apart were competing: "create an account" and
+            "give us your email instead". Ordered by commitment, they stop
+            fighting — the gate is the primary ask, and this is the fallback for
+            someone who does not want an account at all. */}
+        {!signedIn ? (
+          <TrackCompanyCta company={c.name} number={c.number} sector={c.primaryClassification?.sector} />
+        ) : null}
         {financials ? (
           <div className="screen" style={{ paddingTop: 0 }}>
             <FinancialsCard financials={financials} company={c.name} />

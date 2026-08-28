@@ -252,3 +252,62 @@
   .ledger__row { grid-template-columns: 1fr auto; }
   .ledger__bar { display: none; }
 }
+
+/* ---- Registration gate --------------------------------------------------- */
+/* The gated tree stays in the DOM (this page is the SEO surface) but is inert:
+   blurred, unselectable, out of the tab order and out of the a11y tree. The
+   blur is a conversion affordance, not access control — nothing behind it is
+   private, it is our own analysis of public register data. */
+.intelgate { position: relative; isolation: isolate; }
+.intelgate__veil {
+  filter: blur(7px);
+  opacity: .5;
+  pointer-events: none;
+  user-select: none;
+  max-height: 620px;
+  overflow: hidden;
+}
+.intelgate__panel {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; text-align: center; padding: 32px 24px;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--bg-page) 30%, transparent) 0%,
+    color-mix(in srgb, var(--bg-page) 88%, transparent) 45%,
+    var(--bg-page) 100%);
+}
+.intelgate__icon {
+  width: 48px; height: 48px; border-radius: var(--radius-xl, 14px);
+  background: var(--accent-tint); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+}
+.intelgate__title {
+  font-family: var(--font-grotesk); font-weight: 800; font-size: 24px;
+  letter-spacing: -.02em; color: var(--text-strong); margin: 4px 0 0;
+}
+.intelgate__sub { color: var(--text-muted); line-height: 1.55; max-width: 520px; margin: 0 0 6px; }
+.intelgate__cta { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+@media (max-width: 720px) {
+  .intelgate__veil { max-height: 460px; }
+  .intelgate__title { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intelgate__veil { transition: none; }
+}
+/* The score sits alone above the gate, so it gets the full width rather than
+   half of a two-up row that no longer has a second column. */
+.intel__solo { display: grid; grid-template-columns: minmax(0, 620px); }
+
+/* Metered-access notice. Quiet by design — it is information, not a CTA
+   competing with the ones further down the page. */
+.meter-note {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 13px; margin: 0 0 4px;
+  border: 1px solid var(--border-hair); border-radius: var(--radius-md, 10px);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5;
+}
+.meter-note svg { color: var(--accent); flex: none; }
+.meter-note strong { color: var(--text-strong); font-weight: 650; }
+.meter-note a { color: var(--accent); }

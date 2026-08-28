@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ApiKeysCard } from "@/components/app/ApiKeysCard";
+import { ActivityCard } from "@/components/app/ActivityCard";
 import { useState } from "react";
 import { Button, Badge, Input, Icon } from "@/components/ds";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
@@ -193,6 +195,9 @@ export function SettingsScreen({ email, fullName, billing, comped = false }: { e
           </Button>
         </div>
       </section>
+      <ApiKeysCard />
+      <ActivityCard />
+
     </div>
   );
 }

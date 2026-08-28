@@ -41,11 +41,17 @@ import {
 import { buildBrief, buildEvidence, buildActions, buildLensCard, relevantTo } from "@/lib/lens-view";
 import { LensBar, useLensProfile } from "@/components/app/LensBar";
 import { LensScoreCard, Fingerprint, type FingerprintCell } from "@/components/app/LensScore";
+import { IntelGate } from "@/components/app/IntelGate";
+import { METER_ALLOWANCE } from "@/lib/meter";
 
 const DAY = 86_400_000;
 const num = (n: number) => n.toLocaleString("en-GB");
 const pc = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
 const toneClass = (t: Tone) => `is-${t}`;
+
+// What the free account gets you, when the caller has nothing more specific.
+const DEFAULT_GATE_WHAT =
+  "The signals behind the score, this company's fingerprint against its sector peers, the market and competitive read, and what to do next";
 
 function OfficerRow({ p, unlocked }: { p: Officer; unlocked: boolean }) {
   const inner = (
@@ -124,6 +130,9 @@ export function CompanyProfile({
   watched = false,
   network = null,
   savedLens = null,
+  filingLimit = null,
+  metered = false,
+  meterLeft = 0,
 }: {
   company: Company;
   officers: Officer[];
@@ -140,6 +149,11 @@ export function CompanyProfile({
   watched?: boolean;
   network?: DirectorNetwork | null;
   savedLens?: string | null;
+  /** How many filings to DISPLAY; null = the full history. Scoring always uses all of them. */
+  filingLimit?: number | null;
+  /** This logged-out visitor still has free reports left, so show it ungated. */
+  metered?: boolean;
+  meterLeft?: number;
 }) {
   const c = company;
   const router = useRouter();
@@ -191,6 +205,9 @@ export function CompanyProfile({
   const daysTo = (iso?: string) => (iso ? Math.round((Date.parse(iso) - Date.now()) / DAY) : null);
   const accountsDays = daysTo(c.accounts?.nextDue);
   const hasFiledAccounts = !!c.accounts?.lastMadeUpTo || filings.some((f) => f.type === "AA");
+  // Display only — every score and signal above still reads the full list.
+  const shownFilings = filingLimit == null ? filings : filings.slice(0, filingLimit);
+  const filingsTruncated = shownFilings.length < filings.length;
 
   function exportReport() {
     const rows: (string | number | null | undefined)[][] = [
@@ -321,10 +338,246 @@ export function CompanyProfile({
 
   const regionalAhead = report.regional.regionalGrowth > report.regional.nationalGrowth;
 
+  // Everything on the Intelligence tab except the score: the brief, the
+  // signals, the fingerprint, the market and competitive read, and the
+  // actions. Extracted so the gated and ungated views render exactly the
+  // same tree — a gated view that quietly drops sections is how the two
+  // drift apart.
+  const evidenceBlock = (
+    <>
+        <Card>
+          <CardBody>
+            <div className="brief__head">
+              <span className="app-eyebrow">Company brief</span>
+              <Badge tone="neutral">For {lens.label}</Badge>
+            </div>
+            <p className="brief__prose">{brief.prose}</p>
+            <div className="brief__points">
+              {brief.points.map((p) => (
+                <div className={`brief__point ${toneClass(p.tone)}`} key={p.n}>
+                  <span className="brief__n mono">{p.n}</span>
+                  <div>
+                    <div className="brief__title">{p.title}</div>
+                    <div className="brief__text">{p.text}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="brief__foot">
+              <Button variant="secondary" onClick={() => setTab("lens")}>
+                View evidence
+              </Button>
+              <span className="brief__disclaimer mono">Interpretation, not advice</span>
+            </div>
+          </CardBody>
+        </Card>
+
+      <div className="changed">
+        <div className="changed__head">
+          <span className="app-eyebrow">What&rsquo;s changed</span>
+          <span className="changed__sub mono">Register &amp; sector</span>
+        </div>
+        <div className="changed__items">
+          <div className="changed__item">
+            <span className="changed__k mono">Sector growth</span>
+            <span className={`changed__v ${report.industry.annualGrowth >= 0 ? "is-good" : "is-risk"}`}>
+              {pc(report.industry.annualGrowth)}
+            </span>
+          </div>
+          <div className="changed__item">
+            <span className="changed__k mono">Confirmation statement</span>
+            <span className={`changed__v ${c.confirmationStatement?.overdue ? "is-risk" : "is-good"}`}>
+              {c.confirmationStatement?.overdue ? "Overdue" : "Current"}
+            </span>
+          </div>
+          <div className="changed__item">
+            <span className="changed__k mono">{newlyIncorporated ? "Newly incorporated" : "Age"}</span>
+            <span className="changed__v">{incDays != null ? shortAge(incDays) : "—"}</span>
+          </div>
+          <div className="changed__item">
+            <span className="changed__k mono">Regional density</span>
+            <span className="changed__v">{report.local.density}</span>
+          </div>
+        </div>
+        <button className="changed__cta" onClick={() => setTab("lens")}>
+          View all signals <Icon name="arrowRight" size={13} />
+        </button>
+      </div>
+
+      <Fingerprint cells={fingerprint} peers={report.industry.businesses} lensKey={lensKey} lensScore={score} />
+
+      <div className="intel__row2">
+        <Card>
+          <CardBody>
+            <div className="icard__head">
+              <span className="app-eyebrow">Market intelligence</span>
+              <Badge tone={regionalAhead ? "pos" : "warn"}>{regionalAhead ? "Tailwind" : "Headwind"}</Badge>
+            </div>
+            <MiniRows
+              rows={[
+                { k: "Companies in sector", v: num(report.industry.businesses) },
+                { k: "National growth", v: pc(report.regional.nationalGrowth) },
+                { k: `${report.local.region} growth`, v: pc(report.regional.regionalGrowth) },
+              ]}
+            />
+            <div className="icard__spark">
+              <Sparkline points={sparkPoints} label="Sector formations over 10 quarters" />
+              <div className="icard__sparkAxis mono">
+                <span>10 quarters ago</span>
+                <span>Sector formations</span>
+                <span>Now</span>
+              </div>
+            </div>
+            <p className="icard__note">{report.regional.insight}</p>
+            <div className="icard__foot">
+              <button className="icard__cta" onClick={() => setTab("market")}>
+                View market intelligence <Icon name="arrowRight" size={13} />
+              </button>
+              <span className="icard__src mono">ONS · modelled trend</span>
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardBody>
+            <div className="icard__head">
+              <span className="app-eyebrow">Competitive landscape</span>
+              <Badge tone={report.local.density === "Very high" || report.local.density === "High" ? "warn" : "pos"}>
+                {report.local.density === "Very high" || report.local.density === "High" ? "Headwind" : "Manageable"}
+              </Badge>
+            </div>
+            <MiniRows
+              rows={[
+                { k: `Comparables (${report.local.region})`, v: num(report.local.inSameIndustry) },
+                { k: "Sector total (UK)", v: num(report.industry.businesses) },
+                { k: "5-yr survival", v: `${report.survival.fiveYear.toFixed(1)}%` },
+              ]}
+            />
+            <p className="icard__note">
+              {report.local.density === "Very high" || report.local.density === "High"
+                ? "Crowded and attritional. Differentiation matters more than market timing here."
+                : "Room to move — the region is not saturated for this trade."}
+            </p>
+            <div className="icard__foot">
+              <button className="icard__cta" onClick={() => setTab("competitors")}>
+                Compare competitors <Icon name="arrowRight" size={13} />
+              </button>
+              <span className="icard__src mono">CH register</span>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      <Card>
+        <CardBody>
+          <div className="icard__head">
+            <span className="app-eyebrow">{lensCard.label}</span>
+            <Badge tone={lensCard.flagTone === "good" ? "pos" : lensCard.flagTone === "risk" ? "warn" : "neutral"}>
+              {lensCard.flag}
+            </Badge>
+          </div>
+          <div className="icard__headline">{lensCard.headline}</div>
+          <MiniRows rows={lensCard.rows} />
+          <p className="icard__note">{lensCard.note}</p>
+          <div className="icard__foot">
+            <button className="icard__cta" onClick={() => setTab("lens")}>
+              {lensCard.cta.label} <Icon name="arrowRight" size={13} />
+            </button>
+            <span className="icard__src mono">{lensCard.source}</span>
+          </div>
+        </CardBody>
+      </Card>
+
+      {!hasFiledAccounts ? (
+        <Card>
+          <CardBody>
+            <div className="icard__head">
+              <span className="app-eyebrow">Financial intelligence</span>
+              <Badge tone="neutral">Awaiting first accounts</Badge>
+            </div>
+            <p className="icard__note" style={{ marginTop: 0 }}>
+              {incDays != null ? `Incorporated ${agoText(incDays)}. ` : ""}
+              {c.accounts?.nextDue
+                ? `First accounts are due ${fmtDate(c.accounts.nextDue)}.`
+                : "No accounts deadline is published yet."}{" "}
+              A new company has nothing to file for its first 21 months, so this is expected rather than a gap.
+            </p>
+            {accountsDays != null ? (
+              <div className="empty-metric">
+                <span className="empty-metric__label mono">Days to first filing</span>
+                <span className="empty-metric__value">{accountsDays}</span>
+              </div>
+            ) : null}
+            <div className="icard__foot">
+              <Link className="icard__cta" href="/app/alerts">
+                Set filing alert <Icon name="arrowRight" size={13} />
+              </Link>
+              <button className="icard__cta" onClick={() => setTab("market")}>
+                Use sector benchmarks instead <Icon name="arrowRight" size={13} />
+              </button>
+            </div>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      <Card>
+        <CardBody>
+          <div className="icard__head">
+            <span className="app-eyebrow">Recommended next steps</span>
+            <Badge tone="neutral">For {lens.label}</Badge>
+          </div>
+          <div className="steps">
+            {actions.map((a) => (
+              <div className="steps__row" key={a.n}>
+                <span className="steps__n mono">{a.n}</span>
+                <span className="steps__label">{a.label}</span>
+                {a.href.startsWith("#") ? (
+                  <button
+                    className="steps__cta"
+                    onClick={() => setTab(a.href === "#records" ? "records" : a.href === "#competitors" ? "competitors" : "lens")}
+                  >
+                    {a.cta} <Icon name="arrowRight" size={13} />
+                  </button>
+                ) : (
+                  <Link className="steps__cta" href={a.href}>
+                    {a.cta} <Icon name="arrowRight" size={13} />
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+    </>
+  );
+
+  // One gate, used for the Intelligence tab's evidence and for whole tabs.
+  // Signed in: render as-is. Anonymous: blur it, make it inert, and put the
+  // free-account CTA over it.
+  // Signed in, or spending a metered free read: show it. The gate is for the
+  // visitor who has used their allowance.
+  const openToReader = signedIn || metered;
+
+  const gate = (node: React.ReactNode, what?: string) =>
+    openToReader ? (
+      node
+    ) : (
+      <IntelGate
+        badge="Free account"
+        title={`You've used your ${METER_ALLOWANCE} free reports this month`}
+        sub={`A free account keeps this open: ${(what ?? DEFAULT_GATE_WHAT).charAt(0).toLowerCase()}${(what ?? DEFAULT_GATE_WHAT).slice(1)}. No card.`}
+        ctaLabel="Create free account"
+        ctaHref={`/sign-in?next=${encodeURIComponent(`/company/${c.number}`)}`}
+        secondary={{ label: "See plans", href: "/pricing" }}
+      >
+        {node}
+      </IntelGate>
+    );
+
   return (
     <div className="screen profile">
       {unlocked ? (
-        <button className="back" onClick={() => router.push("/search")}>
+        <button className="back" onClick={() => router.push("/app/companies")}>
           <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> Back to results
         </button>
       ) : null}
@@ -375,15 +628,41 @@ export function CompanyProfile({
                 Export report
               </Button>
             </>
-          ) : (
-            <Button href={signedIn ? "/app/upgrade" : "/pricing"} variant="primary" iconRight="arrowRight">
+          ) : signedIn ? (
+            // Signed in but not Pro: upgrade is the right next ask, and they
+            // have already met the account gate.
+            <Button href="/app/upgrade" variant="primary" iconRight="arrowRight">
               See plans
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
 
       <p className="profile-summary">{summary}</p>
+
+      {/* Tell them the meter exists. Hitting a gate on the fourth report with no
+          warning reads as arbitrary; a visible count makes the ask expected. */}
+      {metered ? (
+        <div className="meter-note">
+          <Icon name="shield" size={14} />
+          <span>
+            {meterLeft === 0 ? (
+              <strong>This is your last free report this month.</strong>
+            ) : (
+              <>
+                <strong>
+                  {meterLeft} more free {meterLeft === 1 ? "report" : "reports"}
+                </strong>{" "}
+                this month.
+              </>
+            )}{" "}
+            <Link href={`/sign-in?next=${encodeURIComponent(`/company/${c.number}`)}`}>
+              Create a free account
+            </Link>{" "}
+            to keep reading without a limit.
+          </span>
+        </div>
+      ) : null}
 
       <LensBar
         profileKey={profileKey}
@@ -430,213 +709,15 @@ export function CompanyProfile({
 
       {tab === "intelligence" ? (
         <div className="intel">
-          <div className="intel__row2">
+          {/* The one thing that stays open to everyone, Googlebot included:
+              the score. It is the hook, and on its own it is not the product —
+              everything else on this tab sits behind the free-account gate. */}
+          <div className="intel__solo">
             <LensScoreCard score={score} delta={`${score.coverage}% of model measurable`} />
-
-            <Card>
-              <CardBody>
-                <div className="brief__head">
-                  <span className="app-eyebrow">Company brief</span>
-                  <Badge tone="neutral">For {lens.label}</Badge>
-                </div>
-                <p className="brief__prose">{brief.prose}</p>
-                <div className="brief__points">
-                  {brief.points.map((p) => (
-                    <div className={`brief__point ${toneClass(p.tone)}`} key={p.n}>
-                      <span className="brief__n mono">{p.n}</span>
-                      <div>
-                        <div className="brief__title">{p.title}</div>
-                        <div className="brief__text">{p.text}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="brief__foot">
-                  <Button variant="secondary" onClick={() => setTab("lens")}>
-                    View evidence
-                  </Button>
-                  <span className="brief__disclaimer mono">Interpretation, not advice</span>
-                </div>
-              </CardBody>
-            </Card>
           </div>
 
-          <div className="changed">
-            <div className="changed__head">
-              <span className="app-eyebrow">What&rsquo;s changed</span>
-              <span className="changed__sub mono">Register &amp; sector</span>
-            </div>
-            <div className="changed__items">
-              <div className="changed__item">
-                <span className="changed__k mono">Sector growth</span>
-                <span className={`changed__v ${report.industry.annualGrowth >= 0 ? "is-good" : "is-risk"}`}>
-                  {pc(report.industry.annualGrowth)}
-                </span>
-              </div>
-              <div className="changed__item">
-                <span className="changed__k mono">Confirmation statement</span>
-                <span className={`changed__v ${c.confirmationStatement?.overdue ? "is-risk" : "is-good"}`}>
-                  {c.confirmationStatement?.overdue ? "Overdue" : "Current"}
-                </span>
-              </div>
-              <div className="changed__item">
-                <span className="changed__k mono">{newlyIncorporated ? "Newly incorporated" : "Age"}</span>
-                <span className="changed__v">{incDays != null ? shortAge(incDays) : "—"}</span>
-              </div>
-              <div className="changed__item">
-                <span className="changed__k mono">Regional density</span>
-                <span className="changed__v">{report.local.density}</span>
-              </div>
-            </div>
-            <button className="changed__cta" onClick={() => setTab("lens")}>
-              View all signals <Icon name="arrowRight" size={13} />
-            </button>
-          </div>
 
-          <Fingerprint cells={fingerprint} peers={report.industry.businesses} lensKey={lensKey} lensScore={score} />
-
-          <div className="intel__row2">
-            <Card>
-              <CardBody>
-                <div className="icard__head">
-                  <span className="app-eyebrow">Market intelligence</span>
-                  <Badge tone={regionalAhead ? "pos" : "warn"}>{regionalAhead ? "Tailwind" : "Headwind"}</Badge>
-                </div>
-                <MiniRows
-                  rows={[
-                    { k: "Companies in sector", v: num(report.industry.businesses) },
-                    { k: "National growth", v: pc(report.regional.nationalGrowth) },
-                    { k: `${report.local.region} growth`, v: pc(report.regional.regionalGrowth) },
-                  ]}
-                />
-                <div className="icard__spark">
-                  <Sparkline points={sparkPoints} label="Sector formations over 10 quarters" />
-                  <div className="icard__sparkAxis mono">
-                    <span>10 quarters ago</span>
-                    <span>Sector formations</span>
-                    <span>Now</span>
-                  </div>
-                </div>
-                <p className="icard__note">{report.regional.insight}</p>
-                <div className="icard__foot">
-                  <button className="icard__cta" onClick={() => setTab("market")}>
-                    View market intelligence <Icon name="arrowRight" size={13} />
-                  </button>
-                  <span className="icard__src mono">ONS · modelled trend</span>
-                </div>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <div className="icard__head">
-                  <span className="app-eyebrow">Competitive landscape</span>
-                  <Badge tone={report.local.density === "Very high" || report.local.density === "High" ? "warn" : "pos"}>
-                    {report.local.density === "Very high" || report.local.density === "High" ? "Headwind" : "Manageable"}
-                  </Badge>
-                </div>
-                <MiniRows
-                  rows={[
-                    { k: `Comparables (${report.local.region})`, v: num(report.local.inSameIndustry) },
-                    { k: "Sector total (UK)", v: num(report.industry.businesses) },
-                    { k: "5-yr survival", v: `${report.survival.fiveYear.toFixed(1)}%` },
-                  ]}
-                />
-                <p className="icard__note">
-                  {report.local.density === "Very high" || report.local.density === "High"
-                    ? "Crowded and attritional. Differentiation matters more than market timing here."
-                    : "Room to move — the region is not saturated for this trade."}
-                </p>
-                <div className="icard__foot">
-                  <button className="icard__cta" onClick={() => setTab("competitors")}>
-                    Compare competitors <Icon name="arrowRight" size={13} />
-                  </button>
-                  <span className="icard__src mono">CH register</span>
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-
-          <Card>
-            <CardBody>
-              <div className="icard__head">
-                <span className="app-eyebrow">{lensCard.label}</span>
-                <Badge tone={lensCard.flagTone === "good" ? "pos" : lensCard.flagTone === "risk" ? "warn" : "neutral"}>
-                  {lensCard.flag}
-                </Badge>
-              </div>
-              <div className="icard__headline">{lensCard.headline}</div>
-              <MiniRows rows={lensCard.rows} />
-              <p className="icard__note">{lensCard.note}</p>
-              <div className="icard__foot">
-                <button className="icard__cta" onClick={() => setTab("lens")}>
-                  {lensCard.cta.label} <Icon name="arrowRight" size={13} />
-                </button>
-                <span className="icard__src mono">{lensCard.source}</span>
-              </div>
-            </CardBody>
-          </Card>
-
-          {!hasFiledAccounts ? (
-            <Card>
-              <CardBody>
-                <div className="icard__head">
-                  <span className="app-eyebrow">Financial intelligence</span>
-                  <Badge tone="neutral">Awaiting first accounts</Badge>
-                </div>
-                <p className="icard__note" style={{ marginTop: 0 }}>
-                  {incDays != null ? `Incorporated ${agoText(incDays)}. ` : ""}
-                  {c.accounts?.nextDue
-                    ? `First accounts are due ${fmtDate(c.accounts.nextDue)}.`
-                    : "No accounts deadline is published yet."}{" "}
-                  A new company has nothing to file for its first 21 months, so this is expected rather than a gap.
-                </p>
-                {accountsDays != null ? (
-                  <div className="empty-metric">
-                    <span className="empty-metric__label mono">Days to first filing</span>
-                    <span className="empty-metric__value">{accountsDays}</span>
-                  </div>
-                ) : null}
-                <div className="icard__foot">
-                  <Link className="icard__cta" href="/app/alerts">
-                    Set filing alert <Icon name="arrowRight" size={13} />
-                  </Link>
-                  <button className="icard__cta" onClick={() => setTab("market")}>
-                    Use sector benchmarks instead <Icon name="arrowRight" size={13} />
-                  </button>
-                </div>
-              </CardBody>
-            </Card>
-          ) : null}
-
-          <Card>
-            <CardBody>
-              <div className="icard__head">
-                <span className="app-eyebrow">Recommended next steps</span>
-                <Badge tone="neutral">For {lens.label}</Badge>
-              </div>
-              <div className="steps">
-                {actions.map((a) => (
-                  <div className="steps__row" key={a.n}>
-                    <span className="steps__n mono">{a.n}</span>
-                    <span className="steps__label">{a.label}</span>
-                    {a.href.startsWith("#") ? (
-                      <button
-                        className="steps__cta"
-                        onClick={() => setTab(a.href === "#records" ? "records" : a.href === "#competitors" ? "competitors" : "lens")}
-                      >
-                        {a.cta} <Icon name="arrowRight" size={13} />
-                      </button>
-                    ) : (
-                      <Link className="steps__cta" href={a.href}>
-                        {a.cta} <Icon name="arrowRight" size={13} />
-                      </Link>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
+          {gate(evidenceBlock)}
 
           {unlocked ? (
             <IntelligenceReport
@@ -654,7 +735,10 @@ export function CompanyProfile({
                 score: score.score,
               }}
             />
-          ) : (
+          ) : signedIn ? (
+            /* The third rung. An anonymous visitor has already met the
+               free-account gate, so an upgrade pitch here would be a second ask
+               before they have seen anything. */
             <Card className="deepgate">
               <CardBody>
                 <Badge tone="accent" dot>
@@ -663,27 +747,23 @@ export function CompanyProfile({
                 <h2 className="deepgate__title">Unlock the full report</h2>
                 <p className="deepgate__sub">
                   Verified digital presence, director networks, keyword and regional intelligence, CSV exports, alerts
-                  and watchlists across every UK company. Everything above stays free.
+                  and watchlists across every UK company. Everything above stays on your free account.
                 </p>
                 <div className="deepgate__cta">
-                  <Link href={signedIn ? "/app/upgrade" : "/pricing"}>
+                  <Link href="/app/upgrade">
                     <Button variant="primary" iconRight="arrowRight">
                       See plans
                     </Button>
                   </Link>
-                  {!signedIn ? (
-                    <Link href="/sign-in">
-                      <Button variant="secondary">Sign in</Button>
-                    </Link>
-                  ) : null}
                 </div>
               </CardBody>
             </Card>
-          )}
+          ) : null}
         </div>
       ) : null}
 
       {tab === "lens" ? (
+        gate(
         <div className="intel">
           <p className="tab-question">
             <Icon name="arrowRight" size={13} /> Answers: {lens.question}
@@ -741,9 +821,13 @@ export function CompanyProfile({
             </CardBody>
           </Card>
         </div>
+        ,
+          "What is actually evidenced for the lens you picked, row by row, and which signals could not be checked"
+        )
       ) : null}
 
       {tab === "market" ? (
+        gate(
         <div className="intel">
           <p className="tab-question">
             <Icon name="arrowRight" size={13} /> Answers: is this market big, growing and survivable — and is the region
@@ -823,9 +907,13 @@ export function CompanyProfile({
             </Card>
           </div>
         </div>
+        ,
+          "How big this market is, how fast it is growing, how many companies survive five years, and the local economy around it"
+        )
       ) : null}
 
       {tab === "competitors" ? (
+        gate(
         <div className="intel">
           <p className="tab-question">
             <Icon name="arrowRight" size={13} /> Answers: how crowded is this market, and where does this company sit
@@ -905,9 +993,13 @@ export function CompanyProfile({
             </Card>
           ) : null}
         </div>
+        ,
+          "The closest comparable companies on the register and where this one sits in the distribution"
+        )
       ) : null}
 
       {tab === "records" ? (
+        gate(
         <div className="intel">
           <p className="tab-question">
             <Icon name="arrowRight" size={13} /> Answers: what is formally on the public register — and what has not been
@@ -1035,7 +1127,7 @@ export function CompanyProfile({
                     </tr>
                   </thead>
                   <tbody>
-                    {filings.map((f, i) => (
+                    {shownFilings.map((f, i) => (
                       <tr key={i}>
                         <td className="mono">{fmtDate(f.date)}</td>
                         <td>
@@ -1047,6 +1139,14 @@ export function CompanyProfile({
                     {filings.length === 0 ? (
                       <tr className="empty-row">
                         <td colSpan={3}>No filing history available.</td>
+                      </tr>
+                    ) : null}
+                    {filingsTruncated ? (
+                      <tr className="empty-row">
+                        <td colSpan={3}>
+                          Showing the {shownFilings.length} most recent of {filings.length} filings.{" "}
+                          <Link href="/app/upgrade">Upgrade for the complete history</Link>.
+                        </td>
                       </tr>
                     ) : null}
                   </tbody>
@@ -1097,6 +1197,9 @@ export function CompanyProfile({
             </CardBody>
           </Card>
         </div>
+        ,
+          "The formal register record: filing history, directors, persons with significant control, and any charges"
+        )
       ) : null}
 
       <p className="profile-disclaimer">

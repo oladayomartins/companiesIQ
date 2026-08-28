@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { METER_COOKIE, readMeter, serialiseMeter, meterAllows, meterRemaining } from "@/lib/meter";
 
 // Refreshes the Supabase auth session on every request (so server components
 // and getCurrentUser() see a live session) and gates the SaaS app behind login.
@@ -25,15 +26,6 @@ export async function middleware(req: NextRequest) {
     cb.pathname = "/auth/callback";
     if (!cb.searchParams.get("next")) cb.searchParams.set("next", "/app");
     return NextResponse.redirect(cb);
-  }
-
-  // The Pro explorer and the public funnel converged on /search. Redirect the
-  // retired route here, BEFORE the /app auth gate, so a logged-out visitor
-  // following an old link lands on the search page rather than a sign-in wall.
-  if (req.nextUrl.pathname === "/app/companies" || req.nextUrl.pathname.startsWith("/app/companies/")) {
-    const to = req.nextUrl.clone();
-    to.pathname = "/search";
-    return NextResponse.redirect(to);
   }
 
   // Never run session refresh / gating on the auth callback itself. The callback
@@ -65,6 +57,44 @@ export async function middleware(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // ---- Metered company reports -------------------------------------------
+  //
+  // Decided here because a page cannot write cookies during render in Next 15,
+  // and the meter has to be counted before the page decides what to show. The
+  // verdict travels to the page as a request header.
+  //
+  // Only real document loads count. An RSC prefetch would silently burn a
+  // visitor's allowance for a page they never opened, which is the classic way
+  // meters end up feeling broken.
+  if (!user && req.nextUrl.pathname.startsWith("/company/")) {
+    const isPrefetch =
+      req.headers.get("next-router-prefetch") === "1" ||
+      req.headers.get("purpose") === "prefetch" ||
+      req.nextUrl.searchParams.has("_rsc");
+
+    const state = readMeter(req.cookies.get(METER_COOKIE)?.value);
+    const allowed = meterAllows(state);
+
+    const headers = new Headers(req.headers);
+    headers.set("x-ciq-meter", allowed ? "allow" : "spent");
+    // Remaining AFTER this read. Saying "3 left" while spending one of the
+    // three is off by one, and the visitor notices when the gate arrives early.
+    headers.set("x-ciq-meter-left", String(allowed ? Math.max(0, meterRemaining(state) - 1) : 0));
+    res = NextResponse.next({ request: { headers } });
+
+    if (allowed && !isPrefetch) {
+      const next = { ...state, count: state.count + 1 };
+      res.cookies.set(METER_COOKIE, serialiseMeter(next), {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 40, // past a month rollover, then it resets itself
+      });
+    }
+    return res;
+  }
 
   if (!user && req.nextUrl.pathname.startsWith("/app")) {
     const signIn = req.nextUrl.clone();
