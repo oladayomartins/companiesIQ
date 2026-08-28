@@ -152,8 +152,24 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
     name: c.name,
     identifier: c.number,
     url: `${SITE_URL}/company/${c.number}`,
-    ...(c.geo?.region && c.geo.region !== "Unknown"
-      ? { address: { "@type": "PostalAddress", addressRegion: c.geo.region, addressCountry: "GB" } }
+    // The full registered office, not just the region. Rich Results flagged
+    // streetAddress, addressLocality and postalCode as missing-but-optional —
+    // and we hold all three, from the same Companies House record the page
+    // already renders them from. A complete PostalAddress is what lets an
+    // answer engine place the company, so partial data here was a straight loss.
+    ...(c.address || (c.geo?.region && c.geo.region !== "Unknown")
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            ...(c.address?.line1
+              ? { streetAddress: [c.address.line1, c.address.line2].filter(Boolean).join(", ") }
+              : {}),
+            ...(c.address?.locality ? { addressLocality: c.address.locality } : {}),
+            ...(c.geo?.region && c.geo.region !== "Unknown" ? { addressRegion: c.geo.region } : {}),
+            ...(c.address?.postcode ? { postalCode: c.address.postcode } : {}),
+            addressCountry: "GB",
+          },
+        }
       : {}),
     ...(c.incorporated ? { foundingDate: c.incorporated } : {}),
     // Answer engines quote status and dates directly; make both machine-readable
