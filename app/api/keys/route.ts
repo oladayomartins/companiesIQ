@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   }
 
   const body = (await req.json().catch(() => ({}))) as { name?: string };
-  const created = await createApiKey(user.id, body.name ?? null);
+  const created = await createApiKey(user.id, body.name ?? null, user.email ?? null);
   if (!created) return NextResponse.json({ error: "Could not create key." }, { status: 500 });
 
   await audit({
