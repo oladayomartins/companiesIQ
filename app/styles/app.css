@@ -573,3 +573,17 @@
 .locked-intel__icon { width: 52px; height: 52px; border-radius: var(--radius-xl); background: var(--accent-tint); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 4px; }
 @media (max-width: 900px) { .gate-skel--grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) { .gate-skel--grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- API keys (Settings) ---------- */
+.apikeys__list { display: flex; flex-direction: column; border-top: 1px solid var(--border-hair); margin: 4px 0 14px; }
+.apikeys__row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 2px; border-bottom: 1px solid var(--border-hair); }
+.apikeys__name { font-weight: 600; color: var(--text-strong); font-size: var(--text-ui); }
+.apikeys__meta { font-size: var(--text-2xs); color: var(--text-faint); margin-top: 2px; }
+.apikeys__create { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 10px; }
+.apikeys__input { flex: 1; min-width: 190px; padding: 8px 11px; border-radius: var(--radius-md); border: 1px solid var(--border-hair); background: var(--bg-page); color: var(--text-strong); font: inherit; font-size: var(--text-ui); }
+.apikeys__input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--focus-ring); }
+.apikeys__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+/* The one-time reveal is deliberately loud: the plaintext never comes back. */
+.apikeys__fresh { padding: 14px 15px; border-radius: var(--radius-lg); border: 1px solid var(--accent); background: var(--accent-tint); margin-bottom: 14px; }
+.apikeys__freshHead { display: flex; align-items: center; gap: 8px; color: var(--accent); margin-bottom: 9px; font-size: var(--text-ui); }
+.apikeys__secret { display: block; font-family: var(--font-mono); font-size: 12.5px; word-break: break-all; background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 10px; color: var(--text-strong); }

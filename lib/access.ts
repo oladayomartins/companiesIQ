@@ -16,6 +16,22 @@ import { planById, type Plan, type PlanId } from "@/lib/subscription";
 
 const ACTIVE_STATUSES = new Set(["active", "trialing"]);
 
+/**
+ * The plan for a user id. Used where there is no User object — an API key
+ * identifies a user id, not a session.
+ */
+export async function getUserPlanById(userId: string): Promise<string> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return "free";
+  try {
+    const { data } = await admin.from("subscriptions").select("plan,status").eq("user_id", userId).maybeSingle();
+    if (data && data.plan !== "free" && ACTIVE_STATUSES.has(data.status)) return data.plan;
+    return "free";
+  } catch {
+    return "free";
+  }
+}
+
 /** The user's plan ("free" if none active). */
 export async function getUserPlan(user: User | null): Promise<string> {
   if (!user) return "free";
