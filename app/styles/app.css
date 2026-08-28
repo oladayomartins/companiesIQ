@@ -587,3 +587,11 @@
 .apikeys__fresh { padding: 14px 15px; border-radius: var(--radius-lg); border: 1px solid var(--accent); background: var(--accent-tint); margin-bottom: 14px; }
 .apikeys__freshHead { display: flex; align-items: center; gap: 8px; color: var(--accent); margin-bottom: 9px; font-size: var(--text-ui); }
 .apikeys__secret { display: block; font-family: var(--font-mono); font-size: 12.5px; word-break: break-all; background: var(--surface-card); border: 1px solid var(--border-hair); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 10px; color: var(--text-strong); }
+
+/* ---------- Account activity (Settings) ---------- */
+.activity { display: flex; flex-direction: column; border-top: 1px solid var(--border-hair); margin-bottom: 12px; }
+.activity__row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 14px; padding: 9px 2px; border-bottom: 1px solid var(--border-hair); }
+.activity__what { font-size: var(--text-ui); color: var(--text-body); }
+.activity__subject { font-size: var(--text-2xs); color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; max-width: 190px; white-space: nowrap; }
+.activity__when { font-size: var(--text-2xs); color: var(--text-faint); white-space: nowrap; }
+@media (max-width: 620px) { .activity__row { grid-template-columns: 1fr auto; } .activity__subject { display: none; } }

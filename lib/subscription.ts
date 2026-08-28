@@ -102,6 +102,7 @@ export const PLANS: Plan[] = [
       "Everything in Team",
       "Custom signal models",
       "API access · 250k calls/mo",
+      "Account audit log",
       "Bulk data delivery",
       "Dedicated success manager",
       "SLA & onboarding",
