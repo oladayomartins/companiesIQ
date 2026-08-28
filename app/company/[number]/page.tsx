@@ -144,6 +144,11 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   const orgSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    // A stable @id, because the layout also emits an Organization for
+    // CompaniesIQ itself. Two unlabelled Organization nodes leave a parser
+    // guessing which one the page is actually about; this one is named as the
+    // page's mainEntity below.
+    "@id": `${SITE_URL}/company/${c.number}#organization`,
     name: c.name,
     identifier: c.number,
     url: `${SITE_URL}/company/${c.number}`,
@@ -151,7 +156,41 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
       ? { address: { "@type": "PostalAddress", addressRegion: c.geo.region, addressCountry: "GB" } }
       : {}),
     ...(c.incorporated ? { foundingDate: c.incorporated } : {}),
+    // Answer engines quote status and dates directly; make both machine-readable
+    // rather than leaving them to be parsed out of the prose.
+    ...(c.dissolved ? { dissolutionDate: c.dissolved } : {}),
+    ...(c.primaryClassification?.sector ? { knowsAbout: c.primaryClassification.sector } : {}),
   };
+  // Paywall declaration — REQUIRED, not optional polish.
+  //
+  // We serve the gated intelligence to Googlebot in full (it is in the DOM,
+  // blurred by CSS) while a logged-out human has to register to read it.
+  // Google treats exactly that as cloaking unless the gated section is declared
+  // with isAccessibleForFree:false and a hasPart cssSelector pointing at it —
+  // and the documented penalty is the page not appearing in search at all.
+  //
+  // Only emitted when the page is actually gated. A signed-in reader has the
+  // content, so claiming otherwise would be its own inaccuracy.
+  // https://developers.google.com/search/docs/appearance/structured-data/paywalled-content
+  const paywallSchema = !signedIn
+    ? {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": `${SITE_URL}/company/${c.number}`,
+        url: `${SITE_URL}/company/${c.number}`,
+        name: `${c.name} — company report`,
+        mainEntity: { "@id": `${SITE_URL}/company/${c.number}#organization` },
+        isAccessibleForFree: false,
+        hasPart: {
+          "@type": "WebPageElement",
+          isAccessibleForFree: false,
+          // Must match the class on the wrapper around the gated content
+          // (components/app/IntelGate.tsx). Google accepts .class selectors only.
+          cssSelector: ".intelgate__veil",
+        },
+      }
+    : null;
+
   const breadcrumb = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -163,7 +202,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
 
   return (
     <>
-      <JsonLd data={[orgSchema, breadcrumb]} />
+      <JsonLd data={[orgSchema, breadcrumb, ...(paywallSchema ? [paywallSchema] : [])]} />
       <PublicReportChrome unlocked={unlocked} signedIn={signedIn}>
         {!signedIn ? <TrackCompanyCta company={c.name} number={c.number} sector={c.primaryClassification?.sector} /> : null}
         <CompanyProfile
