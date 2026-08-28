@@ -22,7 +22,9 @@
 .sx-mode.is-on { color: var(--text-strong); border-bottom-color: var(--accent); }
 .sx-mode__tag {
   font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
-  padding: 2px 5px; border-radius: 4px; background: var(--accent-tint); color: var(--accent);
+  /* --accent is the solid fill colour; on the tint it fails contrast at this
+     size. --accent-text is the token meant for accent-coloured text. */
+  padding: 2px 5px; border-radius: 4px; background: var(--accent-tint); color: var(--accent-text);
 }
 
 .sx-box {
