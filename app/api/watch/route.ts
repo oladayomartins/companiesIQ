@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { WATCHLIST_COMPANY_LIMIT } from "@/lib/access";
+import { audit } from "@/lib/audit";
 import { addWatchChecked, removeWatch } from "@/lib/watchlist";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,16 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as { companyNumber?: string };
   if (!body.companyNumber) return NextResponse.json({ error: "companyNumber required." }, { status: 400 });
   const res = await addWatchChecked(body.companyNumber);
-  if (res.ok) return NextResponse.json({ ok: true, watched: true });
+  if (res.ok) {
+    await audit({
+      userId: user.id,
+      actorEmail: user.email ?? null,
+      action: "watch.add",
+      subject: body.companyNumber,
+      req,
+    });
+    return NextResponse.json({ ok: true, watched: true });
+  }
   if (res.reason === "limit") {
     return NextResponse.json(
       { error: `Your plan includes ${WATCHLIST_COMPANY_LIMIT} watched companies. Upgrade for unlimited watchlists.`, limit: true },

@@ -15,6 +15,9 @@ create table if not exists public.api_keys (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users (id) on delete cascade,
   name        text,                                   -- user's label, e.g. "Zapier"
+  -- Denormalised so entitlement can honour comped admin/partner accounts
+  -- without an auth lookup on every authenticated call.
+  user_email  text,
   -- sha256 of the full key. Never store the key itself.
   key_hash    text not null unique,
   -- First 12 chars ("ciq_live_ab12"), shown in the UI so a key is identifiable

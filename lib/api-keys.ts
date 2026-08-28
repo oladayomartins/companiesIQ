@@ -12,6 +12,7 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { isAdminEmail, isPartnerEmail } from "@/lib/admin";
 import { getUserPlanById } from "@/lib/access";
 import { planById, type PlanId } from "@/lib/subscription";
 import { API_QUOTAS } from "@/lib/api-quotas";
@@ -32,7 +33,11 @@ const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 
 /** Issue a key. The plaintext is returned ONCE and never persisted. */
-export async function createApiKey(userId: string, name: string | null): Promise<{ key: string; row: ApiKeyRow } | null> {
+export async function createApiKey(
+  userId: string,
+  name: string | null,
+  userEmail: string | null
+): Promise<{ key: string; row: ApiKeyRow } | null> {
   const admin = getSupabaseAdmin();
   if (!admin) return null;
   const secret = randomBytes(24).toString("base64url");
@@ -44,6 +49,7 @@ export async function createApiKey(userId: string, name: string | null): Promise
       name: name?.trim().slice(0, 60) || null,
       key_hash: sha256(key),
       key_prefix: key.slice(0, 12),
+      user_email: userEmail,
     })
     .select("id,name,key_prefix,created_at,last_used_at")
     .single();
@@ -99,7 +105,7 @@ export async function authenticateApiRequest(req: Request): Promise<AuthResult> 
 
   const { data: row } = await admin
     .from("api_keys")
-    .select("id,user_id,revoked_at")
+    .select("id,user_id,revoked_at,user_email")
     .eq("key_hash", sha256(key))
     .maybeSingle();
   if (!row || row.revoked_at) return { ok: false, status: 401, error: "Invalid or revoked API key." };
@@ -109,10 +115,16 @@ export async function authenticateApiRequest(req: Request): Promise<AuthResult> 
 
   // Entitlement is read from the plan, not baked into the key, so a downgrade
   // takes effect immediately rather than at the next key rotation.
+  //
+  // Comped accounts (admin / partner) are honoured here too. /api/keys lets them
+  // create a key, so refusing it at call time would hand them a credential that
+  // never works.
+  const email = (row.user_email as string | null) ?? null;
+  const comped = isAdminEmail(email) || isPartnerEmail(email);
   const plan = await getUserPlanById(userId);
   const caps = planById(plan as PlanId).caps;
-  const quota = API_QUOTAS[plan] ?? 0;
-  if (!caps.api || quota === 0) {
+  const quota = comped ? API_QUOTAS.enterprise : API_QUOTAS[plan] ?? 0;
+  if (!comped && (!caps.api || quota === 0)) {
     return { ok: false, status: 403, error: "API access is available on the Team and Enterprise plans." };
   }
 
