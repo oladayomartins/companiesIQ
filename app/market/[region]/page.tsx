@@ -16,7 +16,7 @@ import { FEATURED_SECTORS } from "@/lib/sic";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForPlace } from "@/lib/guides";
-import { JsonLd } from "@/components/JsonLd";
+import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
 import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -60,22 +60,17 @@ export default async function MarketPage({ params }: { params: Promise<{ region:
   const emp = live?.employmentRate ?? stat.employmentRate;
   const pay = live?.medianWeeklyPay ?? stat.medianWeeklyPay;
 
-  const breadcrumb = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Markets", item: `${SITE_URL}/market` },
-      { "@type": "ListItem", position: 2, name: stat.region, item: `${SITE_URL}/market/${slug}` },
-    ],
-  };
 
   return (
     <PublicShell>
-      <JsonLd data={breadcrumb} />
+      <DatasetLd
+        name={`${stat.region} — UK business and economic data`}
+        description={`Company formations, business density and labour-market context for ${stat.region}, from the Companies House register with ONS and Nomis statistics.`}
+        path={`/market/${slugify(stat.region)}`}
+        dateModified={new Date().toISOString().slice(0, 10)}
+      />
       <div className="screen profile">
-        <Link className="back" href="/market">
-          <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> All regions
-        </Link>
+        <Breadcrumbs crumbs={[{ href: "/", label: "Home" }, { href: "/market", label: "Markets" }, { label: stat.region }]} />
 
         <div className="screen-head">
           <div>

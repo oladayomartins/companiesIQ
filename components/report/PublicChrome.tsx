@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ds";
 
-// Slim, dark chrome for the PUBLIC company report (/company/[number]).
-// These pages live outside the /app shell — cold visitors and Googlebot land
-// here — so they get their own header (sign-in / dashboard) and a light footer.
+// Chrome for the PUBLIC company report (/company/[number]).
+//
+// Light, like every other page reachable without signing in — the dark theme is
+// the signed-in app's alone. This shell keeps its own header rather than using
+// SiteHeader because the report's CTA is state-dependent (sign in / upgrade /
+// open dashboard) in a way the marketing nav is not.
 export function PublicReportChrome({
   unlocked,
   signedIn = false,
@@ -14,7 +17,7 @@ export function PublicReportChrome({
   children: React.ReactNode;
 }) {
   return (
-    <div className="ciq-dark report-public">
+    <div className="site public-page report-public">
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>

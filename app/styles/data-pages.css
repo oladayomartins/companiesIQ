@@ -1,0 +1,184 @@
+/* =========================================================
+   The DATA archetype: index and detail pages for industries, markets,
+   cities and signals.
+
+   Motion rules (brief §7) are obeyed throughout: only transform and opacity
+   are animated, nothing that triggers layout; bars scale from their own
+   baseline inside an explicit plot track so a label can never be pushed out
+   of its card; and every animation is switched off wholesale under
+   prefers-reduced-motion at the bottom of this file.
+   ========================================================= */
+
+/* ---- Masthead ---------------------------------------------------------- */
+.dx-masthead {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 28px; flex-wrap: wrap; margin-bottom: 26px;
+}
+.dx-lede { max-width: 68ch; margin-top: 10px; }
+.dx-stamp {
+  display: flex; flex-direction: column; gap: 3px; padding: 9px 14px;
+  border: 1px solid var(--border-hair); border-radius: 10px; background: var(--surface-sunken);
+}
+.dx-stamp__k { font-size: var(--text-2xs); letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
+.dx-stamp__v { font-size: var(--text-ui); color: var(--text-body); }
+
+/* ---- Headline figures --------------------------------------------------- */
+.dx-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 22px; padding: 24px 0 26px; border-top: 1px solid var(--border-hair);
+  border-bottom: 1px solid var(--border-hair); margin-bottom: 26px;
+}
+.dx-stat { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.dx-stat__k { font-size: var(--text-2xs); letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
+.dx-stat__v {
+  font-family: var(--font-grotesk); font-weight: 800; font-size: 34px; line-height: 1.05;
+  letter-spacing: -.03em; color: var(--text-strong);
+  /* Tabular figures so a count-up cannot jitter the layout as digits change. */
+  font-variant-numeric: tabular-nums;
+}
+.dx-stat__n { font-size: var(--text-sm); color: var(--text-muted); }
+
+/* ---- Controls ----------------------------------------------------------- */
+.dx-controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.dx-search {
+  display: flex; align-items: center; gap: 9px; flex: 1; min-width: 220px; max-width: 380px;
+  padding: 8px 12px; border: 1px solid var(--border-hair); border-radius: 9px; background: var(--surface-card);
+}
+.dx-search:focus-within { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--focus-ring); }
+.dx-search svg { color: var(--text-faint); flex: none; }
+.dx-search input { flex: 1; min-width: 0; border: 0; background: none; color: var(--text-strong); font: inherit; font-size: var(--text-ui); }
+.dx-search input:focus { outline: none; }
+.dx-search button { display: flex; padding: 3px; border: 0; background: none; cursor: pointer; color: var(--text-faint); border-radius: 5px; }
+.dx-search button:hover { color: var(--text-strong); background: var(--surface-sunken); }
+.dx-count { font-size: var(--text-2xs); letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
+.dx-toggle { display: flex; margin-left: auto; border: 1px solid var(--border-hair); border-radius: 9px; overflow: hidden; }
+.dx-toggle button {
+  padding: 7px 14px; border: 0; background: none; cursor: pointer;
+  color: var(--text-muted); font: inherit; font-size: var(--text-sm); font-weight: 600;
+}
+.dx-toggle button.is-on { background: var(--surface-sunken); color: var(--text-strong); }
+.dx-toggle button:not(.is-on):hover { color: var(--text-strong); }
+
+/* ---- Cards -------------------------------------------------------------- */
+.dx-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.dx-card {
+  display: flex; flex-direction: column; gap: 12px; padding: 18px;
+  border: 1px solid var(--border-hair); border-radius: 13px; background: var(--surface-card);
+  text-decoration: none; color: inherit;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  animation: dx-rise 320ms ease-out backwards;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+.dx-card:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgb(0 0 0 / .07); border-color: var(--border-strong); }
+.dx-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dx-card__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dx-card__name { font-family: var(--font-grotesk); font-weight: 700; font-size: 17px; letter-spacing: -.01em; color: var(--text-strong); }
+.dx-card__head svg { color: var(--accent); flex: none; }
+.dx-card__stats { display: flex; gap: 18px; flex-wrap: wrap; font-size: var(--text-sm); color: var(--text-muted); }
+.dx-card__stats strong { color: var(--text-strong); font-weight: 700; font-variant-numeric: tabular-nums; }
+.dx-pill {
+  display: inline-flex; align-items: center; gap: 7px; align-self: flex-start;
+  padding: 4px 10px; border-radius: 99px; background: var(--surface-sunken);
+  font-size: var(--text-2xs); color: var(--text-muted);
+}
+.dx-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint); }
+.dx-pill.is-pos { background: var(--pos-bg); color: var(--pos); }
+.dx-pill.is-pos .dx-pill__dot { background: var(--pos); }
+
+@keyframes dx-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---- Table -------------------------------------------------------------- */
+.dx-tablewrap { overflow-x: auto; border: 1px solid var(--border-hair); border-radius: 13px; }
+.dx-table { width: 100%; border-collapse: collapse; background: var(--surface-card); }
+.dx-table th, .dx-table td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border-hair); }
+.dx-table thead th {
+  font-size: var(--text-2xs); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-faint); font-weight: 600; background: var(--surface-sunken);
+}
+.dx-table tbody tr:last-child th, .dx-table tbody tr:last-child td { border-bottom: 0; }
+/* Rows tint on hover, never move — a shifting row is impossible to click. */
+.dx-table tbody tr { transition: background-color 160ms ease; }
+.dx-table tbody tr:hover { background: var(--surface-sunken); }
+.dx-table tbody th { font-weight: 600; }
+.dx-table tbody th a { color: var(--text-strong); text-decoration: none; }
+.dx-table tbody th a:hover { color: var(--accent); }
+.dx-table td { color: var(--text-body); font-variant-numeric: tabular-nums; }
+.dx-table td.is-pos { color: var(--pos); }
+.dx-table__go a { color: var(--text-faint); display: inline-flex; }
+.dx-table__go a:hover { color: var(--accent); }
+
+/* ---- Empty state -------------------------------------------------------- */
+.dx-empty { padding: 44px 20px; text-align: center; border: 1px dashed var(--border-strong); border-radius: 13px; }
+.dx-empty__title { font-family: var(--font-grotesk); font-weight: 800; font-size: 19px; color: var(--text-strong); }
+.dx-empty__sub { color: var(--text-muted); margin: 8px auto 16px; max-width: 460px; line-height: 1.55; }
+.dx-empty__btn {
+  padding: 8px 16px; border-radius: 9px; border: 1px solid var(--border-strong);
+  background: var(--surface-card); cursor: pointer; color: var(--text-strong); font: inherit; font-weight: 600;
+}
+.dx-empty__btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- Source line -------------------------------------------------------- */
+.dx-source {
+  margin: 26px 0 0; padding-top: 16px; border-top: 1px solid var(--border-hair);
+  font-size: var(--text-2xs); line-height: 1.6; color: var(--text-faint);
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+@media (max-width: 720px) {
+  .dx-stat__v { font-size: 27px; }
+  .dx-toggle { margin-left: 0; }
+  .dx-controls { gap: 10px; }
+  /* Tap targets stay ≥44px on touch. */
+  .dx-toggle button { padding: 11px 16px; }
+}
+
+/* Non-negotiable: one query, everything off. */
+@media (prefers-reduced-motion: reduce) {
+  .dx-card, .dx-table tbody tr { animation: none !important; transition: none !important; }
+  .dx-card:hover { transform: none; }
+}
+
+/* ---- Detail archetype --------------------------------------------------- */
+.dx-head__actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.dx-action {
+  display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
+  color: var(--accent); font-size: var(--text-ui); font-weight: 600;
+}
+.dx-action:hover { text-decoration: underline; }
+.signal-chip__n { margin-left: 8px; color: var(--text-faint); font-size: var(--text-2xs); }
+
+/* ---- Quarterly bars ------------------------------------------------------ */
+/* The plot is a fixed-height track and the axis is its own grid row, so bar
+   height is always a percentage of something explicit and labels can never be
+   displaced by the data. */
+.qb { margin: 0; }
+.qb__plot { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; height: 132px; align-items: end; }
+.qb__col { height: 100%; display: flex; align-items: flex-end; }
+.qb__track { width: 100%; height: 100%; display: flex; align-items: flex-end; }
+.qb__bar {
+  width: 100%; border-radius: 4px 4px 0 0; background: var(--accent);
+  transform-origin: bottom;
+  animation: qb-grow 420ms cubic-bezier(.2, .7, .3, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+.qb__col:last-child .qb__bar { background: var(--accent); }
+.qb__col:not(:last-child) .qb__bar { background: color-mix(in srgb, var(--accent) 45%, var(--surface-sunken)); }
+.qb__axis { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; margin-top: 8px; }
+.qb__tick { font-size: var(--text-2xs); color: var(--text-faint); text-align: center; white-space: nowrap; }
+.qb__cap { margin-top: 10px; font-size: var(--text-2xs); color: var(--text-muted); }
+
+@keyframes qb-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qb__bar { animation: none !important; }
+}

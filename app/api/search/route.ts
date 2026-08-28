@@ -24,6 +24,9 @@ export async function GET(req: NextRequest) {
   const sector = sp.get("sector") || undefined;
   const regions = sp.getAll("region");
   const region = regions[0] || undefined;
+  // Registered-office town. Companies House has no region field, so a town
+  // search narrows on `location` and the resolved region post-filters it.
+  const location = sp.get("location") || undefined;
   const incorporatedFrom = isoFromWindow(sp.get("incorporated"));
   const startIndex = Number(sp.get("start") || 0) || 0;
 
@@ -49,7 +52,8 @@ export async function GET(req: NextRequest) {
 
   // Note: startIndex is NOT a facet — a paginated plain query should stay on the
   // same (name-search) endpoint across pages, not switch to advanced search.
-  const hasFacets = statuses.length > 0 || sics.length > 0 || types.length > 0 || !!sector || !!region || !!incorporatedFrom;
+  const hasFacets =
+    statuses.length > 0 || sics.length > 0 || types.length > 0 || !!sector || !!region || !!location || !!incorporatedFrom;
 
   try {
     if (needsEnrichment) {
@@ -64,6 +68,7 @@ export async function GET(req: NextRequest) {
           sector,
           region,
           regions: regions.length ? regions : undefined,
+          location,
           incorporatedFrom,
           size: 40,
           startIndex,
@@ -93,6 +98,7 @@ export async function GET(req: NextRequest) {
       sector,
       region,
       regions: regions.length ? regions : undefined,
+      location,
       incorporatedFrom,
       size: 40,
       startIndex,

@@ -11,7 +11,6 @@ export default async function CompaniesPage() {
   if (!(await hasProAccess(await getCurrentUser()))) {
     return (
       <ProGate
-        shape="table"
         icon="search"
         title="Company search"
         features={["Search & filter all 5.5M companies", "Natural-language queries", "Export results to CSV"]}
