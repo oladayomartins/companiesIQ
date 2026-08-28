@@ -85,6 +85,7 @@ export const PLANS: Plan[] = [
       "Unlimited watchlists",
       "Real-time signal alerts",
       "Market & sector analytics",
+      "API access · 10k calls/mo",
       "Priority support",
     ],
     caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true },
@@ -100,6 +101,7 @@ export const PLANS: Plan[] = [
     features: [
       "Everything in Team",
       "Custom signal models",
+      "API access · 250k calls/mo",
       "Bulk data delivery",
       "Dedicated success manager",
       "SLA & onboarding",
