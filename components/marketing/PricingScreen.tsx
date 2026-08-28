@@ -1,5 +1,4 @@
 "use client";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button, Badge, Icon, Card } from "@/components/ds";
 import { SiteFooter } from "@/components/marketing/Footer";
@@ -57,8 +56,11 @@ function PricingTier({ tier, annual, onChoose, busy }: { tier: Plan; annual: boo
 }
 
 export function PricingScreen() {
-  const params = useSearchParams();
-  const [annual, setAnnual] = useState(params.get("interval") !== "monthly");
+  // Read the resume params from window rather than useSearchParams(): this page
+  // is statically prerendered, and useSearchParams() there demands a Suspense
+  // boundary whose fallback would flash an empty pricing table. The resume is a
+  // client-side action anyway, so it costs nothing to wait for mount.
+  const [annual, setAnnual] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const resumed = useRef(false);
@@ -68,16 +70,17 @@ export function PricingScreen() {
   // failure we fall through to the normal table with the reason shown.
   useEffect(() => {
     if (resumed.current) return;
-    const wanted = params.get("plan");
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("interval") === "monthly") setAnnual(false);
+    const wanted = sp.get("plan");
     if (!wanted) return;
     const tier = PRICING_TIERS.find((t) => t.id === wanted);
     if (!tier || tier.monthly === null || tier.monthly === 0) return;
     resumed.current = true;
     void choose(tier, { resuming: true });
-    // choose() is stable for this purpose; re-running on every render would
-    // restart checkout.
+    // Mount only: re-running would restart checkout.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params]);
+  }, []);
 
   async function choose(tier: Plan, opts: { resuming?: boolean } = {}) {
     // Enterprise is sales-led — no self-serve checkout.
