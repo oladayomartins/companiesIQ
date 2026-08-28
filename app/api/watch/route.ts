@@ -1,7 +1,8 @@
 // Watch / unwatch a company (the report "Watch" toggle).
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { addWatch, removeWatch } from "@/lib/watchlist";
+import { WATCHLIST_COMPANY_LIMIT } from "@/lib/access";
+import { addWatchChecked, removeWatch } from "@/lib/watchlist";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +11,15 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   const body = (await req.json().catch(() => ({}))) as { companyNumber?: string };
   if (!body.companyNumber) return NextResponse.json({ error: "companyNumber required." }, { status: 400 });
-  const ok = await addWatch(body.companyNumber);
-  return ok ? NextResponse.json({ ok: true, watched: true }) : NextResponse.json({ error: "Could not watch." }, { status: 400 });
+  const res = await addWatchChecked(body.companyNumber);
+  if (res.ok) return NextResponse.json({ ok: true, watched: true });
+  if (res.reason === "limit") {
+    return NextResponse.json(
+      { error: `Your plan includes ${WATCHLIST_COMPANY_LIMIT} watched companies. Upgrade for unlimited watchlists.`, limit: true },
+      { status: 403 }
+    );
+  }
+  return NextResponse.json({ error: "Could not watch." }, { status: 400 });
 }
 
 export async function DELETE(req: NextRequest) {

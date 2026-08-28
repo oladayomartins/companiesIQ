@@ -129,6 +129,7 @@ export function CompanyProfile({
   watched = false,
   network = null,
   savedLens = null,
+  filingLimit = null,
 }: {
   company: Company;
   officers: Officer[];
@@ -145,6 +146,8 @@ export function CompanyProfile({
   watched?: boolean;
   network?: DirectorNetwork | null;
   savedLens?: string | null;
+  /** How many filings to DISPLAY; null = the full history. Scoring always uses all of them. */
+  filingLimit?: number | null;
 }) {
   const c = company;
   const router = useRouter();
@@ -196,6 +199,9 @@ export function CompanyProfile({
   const daysTo = (iso?: string) => (iso ? Math.round((Date.parse(iso) - Date.now()) / DAY) : null);
   const accountsDays = daysTo(c.accounts?.nextDue);
   const hasFiledAccounts = !!c.accounts?.lastMadeUpTo || filings.some((f) => f.type === "AA");
+  // Display only — every score and signal above still reads the full list.
+  const shownFilings = filingLimit == null ? filings : filings.slice(0, filingLimit);
+  const filingsTruncated = shownFilings.length < filings.length;
 
   function exportReport() {
     const rows: (string | number | null | undefined)[][] = [
@@ -1087,7 +1093,7 @@ export function CompanyProfile({
                     </tr>
                   </thead>
                   <tbody>
-                    {filings.map((f, i) => (
+                    {shownFilings.map((f, i) => (
                       <tr key={i}>
                         <td className="mono">{fmtDate(f.date)}</td>
                         <td>
@@ -1099,6 +1105,14 @@ export function CompanyProfile({
                     {filings.length === 0 ? (
                       <tr className="empty-row">
                         <td colSpan={3}>No filing history available.</td>
+                      </tr>
+                    ) : null}
+                    {filingsTruncated ? (
+                      <tr className="empty-row">
+                        <td colSpan={3}>
+                          Showing the {shownFilings.length} most recent of {filings.length} filings.{" "}
+                          <Link href="/app/upgrade">Upgrade for the complete history</Link>.
+                        </td>
                       </tr>
                     ) : null}
                   </tbody>

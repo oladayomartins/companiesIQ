@@ -14,7 +14,7 @@ import { getRegionLive } from "@/lib/nomis";
 import { enrichCompany, type CompanyEnrichment } from "@/lib/enrichment";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { isPartner } from "@/lib/admin";
-import { hasProAccess } from "@/lib/access";
+import { hasProAccess, canUseHistoricalData, FREE_FILING_WINDOW } from "@/lib/access";
 import { isWatched } from "@/lib/watchlist";
 import { getSavedLens } from "@/lib/profile";
 import { getDirectorNetwork } from "@/lib/network";
@@ -111,6 +111,10 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   const subscribed = await hasProAccess(user);
   const unlocked = subscribed;
   const partner = isPartner(user);
+  // "Complete filing history" is an Analyst feature. Free accounts see the most
+  // recent window instead. The FULL list still reaches the scorer below — the
+  // opportunity score must not change with the reader's plan.
+  const fullHistory = await canUseHistoricalData(user);
 
   const [economicLive, similar, enrichment, network, financials] = await Promise.all([
     getRegionLive(c.geo?.region),
@@ -224,6 +228,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           company={c}
           officers={bundle.officers}
           filings={bundle.filings}
+          filingLimit={fullHistory ? null : FREE_FILING_WINDOW}
           charges={bundle.charges}
           pscs={bundle.pscs}
           report={report}

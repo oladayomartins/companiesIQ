@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/lib/supabase/server";
-import { hasProAccess } from "@/lib/access";
+import { canUseAlerts } from "@/lib/access";
 import { ProGate } from "@/components/app/ProGate";
 import { AlertsScreen } from "@/components/app/AlertsScreen";
 
@@ -8,7 +8,9 @@ export const metadata = { title: "Alerts · CompaniesIQ" };
 
 export default async function AlertsPage() {
   const user = await getCurrentUser();
-  if (!(await hasProAccess(user))) {
+  // Sold on Team and above. Gating this on hasProAccess handed it to Analyst,
+  // who is not paying for it.
+  if (!(await canUseAlerts(user))) {
     return (
       <ProGate
         shape="list"
