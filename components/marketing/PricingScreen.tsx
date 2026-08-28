@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Button, Badge, Icon, Card } from "@/components/ds";
 import { SiteFooter } from "@/components/marketing/Footer";
 import { BillingToggle } from "@/components/marketing/BillingToggle";
@@ -56,11 +57,29 @@ function PricingTier({ tier, annual, onChoose, busy }: { tier: Plan; annual: boo
 }
 
 export function PricingScreen() {
-  const [annual, setAnnual] = useState(true);
+  const params = useSearchParams();
+  const [annual, setAnnual] = useState(params.get("interval") !== "monthly");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const resumed = useRef(false);
 
-  async function choose(tier: Plan) {
+  // Coming back from sign-in with a plan in the URL: finish what they started.
+  // Runs once — a failed resume must not trap them in a redirect loop, so on
+  // failure we fall through to the normal table with the reason shown.
+  useEffect(() => {
+    if (resumed.current) return;
+    const wanted = params.get("plan");
+    if (!wanted) return;
+    const tier = PRICING_TIERS.find((t) => t.id === wanted);
+    if (!tier || tier.monthly === null || tier.monthly === 0) return;
+    resumed.current = true;
+    void choose(tier, { resuming: true });
+    // choose() is stable for this purpose; re-running on every render would
+    // restart checkout.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
+
+  async function choose(tier: Plan, opts: { resuming?: boolean } = {}) {
     // Enterprise is sales-led — no self-serve checkout.
     if (tier.monthly === null) {
       window.location.href = "mailto:sales@companiesiq.co.uk?subject=CompaniesIQ%20Enterprise";
@@ -80,7 +99,17 @@ export function PricingScreen() {
         body: JSON.stringify({ plan: tier.id, interval: annual ? "annual" : "monthly" }),
       });
       if (res.status === 401) {
-        window.location.href = "/sign-in?next=/pricing";
+        if (opts.resuming) {
+          // We just came back from sign-in and are still unauthenticated —
+          // bouncing again would loop. Say so and let them retry by hand.
+          setError("Your sign-in didn't carry over. Choose your plan again to continue.");
+          return;
+        }
+        // Carry the choice through the auth round-trip. Sending them back to a
+        // bare /pricing made them pick the same plan a second time, which reads
+        // as though the first click did nothing.
+        const resume = `/pricing?plan=${tier.id}&interval=${annual ? "annual" : "monthly"}`;
+        window.location.href = `/sign-in?next=${encodeURIComponent(resume)}`;
         return;
       }
       const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };

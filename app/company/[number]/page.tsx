@@ -220,7 +220,6 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
     <>
       <JsonLd data={[orgSchema, breadcrumb, ...(paywallSchema ? [paywallSchema] : [])]} />
       <PublicReportChrome unlocked={unlocked} signedIn={signedIn}>
-        {!signedIn ? <TrackCompanyCta company={c.name} number={c.number} sector={c.primaryClassification?.sector} /> : null}
         <CompanyProfile
           company={c}
           officers={bundle.officers}
@@ -238,6 +237,15 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           network={network}
           savedLens={savedLens}
         />
+        {/* The free-alerts band sits BELOW the report now, not above the company
+            name. It predates the registration gate, and with the gate in place
+            two orange asks 400px apart were competing: "create an account" and
+            "give us your email instead". Ordered by commitment, they stop
+            fighting — the gate is the primary ask, and this is the fallback for
+            someone who does not want an account at all. */}
+        {!signedIn ? (
+          <TrackCompanyCta company={c.name} number={c.number} sector={c.primaryClassification?.sector} />
+        ) : null}
         {financials ? (
           <div className="screen" style={{ paddingTop: 0 }}>
             <FinancialsCard financials={financials} company={c.name} />
