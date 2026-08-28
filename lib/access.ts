@@ -12,6 +12,7 @@ import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { isAdmin, isPartner } from "@/lib/admin";
+import { planById, type Plan, type PlanId } from "@/lib/subscription";
 
 const ACTIVE_STATUSES = new Set(["active", "trialing"]);
 
@@ -48,3 +49,51 @@ export async function hasProAccess(user: User | null): Promise<boolean> {
   if (isAdmin(user) || isPartner(user)) return true;
   return isSubscribed(user);
 }
+
+// ---- Per-plan capabilities ---------------------------------------------------
+//
+// hasProAccess() answers "has any paid plan", which is the right gate for the
+// paywall but the wrong one for everything above it: used alone it hands an
+// Analyst every Team feature. These read the caps that lib/subscription.ts has
+// always declared but that nothing enforced, so a plan's promises and its
+// behaviour are the same thing.
+//
+// Admins and partners are comped throughout, exactly as with hasProAccess.
+
+async function capsFor(user: User): Promise<Plan["caps"]> {
+  return planById((await getUserPlan(user)) as PlanId).caps;
+}
+
+/** Real-time signal alerts — sold on Team and above, not on Analyst. */
+export async function canUseAlerts(user: User | null): Promise<boolean> {
+  if (!user) return false;
+  if (isAdmin(user) || isPartner(user)) return true;
+  return (await capsFor(user)).alerts;
+}
+
+/** CSV export of reports, searches and lists — Analyst and above. */
+export async function canExportCsv(user: User | null): Promise<boolean> {
+  if (!user) return false;
+  if (isAdmin(user) || isPartner(user)) return true;
+  return (await capsFor(user)).csvExport;
+}
+
+/** Full filing history. Free accounts see a recent window instead. */
+export async function canUseHistoricalData(user: User | null): Promise<boolean> {
+  if (!user) return false;
+  if (isAdmin(user) || isPartner(user)) return true;
+  return (await capsFor(user)).historicalData;
+}
+
+/** How many watchlists a plan may keep. -1 means unlimited. */
+export async function watchlistLimit(user: User | null): Promise<number> {
+  if (!user) return 0;
+  if (isAdmin(user) || isPartner(user)) return -1;
+  return (await capsFor(user)).watchlists;
+}
+
+/** Companies per watchlist on the entry paid plan, as the pricing page states. */
+export const WATCHLIST_COMPANY_LIMIT = 50;
+
+/** Free accounts see this many of the most recent filings; paid sees all. */
+export const FREE_FILING_WINDOW = 10;

@@ -3,6 +3,7 @@
 // (demo) storage. Keeps the product usable end-to-end without setup.
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServer, getCurrentUser, isSupabaseConfigured } from "@/lib/supabase/server";
+import { canUseAlerts } from "@/lib/access";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,11 @@ export async function POST(req: NextRequest) {
   const supabase = await getSupabaseServer();
   const user = await getCurrentUser();
   if (!supabase || !user) return NextResponse.json({ configured: true, authed: false }, { status: 401 });
+  // The page gate is not enough on its own — creating an alert has to be
+  // authorised here, or a free account can just POST to this route.
+  if (!(await canUseAlerts(user))) {
+    return NextResponse.json({ error: "Alerts are available on the Team and Enterprise plans." }, { status: 403 });
+  }
   const { data, error } = await supabase
     .from("alerts")
     .insert({
