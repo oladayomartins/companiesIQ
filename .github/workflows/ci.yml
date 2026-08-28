@@ -27,3 +27,22 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
           # No secrets needed: the build prerenders with graceful fallbacks.
           # Live data (Companies House / Nomis / Supabase) is fetched at runtime.
+
+      # Accessibility and layout regressions are cheap to catch and expensive to
+      # ship. These run against `next start`, not `next dev`: the dev server's
+      # error overlay trips the contrast rules, and dev hides pages whose server
+      # HTML is empty (see scripts/ui-checks.mjs).
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start production server
+        run: |
+          npm start &
+          npx wait-on http://127.0.0.1:3000 --timeout 90000
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: UI checks (accessibility + layout)
+        run: npm run check:ui
+        env:
+          BASE_URL: http://127.0.0.1:3000
