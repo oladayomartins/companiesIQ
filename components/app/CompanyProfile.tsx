@@ -612,11 +612,13 @@ export function CompanyProfile({
                 Export report
               </Button>
             </>
-          ) : (
-            <Button href={signedIn ? "/app/upgrade" : "/pricing"} variant="primary" iconRight="arrowRight">
+          ) : signedIn ? (
+            // Signed in but not Pro: upgrade is the right next ask, and they
+            // have already met the account gate.
+            <Button href="/app/upgrade" variant="primary" iconRight="arrowRight">
               See plans
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
 
