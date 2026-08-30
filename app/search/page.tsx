@@ -23,14 +23,29 @@ import { SearchExperience, type SavedSearch } from "@/components/search/SearchEx
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }): Promise<Metadata> {
-  const { q } = await searchParams;
-  const query = (q ?? "").trim();
+// Any filtered, sorted or paged state is thin, near-duplicate and combinatorial
+// — a handful of facets is thousands of URLs. Only the bare landing state is
+// indexable. Previously only `q` triggered noindex, so /search?sector=…&page=3
+// was served as "index, follow" while canonicalising to /search: two
+// contradictory instructions on the same page, and an index-bloat vector.
+const FACET_PARAMS = ["q", "sector", "region", "status", "page", "sort", "size", "start", "lens"] as const;
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const query = (typeof sp.q === "string" ? sp.q : "").trim();
+  const filtered = FACET_PARAMS.some((k) => {
+    const v = sp[k];
+    return Array.isArray(v) ? v.length > 0 : typeof v === "string" && v.trim() !== "";
+  });
   return {
     title: query ? `Results for “${query}”` : "Search 5.5m UK companies",
     description:
       "Search every company on the UK register by name, sector, SIC code or town — scored for what you sell. Free profiles, live from Companies House.",
-    robots: query ? { index: false, follow: true } : { index: true, follow: true },
+    robots: filtered ? { index: false, follow: true } : { index: true, follow: true },
     alternates: { canonical: "/search" },
   };
 }
