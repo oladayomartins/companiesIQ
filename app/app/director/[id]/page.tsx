@@ -5,6 +5,10 @@ import { Card, CardHeader, CardBody, Stat, StatusPill, Badge, CompanyAvatar, Ico
 import { getOfficerProfile } from "@/lib/data";
 import { analyzeOfficer, tierTone } from "@/lib/directors";
 import { fmtDate, fmtNumber } from "@/lib/format";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { canUseContactData } from "@/lib/access";
+import { isContactEnrichConfigured } from "@/lib/enrichment/contacts";
+import { RevealContact } from "@/components/app/RevealContact";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -18,9 +22,13 @@ export default async function DirectorPage({ params }: { params: Promise<{ id: s
   if (!profile) notFound();
   const insight = analyzeOfficer(profile);
 
+  // Contact reveal is dark until a provider is wired up, and only for people.
+  const showContact = isContactEnrichConfigured() && !profile.isCorporate;
+  const canReveal = showContact ? await canUseContactData(await getCurrentUser()) : false;
+
   return (
     <div className="screen profile">
-      <Link className="back" href="/app/companies">
+      <Link className="back" href="/search">
         <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> Back
       </Link>
 
@@ -67,6 +75,12 @@ export default async function DirectorPage({ params }: { params: Promise<{ id: s
             <strong>{insight.note}</strong> Serial founders are a strong prospecting and risk signal — they often start
             their next venture before competitors notice.
           </span>
+        </div>
+      ) : null}
+
+      {showContact ? (
+        <div style={{ marginTop: 18 }}>
+          <RevealContact officerId={id} canReveal={canReveal} />
         </div>
       ) : null}
 
