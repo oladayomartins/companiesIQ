@@ -53,6 +53,35 @@ export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
   );
 }
 
+const OGL_V3 = "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/";
+
+/**
+ * The upstream registers these pages are derived from. Google validates every
+ * Dataset node on a page, nested ones included, so each source carries the same
+ * required + recommended fields as the page-level Dataset — a bare name/url pair
+ * reads to Search Console as a Dataset with a missing description.
+ */
+const SOURCE_DATASETS = [
+  {
+    "@type": "Dataset",
+    name: "Companies House company register",
+    description:
+      "The UK public register of companies — every incorporated company with its number, registered address, SIC activity codes, status, officers, persons with significant control, charges and filing history.",
+    url: "https://find-and-update.company-information.service.gov.uk/",
+    license: OGL_V3,
+    creator: { "@type": "GovernmentOrganization", name: "Companies House", url: "https://www.gov.uk/government/organisations/companies-house" },
+  },
+  {
+    "@type": "Dataset",
+    name: "ONS business demography & Nomis labour market statistics",
+    description:
+      "Official UK statistics on business births, deaths and survival rates alongside regional labour market data — employment, workforce jobs and economic activity by local area.",
+    url: "https://www.nomisweb.co.uk/",
+    license: OGL_V3,
+    creator: { "@type": "GovernmentOrganization", name: "Office for National Statistics", url: "https://www.ons.gov.uk/" },
+  },
+];
+
 /**
  * Dataset JSON-LD for a public data page. These pages ARE datasets — say so in
  * the markup rather than letting them read as generic web pages.
@@ -83,12 +112,9 @@ export function DatasetLd({
         url: `${SITE_URL}${path}`,
         dateModified,
         ...(temporalCoverage ? { temporalCoverage } : {}),
-        license: "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+        license: OGL_V3,
         creator: { "@type": "Organization", name: "CompaniesIQ Ltd", url: SITE_URL },
-        isBasedOn: [
-          { "@type": "Dataset", name: "Companies House company register", url: "https://find-and-update.company-information.service.gov.uk/" },
-          { "@type": "Dataset", name: "ONS business demography & Nomis labour market statistics", url: "https://www.nomisweb.co.uk/" },
-        ],
+        isBasedOn: SOURCE_DATASETS,
         includedInDataCatalog: { "@type": "DataCatalog", name: "CompaniesIQ", url: `${SITE_URL}/sources` },
       }}
     />
