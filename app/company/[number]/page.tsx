@@ -198,10 +198,16 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   // with isAccessibleForFree:false and a hasPart cssSelector pointing at it —
   // and the documented penalty is the page not appearing in search at all.
   //
-  // Only emitted when the page is actually gated. A signed-in reader has the
-  // content, so claiming otherwise would be its own inaccuracy.
+  // Only emitted when THIS RESPONSE is actually gated. A signed-in reader has
+  // the content; so does a visitor still inside their metered free reports, and
+  // so does every crawler fetch (crawlers arrive without a meter cookie). In
+  // those renders .intelgate__veil is not in the DOM at all, so declaring a
+  // paywall against that selector would point at an element that is not there —
+  // a markup/DOM mismatch, and a false claim about content we just served in
+  // full. Metering is Google's own flexible-sampling arrangement: the crawler
+  // gets what a first-time human gets, so there is no cloaking to declare.
   // https://developers.google.com/search/docs/appearance/structured-data/paywalled-content
-  const paywallSchema = !signedIn
+  const paywallSchema = !signedIn && !metered
     ? {
         "@context": "https://schema.org",
         "@type": "WebPage",
