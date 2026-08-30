@@ -11,7 +11,7 @@ import { isoDaysAgo } from "@/lib/companies-house";
 import { fmtNumber, fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 import { FEATURED_SECTORS } from "@/lib/sic";
-import { CITIES, cityForSlug } from "@/lib/cities";
+import { CITIES, cityForSlug, type City } from "@/lib/cities";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForPlace } from "@/lib/guides";
@@ -19,6 +19,14 @@ import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
 import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 3600;
+
+/**
+ * "London, London" — London is both a city and a region, so only append the
+ * region when it actually adds something.
+ */
+function placeLabel(c: City) {
+  return c.region === c.name ? c.name : `${c.name}, ${c.region}`;
+}
 
 export function generateStaticParams() {
   return CITIES.map((c) => ({ city: slugify(c.name) }));
@@ -28,7 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   const { city } = await params;
   const c = cityForSlug(city);
   if (!c) return { title: "City" };
-  const desc = `Companies registered in ${c.name}, ${c.region}. Browse newly incorporated ${c.name} businesses with live data from Companies House, plus regional economic context.`;
+  const desc = `Companies registered in ${placeLabel(c)}. Browse newly incorporated ${c.name} businesses with live data from Companies House, plus regional economic context.`;
   return {
     title: `Companies in ${c.name}`,
     description: desc,
@@ -56,7 +64,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
     <PublicShell>
       <DatasetLd
         name={`Companies in ${city.name}`}
-        description={`Company formations and business activity in ${city.name}, ${city.region}, from the Companies House register with ONS regional context.`}
+        description={`Company formations and business activity in ${placeLabel(city)}, from the Companies House register with ONS regional context.`}
         path={`/city/${slugify(city.name)}`}
         dateModified={new Date().toISOString().slice(0, 10)}
       />
