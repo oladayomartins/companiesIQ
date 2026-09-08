@@ -60,7 +60,12 @@ export function PricingScreen() {
   // is statically prerendered, and useSearchParams() there demands a Suspense
   // boundary whose fallback would flash an empty pricing table. The resume is a
   // client-side action anyway, so it costs nothing to wait for mount.
-  const [annual, setAnnual] = useState(true);
+  // Default to MONTHLY so the headline price matches what a cold visitor is
+  // actually charged (£39/mo, as advertised on the homepage). Defaulting to
+  // Annual headlined the £31/mo annual-equivalent but sent the default path to
+  // Stripe for £372 upfront — a price change discovered at the till. Annual is
+  // one toggle away, with the "Save 20%" badge.
+  const [annual, setAnnual] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const resumed = useRef(false);
