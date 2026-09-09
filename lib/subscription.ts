@@ -29,6 +29,8 @@ export interface Plan {
     savedSearches: boolean;
     csvExport: boolean;
     api: boolean;
+    /** Enriched director contact data (Team+). Dark unless a provider is set. */
+    contactData: boolean;
   };
 }
 
@@ -48,7 +50,7 @@ export const PLANS: Plan[] = [
       "Sector, market and city data",
       "Weekly new-company email alerts",
     ],
-    caps: { fullReport: false, historicalData: false, watchlists: 0, alerts: false, savedSearches: false, csvExport: false, api: false },
+    caps: { fullReport: false, historicalData: false, watchlists: 0, alerts: false, savedSearches: false, csvExport: false, api: false, contactData: false },
   },
   {
     id: "analyst",
@@ -68,7 +70,7 @@ export const PLANS: Plan[] = [
       "CSV export",
       "Email support",
     ],
-    caps: { fullReport: true, historicalData: true, watchlists: 1, alerts: false, savedSearches: true, csvExport: true, api: false },
+    caps: { fullReport: true, historicalData: true, watchlists: 1, alerts: false, savedSearches: true, csvExport: true, api: false, contactData: false },
   },
   {
     id: "team",
@@ -88,7 +90,7 @@ export const PLANS: Plan[] = [
       "API access · 10k calls/mo",
       "Priority support",
     ],
-    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true },
+    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true, contactData: true },
   },
   {
     id: "enterprise",
@@ -107,7 +109,7 @@ export const PLANS: Plan[] = [
       "Dedicated success manager",
       "SLA & onboarding",
     ],
-    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true },
+    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true, contactData: true },
   },
 ];
 

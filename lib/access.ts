@@ -80,6 +80,21 @@ async function capsFor(user: User): Promise<Plan["caps"]> {
   return planById((await getUserPlan(user)) as PlanId).caps;
 }
 
+/**
+ * Enriched director CONTACT data (email / direct dial). A higher bar than the
+ * others: it is metered, third-party and regulated (UK GDPR / PECR), so it is
+ * limited to plans whose caps.contactData is true — Team and above.
+ *
+ * Deliberately NOT advertised in the plan feature copy. The feature is dark
+ * without a provider configured, and selling what does not ship is the exact
+ * problem these capability gates were introduced to fix.
+ */
+export async function canUseContactData(user: User | null): Promise<boolean> {
+  if (!user) return false;
+  if (isAdmin(user) || isPartner(user)) return true;
+  return (await capsFor(user)).contactData;
+}
+
 /** Real-time signal alerts — sold on Team and above, not on Analyst. */
 export async function canUseAlerts(user: User | null): Promise<boolean> {
   if (!user) return false;

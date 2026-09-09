@@ -20,6 +20,24 @@ export interface CompanyEnrichment {
   cached: boolean;
 }
 
+/**
+ * Enriched, person-level contact for a director. Third-party enrichment —
+ * NOT from the Companies House register. Every field is a measured value from a
+ * provider with a confidence, or null = "Not Assessed". Never inferred/guessed.
+ */
+export interface DirectorContact {
+  officerId: string;
+  name: string | null;
+  email: string | null;
+  emailConfidence: MatchConfidence | null;
+  phone: string | null;
+  phoneConfidence: MatchConfidence | null;
+  provider: string | null; // provider that returned the data
+  source: string | null; // human-readable provenance label
+  checkedAt: string | null;
+  cached: boolean;
+}
+
 export type ReadinessLevel = "high" | "moderate" | "low" | "unknown";
 
 /**
