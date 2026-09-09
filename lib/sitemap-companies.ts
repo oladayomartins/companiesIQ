@@ -22,15 +22,32 @@ export async function companyCount(): Promise<number> {
 export async function companyChunk(id: number): Promise<{ number: string; updated_at: string | null }[]> {
   const admin = getSupabaseAdmin();
   if (!admin) return [];
+  const from = id * SITEMAP_CHUNK;
+  const to = from + SITEMAP_CHUNK - 1;
+
+  // PostgREST caps a single response at 1,000 rows regardless of the range we
+  // ask for, so `.range(0, 44999)` silently returned 1,000 and the sitemap
+  // shipped a fraction of the register. Page through in explicit 1,000-row
+  // reads until the chunk is filled or the table runs out.
+  const PAGE = 1000;
+  const rows: { number: string; updated_at: string | null }[] = [];
   try {
-    const from = id * SITEMAP_CHUNK;
-    const { data } = await admin
-      .from("companies")
-      .select("number, updated_at")
-      .order("number", { ascending: true })
-      .range(from, from + SITEMAP_CHUNK - 1);
-    return data ?? [];
+    for (let start = from; start <= to; start += PAGE) {
+      const end = Math.min(start + PAGE - 1, to);
+      const { data, error } = await admin
+        .from("companies")
+        .select("number, updated_at")
+        .order("number", { ascending: true })
+        .range(start, end);
+      if (error) break;
+      const batch = data ?? [];
+      rows.push(...batch);
+      // A short read means we have reached the end of the table.
+      if (batch.length < end - start + 1) break;
+    }
+    return rows;
   } catch {
-    return [];
+    // Return what we already have rather than dropping the whole sitemap.
+    return rows;
   }
 }
