@@ -113,3 +113,72 @@ export const WATCHLIST_COMPANY_LIMIT = 50;
 
 /** Free accounts see this many of the most recent filings; paid sees all. */
 export const FREE_FILING_WINDOW = 10;
+
+// ---- Contact discovery ------------------------------------------------------
+//
+// Unlike the other caps, this one costs real outbound requests to somebody
+// else's web server on every miss, so it is METERED rather than a boolean: a
+// plan buys N distinct companies per calendar month. Re-opening a company you
+// already looked up this month is free, exactly as report_unlocks works — the
+// unit a customer understands is "companies I researched", not "HTTP requests".
+
+export interface ContactAllowance {
+  allowed: boolean;
+  limit: number; // -1 = unlimited
+  used: number;
+  remaining: number; // -1 = unlimited
+  reason?: "signed-out" | "plan" | "quota";
+}
+
+const UNLIMITED: ContactAllowance = { allowed: true, limit: -1, used: 0, remaining: -1 };
+
+const utcMonth = () => new Date().toISOString().slice(0, 7);
+
+/**
+ * What contact-discovery allowance this user has left this month, and whether
+ * `number` is already inside it. Counting is by DISTINCT company per month, so
+ * a repeat view never costs a second unit.
+ */
+export async function contactAllowance(user: User | null, number?: string): Promise<ContactAllowance> {
+  if (!user) return { allowed: false, limit: 0, used: 0, remaining: 0, reason: "signed-out" };
+  if (isAdmin(user) || isPartner(user)) return UNLIMITED;
+
+  const limit = (await capsFor(user)).contactLookups;
+  if (limit === 0) return { allowed: false, limit: 0, used: 0, remaining: 0, reason: "plan" };
+  if (limit === -1) return UNLIMITED;
+
+  const admin = getSupabaseAdmin();
+  // Without the service role we cannot meter, and silently handing out an
+  // unmetered allowance is the wrong failure: deny instead.
+  if (!admin) return { allowed: false, limit, used: 0, remaining: 0, reason: "quota" };
+
+  const month = utcMonth();
+  const { data } = await admin
+    .from("contact_lookups")
+    .select("company_number")
+    .eq("user_id", user.id)
+    .eq("month", month);
+
+  const rows = data ?? [];
+  const used = rows.length;
+  const alreadyCounted = !!number && rows.some((r: { company_number: string }) => r.company_number === number);
+  const remaining = Math.max(0, limit - used);
+
+  if (alreadyCounted) return { allowed: true, limit, used, remaining };
+  return remaining > 0
+    ? { allowed: true, limit, used, remaining }
+    : { allowed: false, limit, used, remaining: 0, reason: "quota" };
+}
+
+/**
+ * Record that this user looked up this company this month. Idempotent — the
+ * primary key makes a repeat view a no-op rather than a second unit.
+ */
+export async function recordContactLookup(user: User | null, number: string): Promise<void> {
+  if (!user || isAdmin(user) || isPartner(user)) return;
+  const admin = getSupabaseAdmin();
+  if (!admin) return;
+  await admin
+    .from("contact_lookups")
+    .upsert({ user_id: user.id, company_number: number, month: utcMonth() }, { onConflict: "user_id,company_number,month" });
+}

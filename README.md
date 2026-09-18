@@ -53,7 +53,9 @@ page (driven by `lib/sources.ts`).
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side ingestion writes. | Optional |
 | `INGEST_SECRET` | Protects the `/api/ingest` cron endpoint. | Optional |
 
-To enable persistence, run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor.
+To enable persistence, run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor, then the
+incremental migrations alongside it — including [`supabase/company-contacts.sql`](supabase/company-contacts.sql)
+for the contact-intelligence cache, suppression list and lookup meter.
 
 ---
 
@@ -101,7 +103,13 @@ Evidence-first core with opt-in lead-gen modules surfaced as **Pro** features:
 | **PSC (persons with significant control)** — ownership + nature-of-control on each profile | People tab → "Persons with significant control" |
 | **Director / serial-founder intelligence** — cross-company appointments, prolific-director detection | `/app/director/[id]`, People tab on each profile |
 | **AI / NL discovery** — natural-language search + emerging niches + regional hotspots | `/app/discover`, `GET /api/discover` |
+| **Contact intelligence** — the website, email and phone a company publishes about itself, each with its verification checks and a High/Medium/Low confidence | `lib/enrichment/contact.ts`, `POST /api/contacts/[number]`, card on each report |
 | **Schedulers** — 5–15 min ingestion + alert evaluation | `vercel.json` crons → `/api/ingest`, `/api/alerts/run` |
+
+> **Contact intelligence is self-published data, re-presented with its provenance** — never a bought-in
+> contact database. We verify a website is really the company's before reading it, obey `robots.txt`,
+> identify the crawler at [`/bot`](app/(marketing)/bot/page.tsx), show the checks behind every value,
+> and honour an unconditional opt-out. See [`docs/contact-enrichment.md`](docs/contact-enrichment.md).
 
 > Per the chosen direction, lead-scoring/exports/alerts are presented as opt-in Pro modules
 > over the evidence-first intelligence core — not the default surface. Scores are a transparent

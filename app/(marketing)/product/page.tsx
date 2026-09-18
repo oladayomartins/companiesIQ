@@ -58,6 +58,13 @@ const CAPABILITIES: { icon: IconName; title: string; body: string; href: string;
     cta: "Get free alerts",
   },
   {
+    icon: "shield",
+    title: "Contact details you can actually check",
+    body: "Find the email address and phone number a company publishes on its own website — and see the evidence behind each one: the page it came from, whether the domain matches the verified site, and what we haven't verified. No bought-in contact database, no invented addresses, no confidence you can't audit.",
+    href: "/sources",
+    cta: "How we verify it",
+  },
+  {
     icon: "download",
     title: "Yours to take with you",
     body: "Export any search, report or list to CSV, or pull it through the API — every figure sourced from the public register and dated, so it drops straight into your CRM or model.",

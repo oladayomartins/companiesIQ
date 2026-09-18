@@ -341,3 +341,27 @@
     color-mix(in srgb, var(--bg-page) 93%, transparent) 0%,
     color-mix(in srgb, var(--bg-page) 45%, transparent) 100%);
 }
+
+/* ── Digital presence & contact ──────────────────────────────────────────────
+   Lives inside the "Signals & evidence" section, so it borrows the section's
+   own row styling rather than introducing a card of its own. Values read first;
+   the check list is hidden until asked for. */
+.readiness--single { grid-template-columns: 1fr; }
+.cblock { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.cblock__meta { font-size: var(--text-micro); color: var(--text-faint); letter-spacing: 0.04em; }
+.cblock .rsec__note { width: 100%; margin: 0; }
+.cblock .readiness { width: 100%; }
+
+.cpoint { border-bottom: 1px solid var(--border-hair); }
+.cpoint .readiness__row { border-bottom: 0; }
+.cpoint__value { font-size: var(--text-ui); font-weight: 600; color: var(--text-strong); text-decoration: none; word-break: break-all; font-family: var(--font-mono); }
+.cpoint__value:hover { color: var(--accent); text-decoration: underline; }
+.cpoint__meta { display: inline-flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.cpoint__toggle { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; font-size: var(--text-xs); color: var(--text-muted); text-decoration: underline; text-underline-offset: 2px; }
+.cpoint__toggle:hover { color: var(--accent); }
+.cpoint__checks { padding: 2px 0 12px; display: flex; flex-direction: column; gap: 2px; }
+.cpoint__checks .opp-row { padding: 3px 0; font-size: var(--text-xs); }
+.cpoint__foot { margin: 8px 0 0; font-size: var(--text-micro); color: var(--text-faint); }
+.cpoint__foot a { color: var(--text-faint); }
+.cpoint__foot a:hover { color: var(--accent); }
+.contact-error { font-size: var(--text-sm); color: var(--neg); margin: 0; width: 100%; }

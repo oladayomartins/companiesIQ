@@ -136,6 +136,8 @@ export function CompanyProfile({
   metered = false,
   meterLeft = 0,
   financials = null,
+  contactEntitled = false,
+  contactRemaining = null,
 }: {
   company: Company;
   officers: Officer[];
@@ -160,6 +162,10 @@ export function CompanyProfile({
   /** Figures from the latest filed accounts. Rendered inside the Intelligence
    *  tab rather than beneath the whole page — see the note at the call site. */
   financials?: CompanyFinancials | null;
+  /** Does this reader's plan include verified contact discovery? */
+  contactEntitled?: boolean;
+  /** Contact lookups left this month; -1 = unlimited, null = not applicable. */
+  contactRemaining?: number | null;
 }) {
   const c = company;
   const router = useRouter();
@@ -742,6 +748,8 @@ export function CompanyProfile({
               opportunity={opportunity}
               network={network}
               filings={filings}
+              contactEntitled={contactEntitled}
+              contactRemaining={contactRemaining}
               prospect={{
                 number: c.number,
                 name: c.name,

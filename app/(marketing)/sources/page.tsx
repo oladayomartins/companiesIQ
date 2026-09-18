@@ -164,9 +164,11 @@ export default function SourcesPage() {
           <div className="faq-item">
             <h3 className="faq-item__q">Enrichment (fenced)</h3>
             <p className="faq-item__a">
-              Anything beyond the register — e.g. a company&apos;s digital presence — is a separate, clearly-labelled
-              enrichment layer. Each value is a measured fact with its source, or marked &ldquo;Not Assessed&rdquo;. We
-              never guess a value and present it as fact.
+              Anything beyond the register — a company&apos;s digital presence, or the contact details it publishes on
+              its own website — is a separate, clearly-labelled enrichment layer. Each value is a measured fact with
+              its source and the date we read it, or marked &ldquo;Not Assessed&rdquo;. We never guess a value and
+              present it as fact, and we never buy in third-party contact data. See{" "}
+              <Link href="/bot">about our crawler</Link>.
             </p>
           </div>
         </div>

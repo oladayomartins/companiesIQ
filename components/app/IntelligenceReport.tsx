@@ -2,11 +2,12 @@ import Link from "next/link";
 import { Card, CardHeader, CardBody, Badge, Icon } from "@/components/ds";
 import type { IntelligenceReport as Report } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
-import type { OpportunityIntel, DigitalFact } from "@/lib/opportunity";
+import type { OpportunityIntel } from "@/lib/opportunity";
 import type { DirectorNetwork } from "@/lib/network";
 import type { Filing } from "@/lib/types";
 import { toTimeline } from "@/lib/changes";
 import { AddToProspect, type ProspectTarget } from "@/components/app/AddToProspect";
+import { ContactIntelligence } from "@/components/app/ContactIntelligence";
 import { fmtDate } from "@/lib/format";
 
 function Source({ children }: { children: React.ReactNode }) {
@@ -22,26 +23,6 @@ function SectionHead({ n, title }: { n: number; title: string }) {
     <div className="rsec__head">
       <span className="rsec__n mono">{String(n).padStart(2, "0")}</span>
       <h3 className="rsec__title">{title}</h3>
-    </div>
-  );
-}
-
-// One digital-presence fact row — a confident, sourced statement. Detected →
-// the value (a link where it is one); not detected → an explicit "Not detected";
-// not assessed → "Not assessed" (we never guess).
-function FactRow({ fact }: { fact: DigitalFact }) {
-  const tone = fact.state === "detected" ? "pos" : fact.state === "not_detected" ? "warn" : "neutral";
-  const text = fact.state === "detected" ? fact.value ?? "Detected" : fact.state === "not_detected" ? fact.value ?? "Not detected" : "Not assessed";
-  return (
-    <div className="readiness__row">
-      <span className="readiness__label">{fact.label}</span>
-      {fact.state === "detected" && fact.href ? (
-        <a className="link-btn" href={fact.href} target="_blank" rel="noopener noreferrer">
-          {text}
-        </a>
-      ) : (
-        <Badge tone={tone}>{text}</Badge>
-      )}
     </div>
   );
 }
@@ -63,11 +44,17 @@ export function IntelligenceReport({
   prospect = null,
   network = null,
   filings = [],
+  contactEntitled = false,
+  contactRemaining = null,
 }: {
   report: Report;
   // Accepted for call-site compatibility; the opportunity object already
   // encapsulates the enrichment-derived facts shown in the report.
   enrichment?: CompanyEnrichment | null;
+  /** Does this reader's plan include verified contact discovery? */
+  contactEntitled?: boolean;
+  /** Contact lookups left this month; -1 = unlimited, null = not applicable. */
+  contactRemaining?: number | null;
   opportunity?: OpportunityIntel | null;
   // When set (unlocked, in-app), shows the "Add to prospect list" action.
   prospect?: ProspectTarget | null;
@@ -121,26 +108,20 @@ export function IntelligenceReport({
               </div>
             ) : null}
 
-            {/* Digital presence — verified facts */}
-            <div className="opp-block">
-              <div className="opp-block__title">
-                Digital presence
-                <Badge tone={opportunity.digitalMeasured ? "pos" : "neutral"}>
-                  {opportunity.digitalMeasured ? "Measured" : "Not assessed"}
-                </Badge>
-              </div>
-              <div className="readiness">
-                <FactRow fact={opportunity.digital.website} />
-                <FactRow fact={opportunity.digital.gbp} />
-                <FactRow fact={opportunity.digital.reviews} />
-                <FactRow fact={opportunity.digital.phone} />
-              </div>
-              {opportunity.digitalMeasured ? (
-                <Source>Google Places · public business listing</Source>
-              ) : (
-                <p className="rsec__note">Measured from Google Places when a confident match exists; otherwise shown as Not assessed (never assumed).</p>
-              )}
-            </div>
+            {/* Digital presence & contact. Same four Places-measured rows this
+                section always had, now with the one thing they lacked: a way to
+                go and find out. Contact discovery renders in place rather than
+                as a card of its own — the report already stated digital
+                presence twice, and a third statement in a new card would have
+                made a long page longer. */}
+            <ContactIntelligence
+              number={r.overview.number}
+              companyName={r.overview.name}
+              digital={opportunity.digital}
+              measured={opportunity.digitalMeasured}
+              entitled={contactEntitled}
+              remaining={contactRemaining}
+            />
 
             {/* Compliance & register — verified facts */}
             <div className="opp-block">

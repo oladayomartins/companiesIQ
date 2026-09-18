@@ -15,7 +15,7 @@ import { getRegionLive } from "@/lib/nomis";
 import { enrichCompany, type CompanyEnrichment } from "@/lib/enrichment";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { isPartner } from "@/lib/admin";
-import { hasProAccess, canUseHistoricalData, FREE_FILING_WINDOW } from "@/lib/access";
+import { hasProAccess, canUseHistoricalData, contactAllowance, FREE_FILING_WINDOW } from "@/lib/access";
 import { isWatched } from "@/lib/watchlist";
 import { getSavedLens } from "@/lib/profile";
 import { getDirectorNetwork } from "@/lib/network";
@@ -149,6 +149,12 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   ]);
   const report = buildIntelligenceReport(c, economicLive);
   const watched = unlocked ? await isWatched(c.number).catch(() => false) : false;
+  // Contact discovery is metered per plan. Read the allowance here so the card
+  // renders in its correct state on first paint rather than flickering from
+  // "buy this" to "you already have it" once the client asks.
+  const contacts = unlocked
+    ? await contactAllowance(user, c.number).catch(() => null)
+    : null;
   // A Pro user's pinned lens ("what I sell") seeds the report; the client still
   // overrides it with a per-session switch.
   const savedLens = user ? await getSavedLens(user.id).catch(() => null) : null;
@@ -252,6 +258,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           metered={metered}
           meterLeft={meterLeft}
           financials={financials}
+          contactEntitled={!!contacts && contacts.limit !== 0}
+          contactRemaining={contacts?.remaining ?? null}
         />
         {/* The free-alerts band sits BELOW the report now, not above the company
             name. It predates the registration gate, and with the gate in place
