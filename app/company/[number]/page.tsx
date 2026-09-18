@@ -25,7 +25,6 @@ import { CompanyProfile } from "@/components/app/CompanyProfile";
 import { TrackCompanyCta } from "@/components/app/TrackCompanyCta";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForCompany } from "@/lib/guides";
-import { FinancialsCard } from "@/components/app/FinancialsCard";
 import { getCompanyFinancials } from "@/lib/enrichment/financials";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
 import { PublicShell } from "@/components/public/PublicShell";
@@ -252,6 +251,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           savedLens={savedLens}
           metered={metered}
           meterLeft={meterLeft}
+          financials={financials}
         />
         {/* The free-alerts band sits BELOW the report now, not above the company
             name. It predates the registration gate, and with the gate in place
@@ -261,11 +261,6 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
             someone who does not want an account at all. */}
         {!signedIn ? (
           <TrackCompanyCta company={c.name} number={c.number} sector={c.primaryClassification?.sector} />
-        ) : null}
-        {financials ? (
-          <div className="screen" style={{ paddingTop: 0 }}>
-            <FinancialsCard financials={financials} company={c.name} />
-          </div>
         ) : null}
         <div className="screen" style={{ paddingTop: 0 }}>
           <RelatedGuides guides={guidesForCompany()} dark />

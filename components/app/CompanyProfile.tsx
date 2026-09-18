@@ -20,6 +20,8 @@ import { IntelligenceReport } from "@/components/app/IntelligenceReport";
 import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
+import type { CompanyFinancials } from "@/lib/enrichment/financials-types";
+import { FinancialsCard } from "@/components/app/FinancialsCard";
 import { buildOpportunity } from "@/lib/opportunity";
 import { WatchButton } from "@/components/app/WatchButton";
 import type { DirectorNetwork } from "@/lib/network";
@@ -133,6 +135,7 @@ export function CompanyProfile({
   filingLimit = null,
   metered = false,
   meterLeft = 0,
+  financials = null,
 }: {
   company: Company;
   officers: Officer[];
@@ -154,6 +157,9 @@ export function CompanyProfile({
   /** This logged-out visitor still has free reports left, so show it ungated. */
   metered?: boolean;
   meterLeft?: number;
+  /** Figures from the latest filed accounts. Rendered inside the Intelligence
+   *  tab rather than beneath the whole page — see the note at the call site. */
+  financials?: CompanyFinancials | null;
 }) {
   const c = company;
   const router = useRouter();
@@ -716,6 +722,16 @@ export function CompanyProfile({
             <LensScoreCard score={score} delta={`${score.coverage}% of model measurable`} />
           </div>
 
+          {/* Turnover, net worth and the growth tier used to render BELOW the
+              entire report — past thirteen numbered sections, most of them
+              sector context identical for every company in this SIC and region.
+              It is the most decision-relevant card on the page for almost every
+              reader, so it now sits directly under the score. */}
+          {financials ? (
+            <div className="intel__solo">
+              <FinancialsCard financials={financials} company={c.name} />
+            </div>
+          ) : null}
 
           {gate(evidenceBlock)}
 
@@ -906,9 +922,47 @@ export function CompanyProfile({
               </CardBody>
             </Card>
           </div>
+
+          {/* Trends + outlook. These lived on the Intelligence tab as three
+              separate numbered sections ("Growth & survival", "Industry trends",
+              "Market outlook") one scroll below three OTHER sections printing
+              the same sector figures. They are market context, so they belong on
+              the Market tab — and as one card, because a reader asking "where is
+              this sector heading?" is asking one question, not three. */}
+          <Card>
+            <CardHeader subtitle="Trends &amp; outlook" title="Where the sector is heading" />
+            <CardBody>
+              <MiniRows
+                rows={[
+                  { k: "National sector growth", v: pc(report.regional.nationalGrowth) },
+                  { k: `Regional growth · ${report.overview.location}`, v: pc(report.regional.regionalGrowth) },
+                  { k: "Growth trajectory", v: report.trends.trajectory },
+                  { k: "Regional concentration", v: report.trends.concentration },
+                  { k: "Emerging locations", v: report.trends.emerging },
+                  { k: "Sector momentum", v: report.trends.momentum },
+                ]}
+              />
+              {report.outlook.items.length ? (
+                <ul className="recs" style={{ marginTop: 16 }}>
+                  {report.outlook.items.map((item, i) => (
+                    <li key={i}>
+                      <span className="recs__num mono">{i + 1}</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="icard__foot">
+                <Link className="icard__cta" href="/sources">
+                  View methodology <Icon name="arrowRight" size={13} />
+                </Link>
+                <span className="icard__src mono">{report.trends.source}</span>
+              </div>
+            </CardBody>
+          </Card>
         </div>
         ,
-          "How big this market is, how fast it is growing, how many companies survive five years, and the local economy around it"
+          "How big this market is, how fast it is growing, how many companies survive five years, the local economy around it, and where the sector is heading"
         )
       ) : null}
 
@@ -921,7 +975,7 @@ export function CompanyProfile({
           </p>
           <Card>
             <CardHeader
-              subtitle={`Closest comparables · ${num(report.local.inSameIndustry)} in ${report.local.region}`}
+              subtitle={`Closest comparables · ${num(report.local.inSameIndustry)} in ${report.local.region} · ${num(report.local.newEntrants)} new in 12m`}
               title="Peer companies"
               action={<Badge tone="neutral">{peers.length} scored</Badge>}
             />

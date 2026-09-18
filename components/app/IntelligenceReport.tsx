@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, CardHeader, CardBody, Stat, Badge, Icon } from "@/components/ds";
+import { Card, CardHeader, CardBody, Badge, Icon } from "@/components/ds";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import type { OpportunityIntel, DigitalFact } from "@/lib/opportunity";
@@ -7,7 +7,7 @@ import type { DirectorNetwork } from "@/lib/network";
 import type { Filing } from "@/lib/types";
 import { toTimeline } from "@/lib/changes";
 import { AddToProspect, type ProspectTarget } from "@/components/app/AddToProspect";
-import { fmtNumber, fmtPercent, fmtDelta, fmtDate } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 
 function Source({ children }: { children: React.ReactNode }) {
   return (
@@ -22,21 +22,6 @@ function SectionHead({ n, title }: { n: number; title: string }) {
     <div className="rsec__head">
       <span className="rsec__n mono">{String(n).padStart(2, "0")}</span>
       <h3 className="rsec__title">{title}</h3>
-    </div>
-  );
-}
-
-const STARTUP_FOUNDATIONS = ["Business bank account", "Accounting system", "Professional email", "Website", "Insurance", "Record keeping"];
-
-function ReadinessList({ items, status }: { items: string[]; status: string }) {
-  return (
-    <div className="readiness">
-      {items.map((label) => (
-        <div className="readiness__row" key={label}>
-          <span className="readiness__label">{label}</span>
-          <Badge tone="neutral">{status}</Badge>
-        </div>
-      ))}
     </div>
   );
 }
@@ -103,34 +88,33 @@ export function IntelligenceReport({
       {/* 1 · Opportunity intelligence — the lead-qualification view */}
       {opportunity ? (
         <Card>
-          <CardHeader children={<SectionHead n={1} title="Opportunity intelligence" />} action={<Badge tone="accent">Lead view</Badge>} />
+          <CardHeader children={<SectionHead n={1} title="Signals &amp; evidence" />} action={<Badge tone="accent">Lead view</Badge>} />
           <CardBody>
+            {/* This section used to print its own "Opportunity signal score
+                /100" — a SECOND number, from a different model, sitting a few
+                hundred pixels below the score card's own /100. Two scores with
+                the same name and different values invite the reader to distrust
+                both, which is an expensive thing to do to a product whose whole
+                claim is "evidence first". There is now one score (the lens card
+                at the top, with its own ledger and working), and this section is
+                the evidence underneath it. */}
             <p className="rsec__note">
-              A lead-qualification view of {r.overview.name}. Facts are verified from the public record and Google
-              Places. Sector and provider notes are labelled as common patterns — not claims about this company.
+              The verified signals behind the opportunity score for {r.overview.name}. Facts come from the public record
+              and Google Places. Sector and provider notes are labelled as common patterns — not claims about this
+              company.
             </p>
 
-            {/* Score + headline signals */}
-            <div className="opp-top">
-              <div className="opp-score">
-                <div className="opp-score__num">
-                  {opportunity.score}
-                  <span className="opp-score__den">/100</span>
-                </div>
-                <div className="opp-score__label">Opportunity signal score</div>
-              </div>
-              <div className="opp-signals">
-                {opportunity.signals.length ? (
-                  opportunity.signals.map((s, i) => (
-                    <span key={i} className={`opp-chip opp-chip--${s.tone}`}>
-                      {s.tone === "good" ? "✓" : s.tone === "watch" ? "⚠" : "•"} {s.label}
-                      {s.detail ? ` · ${s.detail}` : ""}
-                    </span>
-                  ))
-                ) : (
-                  <span className="rsec__note">No notable signals on the public record.</span>
-                )}
-              </div>
+            <div className="opp-signals opp-signals--wide">
+              {opportunity.signals.length ? (
+                opportunity.signals.map((s, i) => (
+                  <span key={i} className={`opp-chip opp-chip--${s.tone}`}>
+                    {s.tone === "good" ? "✓" : s.tone === "watch" ? "⚠" : "•"} {s.label}
+                    {s.detail ? ` · ${s.detail}` : ""}
+                  </span>
+                ))
+              ) : (
+                <span className="rsec__note">No notable signals on the public record.</span>
+              )}
             </div>
 
             {prospect ? (
@@ -199,18 +183,6 @@ export function IntelligenceReport({
               </div>
             </div>
 
-            {/* Transparent score basis */}
-            {opportunity.scoreBasis.length ? (
-              <details className="opp-basis">
-                <summary>How this score is calculated</summary>
-                <ul>
-                  {opportunity.scoreBasis.map((b, i) => (
-                    <li key={i}>{b}</li>
-                  ))}
-                </ul>
-                <p className="rsec__note">Composite of verified public signals only. Indicative — not a recommendation.</p>
-              </details>
-            ) : null}
           </CardBody>
         </Card>
       ) : null}
@@ -242,24 +214,9 @@ export function IntelligenceReport({
         </Card>
       ) : null}
 
-      {/* 3 · Market summary */}
-      <Card>
-        <CardHeader children={<SectionHead n={3} title="Market summary" />} />
-        <CardBody>
-          <div className="metric-row metric-row--5">
-            <Stat size="sm" label="Industry" value={r.overview.sector} />
-            <Stat size="sm" label="Market size" value={fmtNumber(r.industry.businesses)} />
-            <Stat size="sm" label="New registrations (12m)" value={fmtNumber(r.industry.newLastYear)} />
-            <Stat size="sm" label="Growth rate" value={fmtDelta(r.industry.annualGrowth)} />
-            <Stat size="sm" label="Survival rate (5yr)" value={fmtPercent(r.survival.fiveYear)} />
-          </div>
-          <Source>{r.industry.source}; {r.survival.source}</Source>
-        </CardBody>
-      </Card>
-
       {/* 3 · Business overview */}
       <Card>
-        <CardHeader children={<SectionHead n={4} title="Business overview" />} />
+        <CardHeader children={<SectionHead n={3} title="Business overview" />} />
         <CardBody>
           <dl className="detail-list">
             <div>
@@ -292,134 +249,9 @@ export function IntelligenceReport({
         </CardBody>
       </Card>
 
-      {/* 4 · Industry snapshot */}
-      <Card>
-        <CardHeader children={<SectionHead n={5} title="Industry snapshot" />} />
-        <CardBody>
-          <div className="metric-row">
-            <Stat size="sm" label={`Businesses · ${r.industry.sector}`} value={fmtNumber(r.industry.businesses)} />
-            <Stat size="sm" label="New registrations (12m)" value={fmtNumber(r.industry.newLastYear)} />
-            <Stat size="sm" label="Annual growth" value={fmtDelta(r.industry.annualGrowth)} delta={fmtDelta(r.industry.annualGrowth)} />
-          </div>
-          <Source>{r.industry.source}</Source>
-        </CardBody>
-      </Card>
-
-      {/* 5 · Competition snapshot */}
-      <Card>
-        <CardHeader children={<SectionHead n={6} title="Competition snapshot" />} />
-        <CardBody>
-          <div className="metric-row metric-row--4">
-            <Stat size="sm" label={`Similar companies · ${r.local.region}`} value={fmtNumber(r.local.inSameIndustry)} />
-            <Stat size="sm" label="New entrants (12m)" value={fmtNumber(r.local.newEntrants)} />
-            <Stat size="sm" label="Market density" value={r.local.density} />
-            <Stat size="sm" label="Regional concentration" value={r.trends.concentration.startsWith("Highly") ? "High" : "Moderate"} />
-          </div>
-          <Source>{r.local.source}</Source>
-        </CardBody>
-      </Card>
-
-      {/* 6 · Growth & survival (merged) */}
-      <Card>
-        <CardHeader children={<SectionHead n={7} title="Growth & survival" />} />
-        <CardBody>
-          <div className="metric-row metric-row--2">
-            <Stat size="sm" label="National sector growth" value={fmtDelta(r.regional.nationalGrowth)} />
-            <Stat size="sm" label={`Regional growth · ${r.overview.location}`} value={fmtDelta(r.regional.regionalGrowth)} />
-          </div>
-          <div className="insight">
-            <span className="insight__icon">
-              <Icon name="trendUp" size={18} />
-            </span>
-            <span className="insight__text">{r.regional.insight}</span>
-          </div>
-          <div className="bench" style={{ marginTop: 16 }}>
-            {[
-              ["1-year survival", r.survival.oneYear],
-              ["3-year survival", r.survival.threeYear],
-              ["5-year survival", r.survival.fiveYear],
-            ].map(([label, val]) => (
-              <div className="bench__row" key={label as string}>
-                <span className="bench__label">{label}</span>
-                <div className="bench__track">
-                  <div className="bench__fill" style={{ width: `${val as number}%` }} />
-                </div>
-                <span className="bench__val">{fmtPercent(val as number)}</span>
-              </div>
-            ))}
-          </div>
-          <Source>{r.regional.source}; {r.survival.source}</Source>
-        </CardBody>
-      </Card>
-
-      {/* 7 · Local economic indicators */}
-      <Card>
-        <CardHeader children={<SectionHead n={8} title="Local economic indicators" />} />
-        <CardBody>
-          <div className="metric-row metric-row--4">
-            <Stat size="sm" label="Population" value={fmtNumber(r.economic.population)} />
-            <Stat size="sm" label="Employment rate" value={fmtPercent(r.economic.employmentRate)} />
-            <Stat size="sm" label="Economic activity" value={fmtPercent(r.economic.economicActivityRate)} />
-            <Stat size="sm" label="Median weekly pay" value={`£${fmtNumber(r.economic.medianWeeklyPay)}`} />
-          </div>
-          <Source>{r.economic.source}</Source>
-        </CardBody>
-      </Card>
-
-      {/* 8 · Industry trends */}
-      <Card>
-        <CardHeader children={<SectionHead n={9} title="Industry trends" />} />
-        <CardBody>
-          <dl className="detail-list">
-            <div>
-              <dt>Growth trajectory</dt>
-              <dd>{r.trends.trajectory}</dd>
-            </div>
-            <div>
-              <dt>Regional concentration</dt>
-              <dd>{r.trends.concentration}</dd>
-            </div>
-            <div>
-              <dt>Emerging locations</dt>
-              <dd>{r.trends.emerging}</dd>
-            </div>
-            <div>
-              <dt>Sector momentum</dt>
-              <dd>{r.trends.momentum}</dd>
-            </div>
-          </dl>
-          <Source>{r.trends.source}</Source>
-        </CardBody>
-      </Card>
-
-      {/* 9 · Market outlook */}
-      <Card>
-        <CardHeader children={<SectionHead n={10} title="Market outlook" />} action={<Badge tone="accent">Evidence-based</Badge>} />
-        <CardBody>
-          <ul className="recs">
-            {r.outlook.items.map((item, i) => (
-              <li key={i}>
-                <span className="recs__num mono">{i + 1}</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-          <Source>{r.outlook.source}</Source>
-        </CardBody>
-      </Card>
-
-      {/* 10 · Startup readiness (educational) */}
-      <Card>
-        <CardHeader children={<SectionHead n={11} title="Startup readiness" />} action={<Badge tone="neutral">Educational</Badge>} />
-        <CardBody>
-          <p className="rsec__note">Common foundations for a newly incorporated business. Not assessed for this company.</p>
-          <ReadinessList items={STARTUP_FOUNDATIONS} status="Not Assessed" />
-        </CardBody>
-      </Card>
-
       {/* 11 · Similar companies */}
       <Card>
-        <CardHeader children={<SectionHead n={12} title="Similar companies" />} action={<Badge tone="neutral">{similar.length}</Badge>} />
+        <CardHeader children={<SectionHead n={4} title="Similar companies" />} action={<Badge tone="neutral">{similar.length}</Badge>} />
         <CardBody>
           {similar.length ? (
             <div className="sim-list">
@@ -448,7 +280,7 @@ export function IntelligenceReport({
       {network && network.connections.length ? (
         <Card>
           <CardHeader
-            children={<SectionHead n={13} title="Connected companies" />}
+            children={<SectionHead n={5} title="Connected companies" />}
             action={<Badge tone="accent">Director network</Badge>}
           />
           <CardBody>
