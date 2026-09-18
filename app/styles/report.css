@@ -11,10 +11,6 @@
 .rsec__n { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--accent); letter-spacing: 0.06em; }
 .rsec__title { font-family: var(--font-grotesk); font-weight: 800; font-size: var(--text-md); letter-spacing: -0.02em; color: var(--text-strong); margin: 0; }
 
-.metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-.metric-row--2 { grid-template-columns: repeat(2, 1fr); }
-.metric-row--4 { grid-template-columns: repeat(4, 1fr); }
-.metric-row--5 { grid-template-columns: repeat(5, 1fr); }
 
 .bench { display: flex; flex-direction: column; gap: 14px; }
 .bench__row { display: grid; grid-template-columns: 150px 1fr 56px; align-items: center; gap: 14px; }
@@ -42,16 +38,9 @@
 .readiness__label { font-size: var(--text-ui); color: var(--text-body); }
 
 /* ── Opportunity intelligence (lead-qualification view) ───────────── */
-.opp-top { display: flex; gap: 18px; align-items: stretch; margin-bottom: 18px; flex-wrap: wrap; }
-.opp-score {
-  flex-shrink: 0; min-width: 150px; display: flex; flex-direction: column; justify-content: center;
-  padding: 16px 20px; border-radius: var(--radius-lg);
-  background: var(--accent-tint); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
-}
-.opp-score__num { font-family: var(--font-grotesk); font-weight: 800; font-size: 40px; line-height: 1; color: var(--accent); letter-spacing: -0.03em; }
-.opp-score__den { font-size: var(--text-prose); font-weight: 700; color: color-mix(in srgb, var(--accent) 70%, var(--text-muted)); margin-left: 2px; }
-.opp-score__label { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-top: 8px; font-weight: 600; }
 .opp-signals { flex: 1; min-width: 220px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+/* Full width now the section no longer sets a second score beside the chips. */
+.opp-signals--wide { width: 100%; margin-bottom: 4px; }
 .opp-chip { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-xs); padding: 6px 11px; border-radius: var(--radius-pill); border: 1px solid var(--border-hair); background: var(--surface-card); color: var(--text-body); height: fit-content; }
 .opp-chip--good { border-color: color-mix(in srgb, var(--pos) 40%, transparent); color: var(--pos); background: color-mix(in srgb, var(--pos) 8%, transparent); }
 .opp-chip--watch { border-color: color-mix(in srgb, var(--warn) 45%, transparent); color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, transparent); }
@@ -68,11 +57,6 @@
 .opp-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .opp-tag { font-size: var(--text-xs); padding: 6px 12px; border-radius: var(--radius-md); background: var(--surface-sunken); border: 1px solid var(--border-hair); color: var(--text-body); }
 .opp-tag--prov { background: var(--accent-tint); border-color: color-mix(in srgb, var(--accent) 22%, transparent); color: color-mix(in srgb, var(--accent) 88%, var(--text-strong)); }
-.opp-basis { margin-top: 16px; border-top: 1px solid var(--border-hair); padding-top: 12px; }
-.opp-basis summary { cursor: pointer; font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); }
-.opp-basis summary:hover { color: var(--accent); }
-.opp-basis ul { margin: 10px 0 6px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
-.opp-basis li { font-size: var(--text-xs); color: var(--text-body); font-family: var(--font-mono); }
 
 @media (max-width: 860px) {
   .opp-list, .opp-cols { grid-template-columns: 1fr; }
@@ -95,7 +79,6 @@
 .report__disclaimer { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-faint); line-height: 1.6; padding: 14px 0 0; }
 
 @media (max-width: 1080px) {
-  .metric-row, .metric-row--4, .metric-row--5 { grid-template-columns: repeat(2, 1fr); }
   .bench__row { grid-template-columns: 120px 1fr 48px; }
 }
 
