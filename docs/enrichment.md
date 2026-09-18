@@ -157,6 +157,10 @@ Never extrapolate beyond the measured sample; never round a 0/0 into a percentag
 6. Wire **Digital Presence Readiness** (subject) + funnel **competitor averages** to the cache.
 7. 10-company trial → measure real cost → tune sample size, TTL, `max_uses`.
 
+> **Phase 3 built the contact layer on top of this one** — website discovery, verification and
+> contact extraction with per-value checks. See [`contact-enrichment.md`](contact-enrichment.md).
+> It reuses the Places cache below: a company with a GBP has already told Google its website.
+
 > Phase 2 also covers founder-mode route, QR tracking, PDF, lead capture, packages — see
 > `docs/architecture.md` §4. This file is the enrichment-data slice only.
 

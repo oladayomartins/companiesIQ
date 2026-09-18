@@ -29,6 +29,10 @@ export interface Plan {
     savedSearches: boolean;
     csvExport: boolean;
     api: boolean;
+    /** Verified contact discovery — distinct companies looked up per calendar
+     *  month. 0 = not included, -1 = unlimited. Each lookup crawls the
+     *  company's own website, so it is metered rather than unbounded. */
+    contactLookups: number;
   };
 }
 
@@ -48,7 +52,7 @@ export const PLANS: Plan[] = [
       "Sector, market and city data",
       "Weekly new-company email alerts",
     ],
-    caps: { fullReport: false, historicalData: false, watchlists: 0, alerts: false, savedSearches: false, csvExport: false, api: false },
+    caps: { fullReport: false, historicalData: false, watchlists: 0, alerts: false, savedSearches: false, csvExport: false, api: false, contactLookups: 0 },
   },
   {
     id: "analyst",
@@ -65,10 +69,11 @@ export const PLANS: Plan[] = [
       "Full intelligence reports",
       "Complete filing history",
       "1 watchlist · 50 companies",
+      "Verified contact discovery · 250 companies/mo",
       "CSV export",
       "Email support",
     ],
-    caps: { fullReport: true, historicalData: true, watchlists: 1, alerts: false, savedSearches: true, csvExport: true, api: false },
+    caps: { fullReport: true, historicalData: true, watchlists: 1, alerts: false, savedSearches: true, csvExport: true, api: false, contactLookups: 250 },
   },
   {
     id: "team",
@@ -84,11 +89,12 @@ export const PLANS: Plan[] = [
       "Everything in Analyst",
       "Unlimited watchlists",
       "Real-time signal alerts",
+      "Verified contact discovery · 2,500 companies/mo",
       "Market & sector analytics",
       "API access · 10k calls/mo",
       "Priority support",
     ],
-    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true },
+    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true, contactLookups: 2500 },
   },
   {
     id: "enterprise",
@@ -101,13 +107,14 @@ export const PLANS: Plan[] = [
     features: [
       "Everything in Team",
       "Custom signal models",
+      "Unlimited contact discovery",
       "API access · 250k calls/mo",
       "Account audit log",
       "Bulk data delivery",
       "Dedicated success manager",
       "SLA & onboarding",
     ],
-    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true },
+    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true, contactLookups: -1 },
   },
 ];
 

@@ -79,6 +79,18 @@ export const SOURCES: DataSource[] = [
     powers: "Sector business population (active companies by sector) and sector growth rates.",
     note: "Annual spreadsheet release (no queryable API). Companies House counts a different universe (registered companies, not the BPE enterprise base), so these are kept as the authoritative sector reference rather than recomputed.",
   },
+  {
+    id: "company-website",
+    name: "Company websites (self-published)",
+    provider: "The companies themselves",
+    status: "live",
+    licence: "Publicly published by the company; re-presented with attribution",
+    url: "https://www.companiesiq.co.uk/bot",
+    powers:
+      "Contact intelligence: the website, general email addresses and phone numbers a company publishes about itself, each shown with the verification checks run against it and the page it came from.",
+    note:
+      "Fetched on demand from the company's own site, identifying ourselves as CompaniesIQBot and obeying robots.txt. Nothing is bought in from a third-party contact database. A business or individual can have a detail suppressed at any time, and a suppressed value is never re-published.",
+  },
 ];
 
 export const LIVE_SOURCES = SOURCES.filter((s) => s.status === "live");

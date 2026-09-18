@@ -221,7 +221,7 @@ export const COMPETITORS: Competitor[] = [
       ],
       [
         "Does CompaniesIQ provide contact data?",
-        "CompaniesIQ surfaces public register data — companies, officers, PSCs, filings and financial signals — not verified email or phone contact data. For contact enrichment, a contact-data provider is the better fit.",
+        "CompaniesIQ finds the contact details a company publishes on its own website — general email addresses and phone numbers — and shows the verification checks behind each one, so you can see how far to trust it. What it does not do is resell a bought-in database of personal work emails and direct dials. If prospecting named individuals at scale is the job, a dedicated contact-data provider is the better fit.",
       ],
       [
         "Is CompaniesIQ free to try?",

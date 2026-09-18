@@ -14,7 +14,7 @@ export default function PrivacyPage() {
       <section className="pricing-hero">
         <span className="eyebrow">Legal</span>
         <h1 className="pricing-hero__title">Privacy Policy</h1>
-        <p className="pricing-hero__sub">Last updated 8 June 2026. How we handle personal data under UK GDPR.</p>
+        <p className="pricing-hero__sub">Last updated 18 September 2026. How we handle personal data under UK GDPR.</p>
       </section>
 
       <section className="prose">
@@ -30,6 +30,49 @@ export default function PrivacyPage() {
           The company information we display originates from the UK public register (Companies House) and official
           statistics (ONS, Nomis), reused under the Open Government Licence. This is public-record data, not data we
           collect from you. See <Link href="/sources">sources &amp; methodology</Link>.
+        </p>
+
+        <h2>Business contact details published on company websites</h2>
+        <p>
+          Our contact-intelligence feature fetches a company&apos;s own website and records the general contact details
+          the company has chosen to publish there — typically a business email such as{" "}
+          <span className="mono">hello@</span> or <span className="mono">info@</span> and a business telephone number —
+          together with the page each one came from and the date we read it. We do not buy, licence or import contact
+          data from third-party contact databases, and we do not attempt to derive or guess an individual&apos;s email
+          address.
+        </p>
+        <ul>
+          <li>
+            <strong>Lawful basis</strong> — legitimate interests (Art. 6(1)(f)): re-presenting business contact
+            information that the business itself published for the purpose of being contacted, with its provenance
+            attached. We have balanced this against the rights of the individuals concerned, which is why we limit
+            collection to what is published on the company&apos;s own site, show the evidence for every value, and
+            operate the objection route below.
+          </li>
+          <li>
+            <strong>Crawling</strong> — we identify ourselves as <span className="mono">CompaniesIQBot</span> and obey{" "}
+            <span className="mono">robots.txt</span>. See <Link href="/bot">about our crawler</Link>.
+          </li>
+          <li>
+            <strong>Sole traders and small companies</strong> — a business number or address can also be personal data.
+            Where that is the case, the rights below apply to it in full.
+          </li>
+          <li>
+            <strong>Retention</strong> — a record is re-checked or expires within 30 days; a suppressed value is
+            recorded permanently as suppressed so that it is never re-published.
+          </li>
+        </ul>
+        <p>
+          <strong>Objecting (Art. 21).</strong> If you do not want a detail shown, email{" "}
+          <a href="mailto:privacy@companiesiq.co.uk">privacy@companiesiq.co.uk</a> or use the removal form on{" "}
+          <Link href="/bot">the crawler page</Link>. We do not require you to create an account first, and we act on
+          the request rather than asking you to justify it.
+        </p>
+        <p>
+          <strong>Marketing to these details is your responsibility.</strong> If you contact a company using details
+          found here, you are the controller for that outreach and must comply with UK GDPR and PECR — including the
+          rules on electronic marketing, the Corporate Telephone Preference Service (CTPS) and the Telephone
+          Preference Service (TPS). We do not screen numbers against TPS/CTPS on your behalf.
         </p>
 
         <h2>Data we collect about you</h2>
