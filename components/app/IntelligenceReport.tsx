@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card, CardHeader, CardBody, Badge, Icon } from "@/components/ds";
-import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
+import type { IntelligenceReport as Report } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import type { OpportunityIntel, DigitalFact } from "@/lib/opportunity";
 import type { DirectorNetwork } from "@/lib/network";
@@ -59,14 +59,12 @@ function OppRow({ tone, children }: { tone: "good" | "watch" | "neutral"; childr
 
 export function IntelligenceReport({
   report,
-  similar = [],
   opportunity = null,
   prospect = null,
   network = null,
   filings = [],
 }: {
   report: Report;
-  similar?: SimilarCompany[];
   // Accepted for call-site compatibility; the opportunity object already
   // encapsulates the enrichment-derived facts shown in the report.
   enrichment?: CompanyEnrichment | null;
@@ -249,38 +247,11 @@ export function IntelligenceReport({
         </CardBody>
       </Card>
 
-      {/* 11 · Similar companies */}
-      <Card>
-        <CardHeader children={<SectionHead n={4} title="Similar companies" />} action={<Badge tone="neutral">{similar.length}</Badge>} />
-        <CardBody>
-          {similar.length ? (
-            <div className="sim-list">
-              {similar.map((s) => (
-                <Link key={s.number} href={`/company/${s.number}`} className="sim-row">
-                  <div className="sim-row__main">
-                    <div className="sim-row__name">{s.name}</div>
-                    <div className="sim-row__meta mono">
-                      {s.number}
-                      {s.sicCode ? ` · SIC ${s.sicCode}` : ""}
-                      {s.region ? ` · ${s.region}` : ""}
-                    </div>
-                  </div>
-                  <Icon name="chevronRight" size={15} className="sim-row__chev" />
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="rsec__note">No active companies found with the same SIC code.</p>
-          )}
-          <Source>Companies House · same SIC code (same-region first)</Source>
-        </CardBody>
-      </Card>
-
       {/* 12 · Connected companies (shared directors) */}
       {network && network.connections.length ? (
         <Card>
           <CardHeader
-            children={<SectionHead n={5} title="Connected companies" />}
+            children={<SectionHead n={4} title="Connected companies" />}
             action={<Badge tone="accent">Director network</Badge>}
           />
           <CardBody>

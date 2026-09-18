@@ -738,7 +738,6 @@ export function CompanyProfile({
           {unlocked ? (
             <IntelligenceReport
               report={report}
-              similar={similar}
               enrichment={enrichment}
               opportunity={opportunity}
               network={network}
