@@ -21,8 +21,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Retried once: next/font downloads Google Fonts at build time, and a bad
+      # response from Google fails the build with no code change involved
+      # ("Cannot read properties of null" in next/font's google loader). A real
+      # build error fails both attempts, so this only absorbs network flakes.
       - name: Build
-        run: npm run build
+        run: npm run build || { echo "::warning::Build failed — retrying once (Google Fonts fetch is flaky in CI)"; sleep 15; npm run build; }
         env:
           NEXT_TELEMETRY_DISABLED: "1"
           # No secrets needed: the build prerenders with graceful fallbacks.
