@@ -52,8 +52,9 @@ function FactRow({ fact }: { fact: DigitalFact }) {
   );
 }
 
-/** A found email or phone: the value, its confidence, and its working on demand. */
-function ContactRow({ point }: { point: ContactPoint }) {
+/** A found email or phone: the value, its confidence, and its working on demand.
+ *  Shared with the director contact card (DirectorContactCard). */
+export function ContactRow({ point }: { point: ContactPoint }) {
   const [open, setOpen] = useState(false);
   const href = point.kind === "email" ? `mailto:${point.value}` : `tel:${point.value}`;
   const page = point.foundOn.find((p) => p.startsWith("http"));

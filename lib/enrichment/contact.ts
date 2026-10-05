@@ -260,18 +260,24 @@ function buildPoints(
 // ---- Suppression ------------------------------------------------------------
 
 /**
+ * Which of these canonical values (lower-cased email / E.164 phone) someone has
+ * asked us to stop showing. Shared with director contacts
+ * (./director-contact.ts) so one opt-out covers every surface.
+ */
+export async function suppressedValues(values: string[]): Promise<Set<string>> {
+  const admin = getSupabaseAdmin();
+  if (!admin || !values.length) return new Set();
+  const { data } = await admin.from("contact_suppressions").select("value").in("value", values);
+  return new Set((data ?? []).map((r: { value: string }) => r.value));
+}
+
+/**
  * Drop anything on the suppression list. A person or business that asks us to
  * stop showing a contact detail is honoured at read time AND at write time, so
  * a re-crawl cannot quietly resurrect it.
  */
 async function applySuppressions(result: CompanyContacts): Promise<CompanyContacts> {
-  const admin = getSupabaseAdmin();
-  if (!admin) return result;
-  const values = [...result.emails, ...result.phones].map((p) => p.value);
-  if (!values.length) return result;
-
-  const { data } = await admin.from("contact_suppressions").select("value").in("value", values);
-  const blocked = new Set((data ?? []).map((r: { value: string }) => r.value));
+  const blocked = await suppressedValues([...result.emails, ...result.phones].map((p) => p.value));
   if (!blocked.size) return result;
 
   return {

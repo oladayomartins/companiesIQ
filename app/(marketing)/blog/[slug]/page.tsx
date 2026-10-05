@@ -14,6 +14,9 @@ import { PublicCta } from "@/components/public/PublicShell";
 import { SiteFooter } from "@/components/marketing/Footer";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { getDataset } from "@/lib/research/store";
+import { datasetLd, researchArticleExtras } from "@/lib/research/schema";
+import { ResearchProvenance } from "@/components/marketing/ResearchProvenance";
 
 export const revalidate = 300;
 
@@ -43,6 +46,11 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   if (!post) notFound();
 
   const html = renderMarkdown(post.body_md);
+
+  // A research edition carries the dataset that produced its figures. When one
+  // exists, the page also serves it: provenance above the article, Dataset
+  // structured data, and CSV/JSON downloads.
+  const dataset = await getDataset(post.slug).catch(() => null);
 
   // "More insights" — real post cards (with covers). Prefer the posts this
   // article links to in `related`, then top up with the most recent, excluding
@@ -83,6 +91,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
     author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
     publisher: { "@type": "Organization", name: SITE_NAME, logo: { "@type": "ImageObject", url: `${SITE_URL}/logo/ciq-mark.svg` } },
     ...(post.cover_image ? { image: post.cover_image } : {}),
+    ...(dataset ? researchArticleExtras(dataset) : {}),
   };
   const breadcrumb = {
     "@context": "https://schema.org",
@@ -105,9 +114,11 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         }
       : null;
 
+  const schemas = [articleSchema, breadcrumb, ...(faqSchema ? [faqSchema] : []), ...(dataset ? [datasetLd(dataset)] : [])];
+
   return (
     <main className="site" id="main-content" tabIndex={-1}>
-      <JsonLd data={faqSchema ? [articleSchema, breadcrumb, faqSchema] : [articleSchema, breadcrumb]} />
+      <JsonLd data={schemas} />
       <article className="blog-post blog-article">
         <Link className="back" href="/blog">
           <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> All articles
@@ -118,6 +129,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
           <h1 className="blog-post__title">{post.title}</h1>
           <div className="blog-post__meta mono">{fmtDate(post.published_at ?? post.created_at)}</div>
         </header>
+
+        {dataset ? <ResearchProvenance dataset={dataset} /> : null}
 
         {post.cover_image ? (
           // eslint-disable-next-line @next/next/no-img-element
