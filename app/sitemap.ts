@@ -56,6 +56,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/sic`, lastModified: monthly, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/free-alerts`, lastModified: monthly, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/sources`, lastModified: monthly, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_URL}/api-docs`, lastModified: monthly, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/about`, lastModified: monthly, changeFrequency: "monthly", priority: 0.5 },
     // Indexable on purpose: a site owner who spots CompaniesIQBot in their logs
     // should be able to find this by searching the user-agent string.
