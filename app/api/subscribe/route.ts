@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { priceIdFor, getStripeCustomerId, type BillingInterval } from "@/lib/subscriptions";
+import { recordGrowthEvent } from "@/lib/growth/events";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,16 @@ export async function POST(req: NextRequest) {
       subscription_data: { metadata: { user_id: user.id, plan } },
     });
     if (!session.url) return NextResponse.json({ error: "Checkout session has no URL." }, { status: 502 });
+    // First-party funnel: the Revenue Autopilot recovers this checkout if it
+    // isn't completed (keyed on the session id, so each attempt is distinct).
+    await recordGrowthEvent({
+      userId: user.id,
+      event: "checkout_started",
+      plan,
+      billing: interval,
+      value: session.amount_total != null ? session.amount_total / 100 : null,
+      ref: session.id,
+    });
     return NextResponse.json({ url: session.url });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Checkout failed." }, { status: 502 });

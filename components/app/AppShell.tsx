@@ -20,6 +20,8 @@ const NAV: NavItem[] = [
   // DigitWarehouse-exclusive funnel tooling.
   { id: "campaigns", label: "Campaigns", icon: "briefcase", href: "/app/campaigns", role: "partner" },
   // Blog CMS — admins only.
+  // Revenue + conversion autopilot — admins only.
+  { id: "revenue", label: "Revenue", icon: "trendUp", href: "/app/revenue", role: "admin" },
   { id: "blog", label: "Blog", icon: "file", href: "/app/blog", role: "admin" },
 ];
 

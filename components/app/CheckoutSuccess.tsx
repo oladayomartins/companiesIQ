@@ -28,7 +28,8 @@ export function CheckoutSuccess() {
         transaction_id: session || undefined,
         currency: "GBP",
         value,
-        items: [{ item_id: p.id, item_name: p.name }],
+        // price + quantity: without them GA4 reports £0 item revenue.
+        items: [{ item_id: p.id, item_name: p.name, price: value, quantity: 1 }],
       });
     }
     try {

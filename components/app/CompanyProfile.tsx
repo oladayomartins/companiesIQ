@@ -12,6 +12,7 @@
 // Colour is semantic only: green/amber/red mean good/watch/risk, never
 // decoration. Every score row carries its weight and its reason, and anything
 // we could not measure says "Not checked" rather than being guessed.
+import { GrowthBeacon } from "@/components/app/GrowthBeacon";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -588,6 +589,9 @@ export function CompanyProfile({
 
   return (
     <div className="screen profile">
+      {/* A signed-in free reader on a locked report is the strongest upgrade
+          signal we have — feed it to the Revenue Autopilot. */}
+      {signedIn && !unlocked ? <GrowthBeacon event="paywall_view" refName="Company report" /> : null}
       {unlocked ? (
         <button className="back" onClick={() => router.push("/app/companies")}>
           <Icon name="arrowRight" size={15} style={{ transform: "rotate(180deg)" }} /> Back to results

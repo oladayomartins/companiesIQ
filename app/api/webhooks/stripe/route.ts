@@ -10,6 +10,8 @@ import { markPurchased, recordFunnelEvent } from "@/lib/leads";
 import { upsertSubscription, planForPriceId } from "@/lib/subscriptions";
 import { setProfileNameIfEmpty } from "@/lib/profile";
 import { sendGa4Purchase, isGaServerPurchaseEnabled } from "@/lib/ga-mp";
+import { recordGrowthEvent } from "@/lib/growth/events";
+import { planById, type PlanId } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +96,15 @@ export async function POST(req: NextRequest) {
           session.customer_details?.email ?? session.customer_email ?? null,
           session.customer_details?.name ?? null,
         );
+        // First-party funnel: closes the open checkout (stops recovery emails)
+        // and is the revenue the admin Revenue screen attributes to emails.
+        await recordGrowthEvent({
+          userId,
+          event: "checkout_completed",
+          plan,
+          value: (session.amount_total ?? 0) / 100,
+          ref: session.id,
+        });
       }
       // Server-side purchase (bulletproof revenue). Real Stripe amount, GA ids
       // from metadata for attribution. Dark unless GA4_MP_API_SECRET is set.
@@ -104,7 +115,9 @@ export async function POST(req: NextRequest) {
           transactionId: session.id,
           value: (session.amount_total ?? 0) / 100,
           currency: (session.currency ?? "gbp").toUpperCase(),
-          items: [{ item_id: plan, item_name: plan }],
+          // price + quantity are what GA4 needs for item revenue (it reported
+          // £0 item revenue against a real purchase without them).
+          items: [{ item_id: plan, item_name: planById(plan as PlanId).name, price: (session.amount_total ?? 0) / 100, quantity: 1 }],
         });
       }
       return NextResponse.json({ received: true });
@@ -117,6 +130,16 @@ export async function POST(req: NextRequest) {
     if (company) {
       await recordFunnelEvent(company, "purchase", source);
       await markPurchased(company, email);
+    }
+  }
+
+  // Abandoned CompaniesIQ checkout (Stripe expires sessions after 24h). Add
+  // `checkout.session.expired` to the webhook's events in the Stripe dashboard.
+  if (event.type === "checkout.session.expired") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const userId = session.client_reference_id || session.metadata?.user_id || "";
+    if (session.mode === "subscription" && userId) {
+      await recordGrowthEvent({ userId, event: "checkout_expired", plan: session.metadata?.plan ?? null, ref: session.id });
     }
   }
 

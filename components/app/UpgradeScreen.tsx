@@ -1,24 +1,47 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Badge, Icon } from "@/components/ds";
 import { BillingToggle } from "@/components/marketing/BillingToggle";
 import { MARKETING_TIERS, type Plan } from "@/lib/subscription";
 import { toast } from "@/lib/toast";
 import { track, getGaIds } from "@/lib/track";
+import { growthEvent } from "@/lib/growth/beacon";
 
 // In-app plan picker. Subscribes directly via Stripe and the user comes
 // straight back into the app with the plan unlocked. There is no trial: the
 // Free plan is the try-before-you-buy, and nothing here advertises one.
 export function UpgradeScreen() {
-  const [annual, setAnnual] = useState(true);
+  // Monthly by default, matching /pricing and the homepage's "from £39/mo":
+  // defaulting to Annual sent the default path to Stripe for £372 upfront.
+  const [annual, setAnnual] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const resumed = useRef(false);
 
-  async function choose(t: Plan) {
+  // Record the visit, and resume a checkout when arriving from a Revenue
+  // Autopilot email (/app/upgrade?plan=analyst&interval=monthly): the click in
+  // the email IS the plan choice, so go straight to Stripe. Runs once — a
+  // failed resume falls through to the normal table with the reason shown.
+  useEffect(() => {
+    if (resumed.current) return;
+    resumed.current = true;
+    const sp = new URLSearchParams(window.location.search);
+    const interval = sp.get("interval") === "annual" ? "annual" : "monthly";
+    setAnnual(interval === "annual");
+    growthEvent("upgrade_view");
+    const tier = MARKETING_TIERS.find((t) => t.id === sp.get("plan"));
+    if (tier && tier.monthly) void choose(tier, interval === "annual");
+    // Mount only: re-running would restart checkout.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function choose(t: Plan, annualChoice: boolean = annual) {
     if (t.monthly === null) {
       window.location.href = "mailto:sales@companiesiq.co.uk?subject=CompaniesIQ%20Enterprise";
       return;
     }
+    const billing = annualChoice ? "annual" : "monthly";
+    growthEvent("plan_select", { plan: t.id, billing });
     setBusy(t.id);
     setError(null);
     try {
@@ -28,7 +51,7 @@ export function UpgradeScreen() {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: t.id, interval: annual ? "annual" : "monthly", gaClientId: ga.clientId, gaSessionId: ga.sessionId }),
+        body: JSON.stringify({ plan: t.id, interval: billing, gaClientId: ga.clientId, gaSessionId: ga.sessionId }),
       });
       if (res.status === 401) {
         window.location.href = "/sign-in?next=/app/upgrade";
@@ -37,7 +60,7 @@ export function UpgradeScreen() {
       const d = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
       if (d.url) {
         // Funnel event: intent to pay. Value = yearly total (annual is £/mo billed annually).
-        const value = annual ? (t.annual ?? 0) * 12 : t.monthly ?? 0;
+        const value = annualChoice ? (t.annual ?? 0) * 12 : t.monthly ?? 0;
         track("begin_checkout", { currency: "GBP", value, items: [{ item_id: t.id, item_name: t.name }] });
         toast("Redirecting to secure checkout…", { tone: "pending", duration: 6000 });
         window.location.href = d.url;

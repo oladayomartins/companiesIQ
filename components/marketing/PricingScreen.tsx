@@ -5,6 +5,8 @@ import { SiteFooter } from "@/components/marketing/Footer";
 import { BillingToggle } from "@/components/marketing/BillingToggle";
 import { PRICING_TIERS, type Plan } from "@/lib/subscription";
 import { FAQS } from "@/lib/pricing-faqs";
+import { track, getGaIds } from "@/lib/track";
+import { growthEvent } from "@/lib/growth/beacon";
 
 function PricingTier({ tier, annual, onChoose, busy }: { tier: Plan; annual: boolean; onChoose: () => void; busy: boolean }) {
   const custom = tier.monthly === null;
@@ -75,19 +77,25 @@ export function PricingScreen() {
   // failure we fall through to the normal table with the reason shown.
   useEffect(() => {
     if (resumed.current) return;
+    growthEvent("pricing_view"); // dropped server-side unless signed in
     const sp = new URLSearchParams(window.location.search);
-    if (sp.get("interval") === "monthly") setAnnual(false);
+    const resumeAnnual = sp.get("interval") === "annual";
+    setAnnual(resumeAnnual);
     const wanted = sp.get("plan");
     if (!wanted) return;
     const tier = PRICING_TIERS.find((t) => t.id === wanted);
     if (!tier || tier.monthly === null || tier.monthly === 0) return;
     resumed.current = true;
-    void choose(tier, { resuming: true });
+    // Pass the interval explicitly: setAnnual() above hasn't re-rendered yet,
+    // so `annual` here would still be the default (monthly).
+    void choose(tier, { resuming: true, annual: resumeAnnual });
     // Mount only: re-running would restart checkout.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function choose(tier: Plan, opts: { resuming?: boolean } = {}) {
+  async function choose(tier: Plan, opts: { resuming?: boolean; annual?: boolean } = {}) {
+    const isAnnual = opts.annual ?? annual;
+    const billing = isAnnual ? "annual" : "monthly";
     // Enterprise is sales-led — no self-serve checkout.
     if (tier.monthly === null) {
       window.location.href = "mailto:sales@companiesiq.co.uk?subject=CompaniesIQ%20Enterprise";
@@ -98,13 +106,17 @@ export function PricingScreen() {
       window.location.href = "/sign-in?next=/app";
       return;
     }
+    growthEvent("plan_select", { plan: tier.id, billing });
     setBusy(tier.id);
     setError(null);
     try {
+      // GA ids let the webhook's server-side purchase attribute to this
+      // visit (Google organic → /pricing is where revenue comes from).
+      const ga = await getGaIds();
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan: tier.id, interval: annual ? "annual" : "monthly" }),
+        body: JSON.stringify({ plan: tier.id, interval: billing, gaClientId: ga.clientId, gaSessionId: ga.sessionId }),
       });
       if (res.status === 401) {
         if (opts.resuming) {
@@ -116,12 +128,16 @@ export function PricingScreen() {
         // Carry the choice through the auth round-trip. Sending them back to a
         // bare /pricing made them pick the same plan a second time, which reads
         // as though the first click did nothing.
-        const resume = `/pricing?plan=${tier.id}&interval=${annual ? "annual" : "monthly"}`;
+        const resume = `/pricing?plan=${tier.id}&interval=${billing}`;
         window.location.href = `/sign-in?next=${encodeURIComponent(resume)}`;
         return;
       }
       const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
       if (data.url) {
+        // This page never fired begin_checkout, so GA's checkout step only
+        // counted in-app upgrades.
+        const value = isAnnual ? (tier.annual ?? 0) * 12 : tier.monthly ?? 0;
+        track("begin_checkout", { currency: "GBP", value, items: [{ item_id: tier.id, item_name: tier.name, price: value, quantity: 1 }] });
         window.location.href = data.url;
         return;
       }
