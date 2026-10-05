@@ -27,7 +27,8 @@ export type ContactSource =
   | "tel-link" // an <a href="tel:…"> — the site author's own machine-readable number
   | "mailto-link" // an <a href="mailto:…">
   | "page-text" // scraped from visible copy
-  | "google-places"; // the company's Google Business Profile
+  | "google-places" // the company's Google Business Profile
+  | "provider"; // a third-party enrichment provider (director contacts only — see §10 of the doc)
 
 /** Broad purpose, inferred from the local part. Never treated as evidence. */
 export type ContactRole = "general" | "sales" | "support" | "accounts" | "privacy" | "careers" | "personal";
@@ -105,6 +106,9 @@ export const CHECKS = {
   websiteVerified: { id: "website-verified", label: "Website independently verified as this company's", weight: 20 },
   mailbox: { id: "mailbox", label: "Mailbox independently verified", weight: 0 },
   line: { id: "line", label: "Line independently verified", weight: 0 },
+  // Director contacts only. A provider's own match claim — reported, never
+  // weighted, because it is the vendor's assertion and not a check we ran.
+  providerMatch: { id: "provider-match", label: "Third-party provider reports a confident match", weight: 0 },
 } as const;
 
 /** The maximum score an email can reach, so the percentage means something. */
@@ -189,3 +193,27 @@ export const FREE_MAIL_DOMAINS = new Set([
   "protonmail.com",
   "proton.me",
 ]);
+
+// ---- Director contacts (third-party enrichment) -----------------------------
+//
+// The one place contact data is NOT self-published: a director's business
+// email / direct dial bought from a provider behind CONTACT_ENRICH_URL. Same
+// ContactPoint shape and evidence UI as company contacts, so a reader can see
+// exactly how little we can vouch for it. See docs/contact-enrichment.md §10.
+
+export type DirectorContactStatus =
+  | "measured" // the provider returned at least one value
+  | "not_found" // the provider was asked and returned nothing usable
+  | "not_configured"; // no provider wired up — the feature is dark
+
+export interface DirectorContacts {
+  officerId: string;
+  name: string | null;
+  status: DirectorContactStatus;
+  emails: ContactPoint[];
+  phones: ContactPoint[];
+  provider: string | null;
+  notes: string[];
+  checkedAt: string | null;
+  cached: boolean;
+}

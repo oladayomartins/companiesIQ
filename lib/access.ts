@@ -135,15 +135,21 @@ const UNLIMITED: ContactAllowance = { allowed: true, limit: -1, used: 0, remaini
 const utcMonth = () => new Date().toISOString().slice(0, 7);
 
 /**
- * What contact-discovery allowance this user has left this month, and whether
- * `number` is already inside it. Counting is by DISTINCT company per month, so
- * a repeat view never costs a second unit.
+ * Director reveals share the contact_lookups meter, keyed "officer:<id>" in
+ * the company_number column. Each meter counts only its own rows, so a paid
+ * director reveal never spends a company lookup or the other way round.
  */
-export async function contactAllowance(user: User | null, number?: string): Promise<ContactAllowance> {
-  if (!user) return { allowed: false, limit: 0, used: 0, remaining: 0, reason: "signed-out" };
-  if (isAdmin(user) || isPartner(user)) return UNLIMITED;
+const OFFICER_KEY = "officer:";
+const officerKey = (officerId: string) => `${OFFICER_KEY}${officerId}`;
 
-  const limit = (await capsFor(user)).contactLookups;
+type Meter = "company" | "director";
+
+/**
+ * The shared meter: how many DISTINCT keys this user has used this month
+ * against `limit`, and whether `key` is already inside it. A repeat view
+ * never costs a second unit.
+ */
+async function meteredAllowance(user: User, meter: Meter, limit: number, key?: string): Promise<ContactAllowance> {
   if (limit === 0) return { allowed: false, limit: 0, used: 0, remaining: 0, reason: "plan" };
   if (limit === -1) return UNLIMITED;
 
@@ -152,16 +158,13 @@ export async function contactAllowance(user: User | null, number?: string): Prom
   // unmetered allowance is the wrong failure: deny instead.
   if (!admin) return { allowed: false, limit, used: 0, remaining: 0, reason: "quota" };
 
-  const month = utcMonth();
-  const { data } = await admin
-    .from("contact_lookups")
-    .select("company_number")
-    .eq("user_id", user.id)
-    .eq("month", month);
+  let q = admin.from("contact_lookups").select("company_number").eq("user_id", user.id).eq("month", utcMonth());
+  q = meter === "director" ? q.like("company_number", `${OFFICER_KEY}%`) : q.not("company_number", "like", `${OFFICER_KEY}%`);
+  const { data } = await q;
 
   const rows = data ?? [];
   const used = rows.length;
-  const alreadyCounted = !!number && rows.some((r: { company_number: string }) => r.company_number === number);
+  const alreadyCounted = !!key && rows.some((r: { company_number: string }) => r.company_number === key);
   const remaining = Math.max(0, limit - used);
 
   if (alreadyCounted) return { allowed: true, limit, used, remaining };
@@ -170,15 +173,47 @@ export async function contactAllowance(user: User | null, number?: string): Prom
     : { allowed: false, limit, used, remaining: 0, reason: "quota" };
 }
 
-/**
- * Record that this user looked up this company this month. Idempotent — the
- * primary key makes a repeat view a no-op rather than a second unit.
- */
-export async function recordContactLookup(user: User | null, number: string): Promise<void> {
+async function recordLookup(user: User | null, key: string): Promise<void> {
   if (!user || isAdmin(user) || isPartner(user)) return;
   const admin = getSupabaseAdmin();
   if (!admin) return;
   await admin
     .from("contact_lookups")
-    .upsert({ user_id: user.id, company_number: number, month: utcMonth() }, { onConflict: "user_id,company_number,month" });
+    .upsert({ user_id: user.id, company_number: key, month: utcMonth() }, { onConflict: "user_id,company_number,month" });
+}
+
+/**
+ * What contact-discovery allowance this user has left this month, and whether
+ * `number` is already inside it. Counting is by DISTINCT company per month, so
+ * a repeat view never costs a second unit.
+ */
+export async function contactAllowance(user: User | null, number?: string): Promise<ContactAllowance> {
+  if (!user) return { allowed: false, limit: 0, used: 0, remaining: 0, reason: "signed-out" };
+  if (isAdmin(user) || isPartner(user)) return UNLIMITED;
+  return meteredAllowance(user, "company", (await capsFor(user)).contactLookups, number);
+}
+
+/**
+ * Record that this user looked up this company this month. Idempotent — the
+ * primary key makes a repeat view a no-op rather than a second unit.
+ */
+export async function recordContactLookup(user: User | null, number: string): Promise<void> {
+  await recordLookup(user, number);
+}
+
+// ---- Director contacts (third-party enrichment) -----------------------------
+//
+// A paid provider call per miss, so it has its own allowance (caps.directorLookups)
+// rather than drawing on the company-discovery budget. Same meter, same rules.
+
+/** Director-reveal allowance this month; `officerId` is already counted if revealed. */
+export async function directorContactAllowance(user: User | null, officerId?: string): Promise<ContactAllowance> {
+  if (!user) return { allowed: false, limit: 0, used: 0, remaining: 0, reason: "signed-out" };
+  if (isAdmin(user) || isPartner(user)) return UNLIMITED;
+  return meteredAllowance(user, "director", (await capsFor(user)).directorLookups, officerId ? officerKey(officerId) : undefined);
+}
+
+/** Record a director reveal against this month's allowance. Idempotent. */
+export async function recordDirectorLookup(user: User | null, officerId: string): Promise<void> {
+  await recordLookup(user, officerKey(officerId));
 }

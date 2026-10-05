@@ -156,12 +156,12 @@ Two things we say out loud rather than bury:
 
 ## 7. Packaging
 
-| Plan | Contact discovery |
-|---|---|
-| Free | — |
-| Analyst | 250 companies/mo |
-| Team | 2,500 companies/mo |
-| Enterprise | Unlimited |
+| Plan | Contact discovery | Director contacts (§10) |
+|---|---|---|
+| Free | — | — |
+| Analyst | 250 companies/mo | — |
+| Team | 2,500 companies/mo | Unlimited (`caps.directorLookups`) |
+| Enterprise | Unlimited | Unlimited |
 
 Metered by **distinct company per calendar month**, not per request: re-opening a company you already
 researched this month is free, which is the unit a customer thinks in. Enforced in `lib/access.ts`
@@ -192,3 +192,62 @@ third party and spends the caller's allowance, so it must not be reachable by a 
 3. Companies-House-registered-email is **not** public; do not add it.
 4. Optional later: a `mx` check on the email domain (cheap, non-intrusive, adds a real check without
    touching the mailbox).
+
+---
+
+## 10. Director contacts — the third-party exception
+
+_Status: **built, dark by default.** Lights up only when `CONTACT_ENRICH_URL` is set._
+
+Everything above is self-published. This section is the one place we are **not**: a director's
+business email and direct dial, bought from a provider (Apollo / Lusha / Cognism / Hunter behind a
+thin proxy). The register holds no personal contact data, so there is no other source for it.
+
+That breaks §0's "we do not buy a contact database" rule, deliberately and narrowly. It is therefore
+held to every other rule in this doc through the same machinery, rather than living beside it:
+
+| Concern | Company contacts | Director contacts |
+|---|---|---|
+| Shape | `ContactPoint` + checks | Same — `DirectorContacts` in `contact-types.ts` |
+| Confidence | from checks we ran | **capped at Medium**: a provider's "high" is the vendor's claim, not our check |
+| Checks shown | full list | syntax ✓ · provider match (unweighted) · on-site **not run** · mailbox/line **not run** |
+| Opt-out | `contact_suppressions`, read + write | same table, read + write |
+| Meter | `contact_lookups`, `caps.contactLookups` | same table keyed `officer:<id>`, **own** budget `caps.directorLookups` |
+| Audit | — | `audit_events`, `contact.reveal`, subject `officer:<id>` |
+| Cache | `company_contacts`, 30d | `director_contacts`, 90d (every miss is paid) |
+| Endpoint | `POST /api/contacts/{number}` | `POST /api/contacts/director/{officerId}` |
+| UI | `ContactIntelligence` | `DirectorContactCard` (reuses `ContactRow`) |
+
+Director lookups have their own budget because the economics differ: a company lookup is a free,
+polite crawl; a director miss is a paid provider call (~£0.03–0.80). Sharing the 250/mo Analyst
+budget would hand a £39 plan up to 250 paid calls.
+
+### Provider contract
+
+```json
+POST  { "officerId": "...", "name": "Jane Smith", "companies": [{ "name": "ACME LTD", "number": "01234567" }] }
+→     { "email": "jane@acme.co.uk", "phone": "+44...", "emailConfidence": "high", "phoneConfidence": "low", "provider": "apollo" }
+```
+
+Any field may be null. Values are canonicalised (lower-cased email, E.164 phone) before suppression,
+caching or display; an invalid value is dropped, never repaired.
+
+### Activating it
+
+1. Run `supabase/director-contacts.sql` (after `company-contacts.sql` and `audit-log.sql`).
+2. Stand up the provider proxy; set `CONTACT_ENRICH_URL` (+ optional `CONTACT_ENRICH_KEY`).
+3. Add a `SOURCES` entry in `lib/sources.ts` naming the vendor, so `/sources` stays accurate.
+4. Get DPO/counsel sign-off. Unlike §5, the lawful-basis argument here is **not** "the business
+   published it for the purpose of being contacted" — it is a legitimate-interests assessment for
+   buying personal data, which needs its own LIA and privacy-notice wording. The `/bot` opt-out route
+   already covers these values (same suppression table).
+
+### Indicative provider cost
+
+| Provider | Per lookup | Notes |
+|---|---|---|
+| Hunter | ~£0.03 (email only) | Cheapest starter |
+| Apollo | ~£0.15–0.20 | Cheap emails, weaker UK mobiles |
+| Lusha | email ~£0.08 / phone ~£0.80 | Simple credits |
+| Cognism | annual contract (~£12k+/yr) | Best UK mobiles + compliance |
+

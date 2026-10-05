@@ -33,6 +33,11 @@ export interface Plan {
      *  month. 0 = not included, -1 = unlimited. Each lookup crawls the
      *  company's own website, so it is metered rather than unbounded. */
     contactLookups: number;
+    /** Director contact reveals (email / direct dial) — distinct directors per
+     *  calendar month via the third-party provider behind CONTACT_ENRICH_URL.
+     *  Metered separately from contactLookups because each miss is a paid
+     *  provider call, not a free crawl. 0 = not included, -1 = unlimited. */
+    directorLookups: number;
   };
 }
 
@@ -52,7 +57,7 @@ export const PLANS: Plan[] = [
       "Sector, market and city data",
       "Weekly new-company email alerts",
     ],
-    caps: { fullReport: false, historicalData: false, watchlists: 0, alerts: false, savedSearches: false, csvExport: false, api: false, contactLookups: 0 },
+    caps: { fullReport: false, historicalData: false, watchlists: 0, alerts: false, savedSearches: false, csvExport: false, api: false, contactLookups: 0, directorLookups: 0 },
   },
   {
     id: "analyst",
@@ -73,7 +78,7 @@ export const PLANS: Plan[] = [
       "CSV export",
       "Email support",
     ],
-    caps: { fullReport: true, historicalData: true, watchlists: 1, alerts: false, savedSearches: true, csvExport: true, api: false, contactLookups: 250 },
+    caps: { fullReport: true, historicalData: true, watchlists: 1, alerts: false, savedSearches: true, csvExport: true, api: false, contactLookups: 250, directorLookups: 0 },
   },
   {
     id: "team",
@@ -94,7 +99,7 @@ export const PLANS: Plan[] = [
       "API access · 10k calls/mo",
       "Priority support",
     ],
-    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true, contactLookups: 2500 },
+    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true, contactLookups: 2500, directorLookups: -1 },
   },
   {
     id: "enterprise",
@@ -114,7 +119,7 @@ export const PLANS: Plan[] = [
       "Dedicated success manager",
       "SLA & onboarding",
     ],
-    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true, contactLookups: -1 },
+    caps: { fullReport: true, historicalData: true, watchlists: -1, alerts: true, savedSearches: true, csvExport: true, api: true, contactLookups: -1, directorLookups: -1 },
   },
 ];
 
