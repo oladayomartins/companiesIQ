@@ -365,3 +365,34 @@
 .cpoint__foot a { color: var(--text-faint); }
 .cpoint__foot a:hover { color: var(--accent); }
 .contact-error { font-size: var(--text-sm); color: var(--neg); margin: 0; width: 100%; }
+
+/* ---------------------------------------------------------------
+   Research reports (data-backed blog editions)
+   Charts are inline SVG in the article body: they inherit prose
+   colour and use the accent token, so no chart carries its own
+   palette and both themes work without a second stylesheet.
+   --------------------------------------------------------------- */
+.rs-figure { margin: 26px 0 8px; padding: 0; }
+.rs-chart { display: block; color: var(--text-body); }
+.rs-figure__cap { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; font-size: 12.5px; line-height: 1.5; color: var(--text-faint); }
+.rs-figure__cap strong { color: var(--text-muted); font-weight: 600; font-size: 13px; }
+
+/* Data tables inside prose — dense, readable, and scrollable on narrow screens.
+   Scoped to article prose: app.css owns the global .table-scroll used by app tables. */
+.blog-prose .table-scroll { overflow-x: auto; margin: 18px 0; border: 1px solid var(--border-hair); border-radius: var(--radius-md, 8px); }
+.blog-prose table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.blog-prose th, .blog-prose td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border-hair); white-space: nowrap; }
+.blog-prose th { font-family: var(--font-grotesk); font-weight: 700; font-size: 12px; letter-spacing: 0.01em; color: var(--text-muted); background: var(--surface-sunken); }
+.blog-prose td { color: var(--text-body); font-variant-numeric: tabular-nums; }
+.blog-prose tbody tr:last-child td { border-bottom: 0; }
+.blog-prose td:first-child, .blog-prose th:first-child { padding-left: 14px; }
+
+/* Provenance strip — period, source, retrieval date, raw data. */
+.rs-prov { margin: 0 0 26px; padding: 16px 18px; border: 1px solid var(--border-hair); border-radius: var(--radius-lg, 14px); background: var(--surface-sunken); }
+.rs-prov__badge { display: inline-block; font-family: var(--font-grotesk); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+.rs-prov__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 20px; margin: 0; }
+.rs-prov__grid dt { font-size: 11.5px; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 3px; }
+.rs-prov__grid dd { margin: 0; font-size: 14px; color: var(--text-strong); font-weight: 600; }
+.rs-prov__links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--border-hair); }
+.rs-prov__links a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.rs-prov__links a:hover { text-decoration: underline; }

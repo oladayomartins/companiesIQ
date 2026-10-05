@@ -5,6 +5,7 @@
     { "path": "/api/alerts/run", "schedule": "0 7 * * *" },
     { "path": "/api/free-alerts/run", "schedule": "0 8 * * 1" },
     { "path": "/api/financials/backfill", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/growth", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/growth", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/research", "schedule": "0 6 * * 1" }
   ]
 }
