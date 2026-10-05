@@ -23,7 +23,7 @@ export interface Ga4Purchase {
   transactionId: string; // dedupe key — the Stripe session/subscription id
   value: number; // real amount charged
   currency?: string; // e.g. "GBP"
-  items?: { item_id: string; item_name: string }[];
+  items?: { item_id: string; item_name: string; price?: number; quantity?: number }[];
 }
 
 /** Send a `purchase` event via the Measurement Protocol. Best-effort. */

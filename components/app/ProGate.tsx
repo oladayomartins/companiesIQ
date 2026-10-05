@@ -1,5 +1,6 @@
 import { Icon, Button, Card, CardBody, type IconName } from "@/components/ds";
 import { ENTRY_PAID_PLAN } from "@/lib/subscription";
+import { GrowthBeacon } from "@/components/app/GrowthBeacon";
 
 /**
  * Upgrade wall for paid features (watchlists, company search, market
@@ -77,6 +78,7 @@ export function ProGate({
 }) {
   return (
     <div className="screen">
+      <GrowthBeacon event="paywall_view" refName={title} />
       <div className="locked-intel locked-intel--gate">
         <div className="locked-intel__blur" aria-hidden="true">
           <Skeleton shape={shape} />
