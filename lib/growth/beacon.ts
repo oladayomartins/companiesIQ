@@ -15,7 +15,9 @@ export type BeaconEvent =
   | "search_capped"
   | "gated_action"
   | "save_search"
-  | "export";
+  | "export"
+  | "market_view"
+  | "market_alert";
 
 /** Small, flat context for an event — strings/numbers/booleans only. */
 export type BeaconMeta = Record<string, string | number | boolean | null | undefined>;

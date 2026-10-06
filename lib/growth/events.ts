@@ -21,6 +21,8 @@ export const CLIENT_EVENTS = [
   "gated_action", // clicked a paid action without the plan (ref: save_search | export | …)
   "save_search", // Pro: saved a search
   "export", // Pro: exported results
+  "market_view", // a sector/place search shown as a prospect list (meta: sector, place, active, new30)
+  "market_alert", // opened the weekly-alert opt-in from a market header
 ] as const;
 /** Events only the server records (subscribe route, Stripe webhook). */
 export const SERVER_EVENTS = ["checkout_started", "checkout_completed", "checkout_expired"] as const;
