@@ -42,12 +42,39 @@ export function BlogEditor({ initial }: { initial: Post | null }) {
   const [f, setF] = useState<FormState>(fromPost(initial));
   const [topic, setTopic] = useState("");
   const [notes, setNotes] = useState("");
-  const [busy, setBusy] = useState<null | "gen" | "save" | "publish">(null);
+  const [busy, setBusy] = useState<null | "gen" | "save" | "publish" | "suggest">(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setF((prev) => ({ ...prev, [key]: value }));
+  }
+
+  // Suggest takeaways for the post as written. Fills the field only — nothing
+  // is saved until Publish / Save draft, so the admin always reviews first.
+  async function suggestTakeaways() {
+    if (f.key_takeaways.trim() && !confirm("Replace the current takeaways with suggestions?")) return;
+    setBusy("suggest");
+    setError(null);
+    setInfo(null);
+    try {
+      const res = await fetch("/api/blog/takeaways", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: f.title, body_md: f.body_md }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { takeaways?: string[]; error?: string };
+      if (!res.ok || !data.takeaways?.length) {
+        setError(data.error || "Couldn't suggest takeaways.");
+        return;
+      }
+      set("key_takeaways", data.takeaways.join("\n"));
+      setInfo("Takeaways suggested from the article — review and edit, then Publish to save.");
+    } catch {
+      setError("Couldn't suggest takeaways.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function generate() {
@@ -172,9 +199,20 @@ export function BlogEditor({ initial }: { initial: Post | null }) {
         <Input label="Meta description (SEO, ≤155 chars)" value={f.meta_description} onChange={(e) => set("meta_description", e.target.value)} hint={`${f.meta_description.length}/155`} />
         <Input label="Cover image URL (optional)" value={f.cover_image} onChange={(e) => set("cover_image", e.target.value)} />
 
-        <label className="editor-label" htmlFor="key-takeaways">
-          Key takeaways (one per line, 3–5)
-        </label>
+        <div className="editor-sub__head" style={{ marginTop: 6 }}>
+          <label className="editor-label" htmlFor="key-takeaways" style={{ margin: 0 }}>
+            Key takeaways (one per line, 3–5)
+          </label>
+          <button
+            type="button"
+            className="editor-add"
+            onClick={suggestTakeaways}
+            disabled={!!busy || f.body_md.trim().length < 200}
+            title={f.body_md.trim().length < 200 ? "Add the article body first" : "Suggest takeaways from this article"}
+          >
+            <Icon name="barChart" size={14} /> {busy === "suggest" ? "Reading the article…" : "Suggest from article"}
+          </button>
+        </div>
         <textarea
           id="key-takeaways"
           className="editor-textarea"
