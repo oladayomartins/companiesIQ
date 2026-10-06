@@ -41,16 +41,31 @@ export async function generateMetadata({ params }: { params: Promise<{ number: s
   // Never throw from metadata — a CH error (404, 429, …) just yields a fallback title.
   const c = await getCompany(number).catch(() => null);
   if (!c) return { title: "Company" };
-  const sector = c.primaryClassification?.sector;
-  const region = c.geo?.region && c.geo.region !== "Unknown" ? c.geo.region : undefined;
-  const desc = `${c.name} (company ${c.number})${c.incorporated ? `, incorporated ${fmtDate(c.incorporated)}` : ""}${
-    sector ? ` — ${sector}` : ""
-  }${region ? ` in ${region}` : ""}. Market, competitor and survival intelligence from Companies House, ONS & Nomis.`;
+  // Search Console (Oct 2026): company pages are found by LOOK-UP searches —
+  // "<name> company address", "<name> companies house" — and the old snippet
+  // ("<name> · CompaniesIQ" + a market-intelligence blurb) answered none of
+  // them, so pages ranking 3–7 earned ~0% CTR. Lead with the name, say what the
+  // page has, and put the registered office in the description itself.
+  const address = [c.address?.line1, c.address?.locality, c.address?.postcode].filter(Boolean).join(", ");
+  const status = c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1).replace(/-/g, " ") : "";
+  const who = `${c.name} (${c.number})${address ? ` registered office: ${address}.` : "."}`;
+  const since = c.incorporated ? `, incorporated ${fmtDate(c.incorporated)}` : "";
+  // Longest first; the first that fits ~160 chars wins, so nothing is cut mid-word.
+  const desc =
+    [
+      `${who} ${status}${since}. View directors and filing history.`,
+      `${who} ${status}${since}.`,
+      `${who}${status ? ` ${status}.` : ""}`,
+    ].find((d) => d.length <= 160) ?? who;
+  // Google shows ~60 characters; on a long name, shorten the promise, not the name.
+  const title = `${c.name} — ${c.name.length > 20 ? "Address & Directors" : "Registered Address, Directors & Filings"}`;
   return {
-    title: c.name,
+    // absolute: the " · CompaniesIQ" suffix would push the useful part past
+    // Google's ~60-character cut-off on all but the shortest names.
+    title: { absolute: title },
     description: desc,
     alternates: { canonical: `/company/${c.number}` },
-    openGraph: { title: `${c.name} — CompaniesIQ`, description: desc, type: "profile", url: `${SITE_URL}/company/${c.number}` },
+    openGraph: { title, description: desc, type: "profile", url: `${SITE_URL}/company/${c.number}` },
   };
 }
 

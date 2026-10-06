@@ -295,6 +295,7 @@ create table if not exists public.posts (
   cover_image      text,
   faq              jsonb not null default '[]'::jsonb,   -- [{q,a}]
   related          jsonb not null default '[]'::jsonb,   -- [{label,href}]
+  key_takeaways    jsonb not null default '[]'::jsonb,   -- [string] (posts-takeaways.sql)
   status           text not null default 'draft',         -- draft | published
   published_at     timestamptz,
   author           text,

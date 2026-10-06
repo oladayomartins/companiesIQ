@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Preserve published_at across edits; stamp it only on the draft→published transition.
+  const existing = body.id ? await getPostById(body.id) : null;
   let published_at: string | null | undefined = body.published_at;
   if (published_at === undefined) {
-    const existing = body.id ? await getPostById(body.id) : null;
     if (body.status === "published") {
       published_at = existing?.published_at ?? new Date().toISOString();
     } else {
@@ -27,7 +27,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const post = await upsertPost({ ...body, author: body.author ?? user!.email ?? "CompaniesIQ", published_at });
+    // Keep the existing byline on edit — the editor doesn't send one, and
+    // falling back to the editor's email silently re-attributed old posts.
+    const author = body.author ?? existing?.author ?? "CompaniesIQ Research";
+    const post = await upsertPost({ ...body, author, published_at });
     return NextResponse.json({ post });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Save failed." }, { status: 400 });

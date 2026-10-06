@@ -21,6 +21,10 @@ export interface Post {
   cover_image: string | null;
   faq: FaqItem[];
   related: RelatedLink[];
+  /** 3–5 one-sentence takeaways shown in the box under the intro (and the
+   *  BlogPosting abstract). Empty = no box, unless the body has its own
+   *  "## Key takeaways" list (lib/markdown.ts lifts it). */
+  key_takeaways: string[];
   status: "draft" | "published";
   published_at: string | null;
   author: string | null;
@@ -38,6 +42,7 @@ export interface PostInput {
   cover_image?: string | null;
   faq?: FaqItem[];
   related?: RelatedLink[];
+  key_takeaways?: string[];
   status?: "draft" | "published";
   author?: string | null;
   published_at?: string | null;
@@ -50,6 +55,10 @@ function normalize(row: Record<string, unknown> | null): Post | null {
     ...r,
     faq: Array.isArray(row.faq) ? (row.faq as FaqItem[]) : [],
     related: Array.isArray(row.related) ? (row.related as RelatedLink[]) : [],
+    // Absent until supabase/posts-takeaways.sql has run — treat as none.
+    key_takeaways: Array.isArray(row.key_takeaways)
+      ? (row.key_takeaways as unknown[]).filter((t): t is string => typeof t === "string" && !!t.trim())
+      : [],
   };
 }
 
@@ -116,7 +125,16 @@ export async function upsertPost(input: PostInput): Promise<Post | null> {
   // when publishing (the route passes the existing value to avoid resetting).
   if (input.published_at !== undefined) row.published_at = input.published_at;
   else if ((input.status ?? "draft") === "published") row.published_at = now;
-  const { data, error } = await admin.from("posts").upsert(row, { onConflict: "id" }).select("*").maybeSingle();
+  if (input.key_takeaways !== undefined) {
+    row.key_takeaways = input.key_takeaways.map((t) => t.trim()).filter(Boolean).slice(0, 7);
+  }
+  let { data, error } = await admin.from("posts").upsert(row, { onConflict: "id" }).select("*").maybeSingle();
+  // Before supabase/posts-takeaways.sql runs the column doesn't exist; save the
+  // rest of the post rather than failing the whole edit.
+  if (error && "key_takeaways" in row && /key_takeaways/.test(error.message)) {
+    delete row.key_takeaways;
+    ({ data, error } = await admin.from("posts").upsert(row, { onConflict: "id" }).select("*").maybeSingle());
+  }
   if (error) throw new Error(error.message);
   return normalize(data as Record<string, unknown> | null);
 }

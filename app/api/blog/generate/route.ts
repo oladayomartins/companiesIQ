@@ -19,6 +19,7 @@ const POST_SCHEMA = {
     excerpt: { type: "string" },
     meta_description: { type: "string" },
     body_md: { type: "string" },
+    key_takeaways: { type: "array", items: { type: "string" } },
     faq: {
       type: "array",
       items: {
@@ -38,7 +39,7 @@ const POST_SCHEMA = {
       },
     },
   },
-  required: ["title", "slug", "excerpt", "meta_description", "body_md", "faq", "related"],
+  required: ["title", "slug", "excerpt", "meta_description", "body_md", "key_takeaways", "faq", "related"],
 } as const;
 
 const SYSTEM = `You are the content lead for CompaniesIQ, a UK business-intelligence platform built on public data (Companies House, ONS, Nomis). You write factual, genuinely useful articles for founders, analysts and operators — never fluff or fabricated statistics.
@@ -55,6 +56,8 @@ Write a single blog post following SEO, GEO and AEO best practices:
   - /city/<city-slug> (e.g. /city/manchester, /city/birmingham)
   - /signals/<theme-slug> (e.g. /signals/ai, /signals/fintech)
   - /pricing, /sources, /company/<number> (only if a real company number is provided in the brief)
+- key_takeaways: 3–5 bullets shown in a "Key takeaways" box under the intro and used as the article summary by search engines and AI assistants. Each is ONE complete, self-contained sentence (max ~25 words) that states a conclusion of the article — the answer, not a teaser. Only claims the body itself makes and sources; no new facts or numbers. Do NOT repeat them as a "Key takeaways" section inside body_md.
+- body_md structure: answer-first opening paragraph (2–3 sentences that directly answer the title's question), then 4–7 ## H2 sections whose headings are phrased the way readers search (questions or clear noun phrases), short paragraphs (≤ 4 sentences), lists or a table where they aid scanning, and a brief closing section with a concrete next step.
 - faq: 3–5 question/answer pairs that real users would ask (powers FAQ schema + AEO). Answers concise and self-contained.
 - related: 3–5 {label, href} internal links (same valid targets as above) for the related section.
 

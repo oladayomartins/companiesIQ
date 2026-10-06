@@ -92,7 +92,7 @@ export async function searchCompanies(q: string, opts: { perPage?: number; start
     const geo = resolveGeo({ postcode: it.address?.postal_code, locality: it.address?.locality });
     return {
       number: it.company_number,
-      name: titleCaseName(it.title),
+      name: titleCaseName(it.title, { acronyms: true }),
       status: it.company_status,
       incorporated: it.date_of_creation,
       address: it.address_snippet,
@@ -166,7 +166,7 @@ export async function advancedSearch(params: AdvancedSearchParams): Promise<{ to
     const primary = it.sic_codes?.[0];
     return {
       number: it.company_number,
-      name: titleCaseName(it.company_name),
+      name: titleCaseName(it.company_name, { acronyms: true }),
       status: it.company_status,
       incorporated: it.date_of_creation,
       sicCodes: it.sic_codes || [],
@@ -237,7 +237,7 @@ export async function getCompany(number: string): Promise<Company> {
   const geo = resolveGeo({ postcode: p.registered_office_address?.postal_code, locality: p.registered_office_address?.locality });
   return {
     number: p.company_number,
-    name: titleCaseName(p.company_name),
+    name: titleCaseName(p.company_name, { acronyms: true }),
     status: p.company_status,
     type: p.type ? TYPE_LABELS[p.type] || p.type : undefined,
     incorporated: p.date_of_creation,
@@ -359,7 +359,7 @@ export async function getOfficerAppointments(officerId: string): Promise<Officer
     const sic = undefined; // SIC not returned here; sector enriched lazily on the page if needed
     return {
       companyNumber: a.appointed_to?.company_number || "",
-      companyName: titleCaseName(a.appointed_to?.company_name || ""),
+      companyName: titleCaseName(a.appointed_to?.company_name || "", { acronyms: true }),
       companyStatus: a.appointed_to?.company_status,
       role: roleLabel(a.officer_role),
       appointed: a.appointed_on,

@@ -16,6 +16,8 @@ interface FormState {
   body_md: string;
   faq: FaqItem[];
   related: RelatedLink[];
+  /** One takeaway per line in the editor; saved as string[]. */
+  key_takeaways: string;
   status: "draft" | "published";
 }
 
@@ -30,6 +32,7 @@ function fromPost(p: Post | null): FormState {
     body_md: p?.body_md ?? "",
     faq: p?.faq ?? [],
     related: p?.related ?? [],
+    key_takeaways: (p?.key_takeaways ?? []).join("\n"),
     status: p?.status ?? "draft",
   };
 }
@@ -66,7 +69,7 @@ export function BlogEditor({ initial }: { initial: Post | null }) {
         setError(data.error || "Generation failed.");
         return;
       }
-      const d = data.draft as Partial<FormState>;
+      const d = data.draft as Partial<Omit<FormState, "key_takeaways">> & { key_takeaways?: string[] };
       setF((prev) => ({
         ...prev,
         title: d.title ?? prev.title,
@@ -76,6 +79,7 @@ export function BlogEditor({ initial }: { initial: Post | null }) {
         body_md: d.body_md ?? prev.body_md,
         faq: (d.faq as FaqItem[]) ?? prev.faq,
         related: (d.related as RelatedLink[]) ?? prev.related,
+        key_takeaways: d.key_takeaways?.length ? d.key_takeaways.join("\n") : prev.key_takeaways,
       }));
       setInfo("Draft generated — review and edit before publishing.");
     } catch {
@@ -97,7 +101,12 @@ export function BlogEditor({ initial }: { initial: Post | null }) {
       const res = await fetch("/api/blog", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...f, slug, status }),
+        body: JSON.stringify({
+          ...f,
+          slug,
+          status,
+          key_takeaways: f.key_takeaways.split("\n").map((t) => t.trim()).filter(Boolean),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -162,6 +171,22 @@ export function BlogEditor({ initial }: { initial: Post | null }) {
         <Input label="Excerpt" value={f.excerpt} onChange={(e) => set("excerpt", e.target.value)} />
         <Input label="Meta description (SEO, ≤155 chars)" value={f.meta_description} onChange={(e) => set("meta_description", e.target.value)} hint={`${f.meta_description.length}/155`} />
         <Input label="Cover image URL (optional)" value={f.cover_image} onChange={(e) => set("cover_image", e.target.value)} />
+
+        <label className="editor-label" htmlFor="key-takeaways">
+          Key takeaways (one per line, 3–5)
+        </label>
+        <textarea
+          id="key-takeaways"
+          className="editor-textarea"
+          rows={5}
+          value={f.key_takeaways}
+          onChange={(e) => set("key_takeaways", e.target.value)}
+          placeholder={"One complete sentence each — the answer, not a teaser.\nOnly facts the article itself states and sources."}
+        />
+        <p className="editor-card__hint" style={{ margin: "-4px 0 14px" }}>
+          Shown in a box under the intro and used as the article summary for search engines and AI answers.{" "}
+          {f.key_takeaways.split("\n").filter((t) => t.trim()).length}/5
+        </p>
 
         <label className="editor-label">Body (Markdown)</label>
         <textarea className="editor-textarea" rows={20} value={f.body_md} onChange={(e) => set("body_md", e.target.value)} placeholder="## Heading&#10;&#10;Write in Markdown. Link to /industry/…, /market/…, /city/…, /signals/…" />
