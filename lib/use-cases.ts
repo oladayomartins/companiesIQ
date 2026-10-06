@@ -39,6 +39,12 @@ export interface UseCase {
   ctaHref: string;
   ogTitle: string;
   ogSub: string;
+  /** Optional "where the demand is" block: sectors to show with live
+   *  new-company counts, and what that sector typically needs from this
+   *  audience. Sector names must match lib/sic sectors. */
+  sectorFocus?: { sector: string; need: string }[];
+  /** Industry pre-selected in the page's lead-list builder. */
+  builderSector?: string;
 }
 
 export const USE_CASES: UseCase[] = [
@@ -84,7 +90,7 @@ export const USE_CASES: UseCase[] = [
     ctaTitle: "Reach new companies before they choose an accountant.",
     ctaSub: "Free to search the register. Upgrade to build and export targeted new-client lists.",
     ctaLabel: "Find accounting prospects",
-    ctaHref: "/sign-in",
+    ctaHref: "#build",
     ogTitle: "New-client leads for accountants.",
     ogSub: "Newly incorporated UK companies that need an accountant.",
   },
@@ -131,7 +137,7 @@ export const USE_CASES: UseCase[] = [
     ctaTitle: "Win the brief before the job is posted.",
     ctaSub: "Free to search. Upgrade to track growing employers and export recruitment leads.",
     ctaLabel: "Find hiring employers",
-    ctaHref: "/sign-in",
+    ctaHref: "#build",
     ogTitle: "Recruitment leads that are about to hire.",
     ogSub: "New & growing UK employers, before the vacancy is posted.",
   },
@@ -178,7 +184,7 @@ export const USE_CASES: UseCase[] = [
     ctaTitle: "Reach new businesses before they pick an agency.",
     ctaSub: "Free to search. Upgrade to build and export a weekly pipeline of agency prospects.",
     ctaLabel: "Find agency prospects",
-    ctaHref: "/sign-in",
+    ctaHref: "#build",
     ogTitle: "Agency leads: new businesses that need you.",
     ogSub: "Website, branding & marketing prospects, freshly formed.",
   },
@@ -225,7 +231,7 @@ export const USE_CASES: UseCase[] = [
     ctaTitle: "Give your reps a list worth working.",
     ctaSub: "Free to search. Upgrade to build, enrich and export targeted account lists.",
     ctaLabel: "Build a prospect list",
-    ctaHref: "/sign-in",
+    ctaHref: "#build",
     ogTitle: "B2B prospecting on the live register.",
     ogSub: "Define your ICP as filters, export clean accounts.",
   },
@@ -272,7 +278,7 @@ export const USE_CASES: UseCase[] = [
     ctaTitle: "Source from the formation data.",
     ctaSub: "Free to explore. Upgrade to track companies and export market intelligence.",
     ctaLabel: "Explore new companies",
-    ctaHref: "/sign-in",
+    ctaHref: "#build",
     ogTitle: "Deal sourcing from the register.",
     ogSub: "New UK startups and emerging sectors, as they form.",
   },
@@ -280,48 +286,64 @@ export const USE_CASES: UseCase[] = [
   // ---------------------------------------------------------- Insurance / finance brokers
   {
     slug: "insurance-brokers",
-    persona: "Insurance & finance brokers",
-    forLabel: "For brokers",
-    cardTitle: "Insurance & finance brokers",
-    cardBody: "Find newly formed businesses that need insurance, banking and finance — a fresh, dated pipeline every week.",
+    persona: "Commercial insurance brokers",
+    forLabel: "For insurance brokers",
+    cardTitle: "Commercial insurance brokers",
+    cardBody: "Business insurance leads from the companies forming this week — matched to the trades and risks you write.",
     cardIcon: "shield",
-    metaTitle: "Broker Leads — new UK businesses that need insurance & finance",
+    // Search Console (Oct 2026): this page drew 2,297 impressions at position
+    // ~77 on "insurance leads", "business insurance leads", "leads for
+    // insurance brokers"… — under a "Broker Leads … insurance & finance"
+    // title that never said "insurance leads". Retargeted at the B2B slice of
+    // that demand (commercial lines), which new companies genuinely are.
+    metaTitle: "Business Insurance Leads for UK Brokers",
     metaDescription:
-      "Find newly registered UK businesses that need business insurance, banking and finance. Filter new formations by sector and location and export a broker prospect list. Free to start.",
-    h1: "Find new businesses that need cover and finance.",
+      "Commercial insurance leads from the live Companies House register: every new UK business by trade and town, the week it forms. Build a broker list free.",
+    h1: "Business insurance leads, from the companies forming this week.",
     intro:
-      "Every new company needs a bank account, and most need insurance and, before long, finance. Filter the newest UK businesses by sector and location and reach them while they're setting up — a fresh, dated pipeline every week.",
-    jobTitle: "New businesses are buying these decisions now",
-    job: "In its first weeks a new company opens a bank account, takes out cover appropriate to its trade, and starts thinking about funding to grow. The broker who reaches them at that moment — with something relevant to their sector — wins the account. Companies House shows you which businesses just formed and what they do; CompaniesIQ makes that a targeted, exportable list.",
+      "Every new company is a commercial insurance buyer: employers' liability once it takes on staff, public liability, cover for vehicles, premises and the work it does. Find the newest UK businesses by trade and town and reach them before they've placed their cover.",
+    jobTitle: "New businesses are placing their first cover now",
+    job: "Most UK employers are legally required to hold employers' liability insurance — with at least £5 million of cover — from the day they take on staff, and any vehicle on the road must be insured. Beyond that, the covers a new business needs follow its trade: contractors need public liability and contractors' all risks, cafés need premises and product liability, consultancies need professional indemnity. Those first policies are often bought in the company's first weeks, and the broker who reaches the director then — with cover that fits the trade — wins the account and the renewals. Companies House shows you which businesses just formed and what they do; CompaniesIQ turns that into a targeted, dated list.",
     valueProps: [
-      { icon: "bell", title: "This week's new businesses", body: "Every UK incorporation, searchable within 24 hours — a rolling list of companies making their first insurance, banking and finance decisions." },
-      { icon: "filter", title: "Matched to the risk you write", body: "Filter by sector so the cover or product fits — trades and construction, hospitality, transport, professional services or healthcare." },
-      { icon: "pin", title: "In your territory", body: "Narrow by region and city to the businesses you can serve, and prioritise the local formations that match your book." },
-      { icon: "download", title: "Export and work it", body: "Take the list to CSV or the API and run it through your outreach — a repeatable, dated pipeline rather than a one-off buy." },
+      { icon: "bell", title: "This week's new businesses", body: "Every UK incorporation, searchable within 24 hours — a rolling list of companies placing their first commercial cover." },
+      { icon: "filter", title: "Matched to the risks you write", body: "Filter by trade so the cover fits — construction and trades, hospitality, transport, professional services, technology or healthcare." },
+      { icon: "pin", title: "In your territory", body: "Narrow by town and region to the businesses you can serve, and work the local formations first." },
+      { icon: "download", title: "A pipeline, not a bought list", body: "Build, save and export your own dated list every week — instead of buying shared, resold leads of unknown age." },
     ],
     steps: [
-      ["01", "Filter new formations", "Start from this week's incorporations and narrow by sector and location to the businesses whose risk or finance need fits your book."],
-      ["02", "Prioritise the fit", "Use activity and location to focus on the companies most likely to need — and qualify for — what you broker."],
-      ["03", "Reach them early", "Export and run timely outreach while they're still setting up cover, banking and finance."],
+      ["01", "Pick the trades you write", "Start from this week's incorporations and narrow by trade and town to the businesses whose risk fits your book."],
+      ["02", "Qualify the fit", "Use the activity code, registered office and directors to judge the trade, the likely size and who to speak to."],
+      ["03", "Reach them first", "Export the list and get in touch while they're still placing employers' liability, public liability and their first policies."],
     ],
     browse: [
-      { label: "Browse by industry", href: "/industry", note: "Target the trades and sectors whose risk you write." },
+      { label: "New construction companies", href: "/industry/construction", note: "Contractors and trades: public liability, employers' liability, contractors' all risks." },
+      { label: "New hospitality businesses", href: "/industry/hospitality", note: "Cafés, restaurants and pubs: premises, product and public liability." },
       { label: "Browse by city", href: "/city", note: "Focus on new businesses in your territory." },
-      { label: "See what's forming", href: "/signals", note: "Track new companies by theme as they incorporate." },
     ],
+    sectorFocus: [
+      { sector: "Construction", need: "Public liability, employers' liability, contractors' all risks, tools and plant." },
+      { sector: "Hospitality", need: "Premises and contents, public and product liability, business interruption, employers' liability." },
+      { sector: "Healthcare & social", need: "Medical malpractice or professional indemnity, public liability, employers' liability." },
+      { sector: "Professional services", need: "Professional indemnity, cyber, office contents and public liability." },
+      { sector: "Technology", need: "Professional indemnity (tech E&O), cyber liability, equipment." },
+      { sector: "Retail & wholesale", need: "Stock and premises, product liability, public liability, goods in transit." },
+    ],
+    builderSector: "Construction",
     faqs: [
-      ["How can brokers find new businesses that need insurance or finance?", "New companies make their banking, insurance and finance decisions in their first weeks. CompaniesIQ lists every UK incorporation within 24 hours, filterable by sector and location, so you can build a list of freshly formed businesses whose needs match what you broker — and reach them while those decisions are open."],
-      ["Can I target the sectors whose risk I write?", "Yes. Filter new formations by SIC sector so you only see businesses relevant to your book — construction and trades, hospitality, transport, healthcare or professional services — and layer a location filter on top."],
-      ["What do I learn about each business?", "Company name, incorporation date, registered office, activity codes, status and the directors — enough to gauge the trade, the size and who to approach before you make contact."],
-      ["Can I export the leads?", "Yes. Lists export to CSV, and Team and Enterprise include API access to push prospects into your CRM. Companies House data is public record under the Open Government Licence; your outreach must still follow UK marketing rules (PECR/GDPR)."],
-      ["Is there a free plan?", "Yes — search the register and view companies free. Upgrade to build and export targeted broker lists. See the pricing page for limits."],
+      ["Where can insurance brokers find commercial insurance leads?", "The most reliable source is the Companies House register: every new UK company appears within days of incorporating, with its trade (SIC code), registered office and directors. CompaniesIQ makes that searchable within 24 hours — filter new formations by trade and town and you have a dated list of businesses placing their first commercial cover."],
+      ["Do new limited companies need business insurance?", "Most do. Employers' liability insurance is a legal requirement for most UK employers from the day they take on staff, with at least £5 million of cover, and any vehicle used on the road must be insured. Other covers — public liability, professional indemnity, property — depend on the trade, its contracts and, for some professions, its regulator."],
+      ["Should I buy insurance leads or build my own list?", "Bought insurance leads are often consumer enquiries, sold to several brokers at once, and of unknown age. A list built from the register is business-to-business, dated to the day each company formed, and filtered to the trades you write. The register is public, so the edge is speed and fit: reaching the right new businesses in their first weeks."],
+      ["Can I target the trades whose risk I write?", "Yes. Filter new formations by sector — construction and trades, hospitality, transport and logistics, technology, healthcare or professional services — and layer a town or region on top."],
+      ["What do I learn about each business?", "Company name, incorporation date, registered office, activity codes, status and the directors — enough to gauge the trade, the likely size and who to approach before you make contact."],
+      ["Can I export the leads?", "Yes. Lists export to CSV, and Team and Enterprise include API access to push prospects into your CRM. Companies House data is public record under the Open Government Licence; your outreach must still follow UK marketing rules (PECR and UK GDPR)."],
+      ["Is there a free plan?", "Yes — search the register and view companies free, no card needed. Upgrade to save, track and export full broker lists. See the pricing page for limits."],
     ],
-    ctaTitle: "Reach new businesses while they're setting up.",
-    ctaSub: "Free to search. Upgrade to build and export a weekly broker pipeline.",
-    ctaLabel: "Find broker prospects",
-    ctaHref: "/sign-in",
-    ogTitle: "Broker leads: newly formed businesses.",
-    ogSub: "Insurance, banking & finance prospects, freshly formed.",
+    ctaTitle: "Reach new businesses before they've placed their cover.",
+    ctaSub: "Free to search. Upgrade to save, track and export a weekly broker pipeline.",
+    ctaLabel: "Build a broker lead list",
+    ctaHref: "#build",
+    ogTitle: "Business insurance leads for brokers.",
+    ogSub: "New UK businesses placing their first commercial cover.",
   },
 ];
 
