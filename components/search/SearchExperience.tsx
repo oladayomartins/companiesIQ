@@ -23,6 +23,9 @@ import { slugify } from "@/lib/slug";
 import { LENSES, lensForProfile, scorePeerLite } from "@/lib/lens";
 import { LensBar, useLensProfile } from "@/components/app/LensBar";
 import type { SearchResult } from "@/lib/types";
+import { growthEvent } from "@/lib/growth/beacon";
+import { classifySearch } from "@/lib/growth/intent";
+import { MarketHeader } from "@/components/search/MarketHeader";
 
 export interface SavedSearch {
   id: string;
@@ -66,6 +69,7 @@ const SCORE_BANDS = [
 ] as const;
 
 const num = (n: number) => n.toLocaleString("en-GB");
+const RECENCY_WORDS = /\b(new|newly|recent|recently|latest|just|formed|registered|incorporated|today|this week|this month|start-?ups?)\b/gi;
 const DAY = 86_400_000;
 const ageDays = (iso?: string) => (iso ? Math.floor((Date.now() - Date.parse(iso)) / DAY) : null);
 const ageLabel = (iso?: string) => {
@@ -153,17 +157,34 @@ export function SearchExperience({
   // reading on screen is always the reading that executed.
   const reading = useMemo(() => readQuery(q), [q]);
   const ranReading = useMemo(() => readQuery(ran), [ran]);
+  // A market / new-company / leads search with a sector or place is the start of
+  // a prospect list, so the results get framed as one (MarketHeader).
+  const ranIntent = useMemo(() => classifySearch(ran, ranReading), [ran, ranReading]);
+  const isMarket = ranIntent !== "lookup" && !!(ranReading.sector || ranReading.place || ranReading.region);
 
   const runSearch = useCallback(
-    async (query: string, advanced: Adv = EMPTY_ADV) => {
+    async (query: string, advanced: Adv = EMPTY_ADV, kind: "search" | "refine" = "search") => {
       const r = readQuery(query);
       const sp = new URLSearchParams();
-      if (r.name) sp.set("q", r.name);
+      // In a market search, time words ("new", "latest", "formed this month")
+      // describe recency, not the company name — leaving them in turned "new
+      // construction companies in Birmingham" into "names containing 'new'".
+      // Only when a sector/place is present, so a name like "New Look" survives.
+      const scoped = !!(r.sector || r.region || r.place);
+      const name = scoped ? r.name.replace(RECENCY_WORDS, " ").replace(/\s+/g, " ").trim() : r.name;
+      if (name) sp.set("q", name);
       else if (query.trim() && !r.sector && !r.region && !r.place) sp.set("q", query.trim());
       if (r.sector) sp.set("sector", r.sector);
       if (r.region) sp.set("region", r.region);
       if (r.place) sp.set("location", r.place);
       for (const s of r.status) sp.append("status", s);
+      // A prospect list is live businesses: default market searches to active
+      // companies, and "new …" searches to the last 30 days (widened below if
+      // empty) — so the table matches the prospect-list header's counts.
+      const intent = classifySearch(query, r);
+      const prospecting = scoped && intent !== "lookup";
+      if (prospecting && !r.status.length) sp.append("status", "active");
+      if (prospecting && intent === "trigger") sp.set("incorporated", "30d");
       if (advanced.accountsOverdue) sp.set("accountsOverdue", "1");
       if (advanced.confirmationDue) sp.set("confirmationDue", "1");
       if (advanced.hasAccounts) sp.set("hasAccounts", "1");
@@ -175,15 +196,35 @@ export function SearchExperience({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/search?${sp.toString()}`);
+        let res = await fetch(`/api/search?${sp.toString()}`);
         if (!res.ok) throw new Error(String(res.status));
-        const data = (await res.json()) as { total: number; results: SearchResult[] };
+        let data = (await res.json()) as { total: number; results: SearchResult[]; exact?: boolean };
+        if (!data.total && sp.get("incorporated") === "30d") {
+          sp.set("incorporated", "12m"); // nothing this month — show the last year instead
+          res = await fetch(`/api/search?${sp.toString()}`);
+          if (res.ok) data = (await res.json()) as typeof data;
+        }
         setRows(data.results ?? []);
         setTotal(data.total ?? 0);
+        // Funnel signal: what was searched and what kind of job it is. Recorded
+        // for signed-in users only (server side); GA never sees the query text.
+        growthEvent(kind === "search" ? "search" : "search_filter", {
+          meta: {
+            q: query.trim(),
+            intent: classifySearch(query, r),
+            sector: r.sector ?? null,
+            region: r.region ?? null,
+            place: r.place ?? null,
+            results: data.total ?? 0,
+            advanced: kind === "refine",
+          },
+        });
         // Sector, region and town are narrowed by us AFTER Companies House
         // returns a page, so the count is "matches in the sample", not a
         // register-wide total. Say which one the number is.
-        setSampled(!!(r.sector || r.region || r.place));
+        // …unless the API says the total is Companies House's own (sector queried
+        // as SIC codes), in which case it is the real register count.
+        setSampled(!!(r.sector || r.region || r.place) && !data.exact);
       } catch {
         setRows([]);
         setTotal(0);
@@ -196,6 +237,7 @@ export function SearchExperience({
   );
 
   useEffect(() => {
+    if (initialQuery.trim() && classifySearch(initialQuery, readQuery(initialQuery)) === "trigger") setSort("new");
     if (initialQuery.trim()) void runSearch(initialQuery);
     // Only on mount — later runs go through submit().
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -206,7 +248,7 @@ export function SearchExperience({
   function applyAdv(nextAdv: Adv) {
     setAdv(nextAdv);
     setSelected(new Set());
-    if (ran) void runSearch(ran, nextAdv);
+    if (ran) void runSearch(ran, nextAdv, "refine");
   }
 
   function submit(next?: string) {
@@ -218,7 +260,11 @@ export function SearchExperience({
     // Keep the URL shareable and the page crawlable at its canonical address.
     router.replace(query ? `/search?q=${encodeURIComponent(query)}` : "/search", { scroll: false });
     setAdv(EMPTY_ADV);
-    if (query) void runSearch(query, EMPTY_ADV);
+    if (query) {
+      // Asking for new companies means you want the newest at the top.
+      if (classifySearch(query, readQuery(query)) === "trigger") setSort("new");
+      void runSearch(query, EMPTY_ADV);
+    }
     else {
       setRows([]);
       setTotal(0);
@@ -276,7 +322,12 @@ export function SearchExperience({
     [scored, filters]
   );
 
+  const reportedRefine = useRef<string | null>(null);
   const toggle = (group: keyof Filters, id: string) => {
+    if (reportedRefine.current !== ran) {
+      reportedRefine.current = ran;
+      growthEvent("search_filter", { meta: { facet: group, value: id, intent: classifySearch(ran, ranReading) } });
+    }
     setFilters((f) => ({
       ...f,
       [group]: f[group].includes(id) ? f[group].filter((x) => x !== id) : [...f[group], id],
@@ -307,6 +358,17 @@ export function SearchExperience({
   const hidden = sorted.slice(visibleCount);
   const next = encodeURIComponent(`/search${ran ? `?q=${encodeURIComponent(ran)}` : ""}`);
 
+  // Hitting the row cap is the search equivalent of an export limit: they asked
+  // for a list and we showed them part of it. Strong upgrade intent — once per query.
+  const reportedCap = useRef<string | null>(null);
+  useEffect(() => {
+    if (loading || tier.pro || !hidden.length || reportedCap.current === ran) return;
+    reportedCap.current = ran;
+    growthEvent("search_capped", {
+      meta: { hidden: hidden.length, total: sorted.length, intent: classifySearch(ran, ranReading) },
+    });
+  }, [loading, tier.pro, hidden.length, sorted.length, ran, ranReading]);
+
   // ---- Bulk actions ----------------------------------------------------------
 
   const selectedRows = useMemo(() => visible.filter((r) => selected.has(r.number)), [visible, selected]);
@@ -330,6 +392,7 @@ export function SearchExperience({
       )
     );
     toast(`Exported ${list.length} ${list.length === 1 ? "company" : "companies"} to CSV`, { tone: "info" });
+    growthEvent("export", { meta: { rows: list.length, intent: classifySearch(ran, ranReading) } });
   }
 
   async function saveSearch() {
@@ -353,6 +416,7 @@ export function SearchExperience({
       if (!res.ok) throw new Error(data?.error ?? "failed");
       setSaved((s) => [data.search as SavedSearch, ...s]);
       toast("Search saved", { tone: "info" });
+      growthEvent("save_search", { meta: { intent: classifySearch(ran, ranReading) } });
     } catch {
       toast("Couldn’t save that search", { tone: "error" });
     } finally {
@@ -743,13 +807,35 @@ export function SearchExperience({
             </div>
           ) : null}
 
+          {isMarket ? (
+            <MarketHeader
+              query={ran}
+              intent={ranIntent}
+              sector={ranReading.sector ?? null}
+              place={ranReading.place ?? null}
+              region={ranReading.region ?? null}
+              pro={tier.pro}
+              signedIn={tier.signedIn}
+              canSave={tier.canSaveSearches}
+              saving={savingSearch}
+              sortedNewest={sort === "new"}
+              onNewest={() => setSort("new")}
+              onSave={saveSearch}
+              onExport={exportSelected}
+            />
+          ) : null}
+
+          {isMarket ? null : (
           <div className="sx-actions">
             {tier.canSaveSearches ? (
               <Button variant="secondary" onClick={saveSearch} disabled={savingSearch}>
                 {savingSearch ? "Saving…" : "Save this search"}
               </Button>
             ) : (
-              <Link href={tier.signedIn ? "/app/upgrade" : "/pricing"}>
+              <Link
+                href={tier.signedIn ? "/app/upgrade" : "/pricing"}
+                onClick={() => growthEvent("gated_action", { ref: "save_search", meta: { intent: classifySearch(ran, ranReading) } })}
+              >
                 <Button variant="secondary">Save this search</Button>
               </Link>
             )}
@@ -759,6 +845,7 @@ export function SearchExperience({
               </Button>
             ) : null}
           </div>
+          )}
 
           {error ? <p className="sx-error">{error}</p> : null}
 
@@ -863,7 +950,10 @@ export function SearchExperience({
                         ? `Your free account previews the first ${FREE_VISIBLE}. Pro adds the full set, filters, sorting, exports and saved searches.`
                         : `You're previewing the top ${ANON_VISIBLE} — every profile above is free to open. Sign up free to search deeper.`}
                     </p>
-                    <Link href={tier.signedIn ? "/app/upgrade" : `/sign-in?next=${next}`}>
+                    <Link
+                      href={tier.signedIn ? "/app/upgrade" : `/sign-in?next=${next}`}
+                      onClick={() => growthEvent("gated_action", { ref: "see_all_matches", meta: { total: sorted.length } })}
+                    >
                       <Button variant="primary" iconRight="arrowRight">
                         {tier.signedIn ? "See plans" : "Create free account"}
                       </Button>

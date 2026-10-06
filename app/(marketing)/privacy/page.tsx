@@ -93,6 +93,13 @@ export default function PrivacyPage() {
             <strong>Analytics</strong> — privacy-conscious usage data via Google Analytics 4 (no entity-identifier
             pages, query strings stripped).
           </li>
+          <li>
+            <strong>Product usage (signed-in accounts)</strong> — how you use CompaniesIQ, such as the searches you
+            run, plan pages you view and checkout steps, plus how the visit in which you signed up began (the first
+            page, the referring website and any campaign tags). It is kept in your browser&rsquo;s session storage
+            until you sign up and never stored for visitors who don&rsquo;t create an account. We use it to improve
+            the product and to send relevant service emails, which you can unsubscribe from at any time.
+          </li>
         </ul>
 
         <h2>Lawful bases</h2>

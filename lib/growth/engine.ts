@@ -41,21 +41,38 @@ async function all<T>(fetchPage: (from: number, to: number) => PromiseLike<{ dat
 export interface LoadedAccount extends UserSnapshot {
   token: string;
   plan: string;
+  /** How the signup visit started (null before attribution existed). */
+  attribution: { landing: string | null; referrer: string | null; utmSource: string | null };
 }
 
 export async function loadAccounts(admin: Admin, now = Date.now()): Promise<LoadedAccount[]> {
   const since90 = new Date(now - 90 * DAY).toISOString();
   const since30 = new Date(now - 30 * DAY).toISOString();
 
-  type Profile = { id: string; email: string | null; full_name: string | null; created_at: string; marketing_opt_out: boolean; growth_token: string };
-  const profiles = await all<Profile>((a, b) =>
-    admin.from("profiles").select("id,email,full_name,created_at,marketing_opt_out,growth_token").order("created_at").range(a, b),
-  );
+  type Profile = {
+    id: string;
+    email: string | null;
+    full_name: string | null;
+    created_at: string;
+    marketing_opt_out: boolean;
+    growth_token: string;
+    signup_landing?: string | null;
+    signup_referrer?: string | null;
+    signup_utm?: Record<string, unknown> | null;
+  };
+  const BASE = "id,email,full_name,created_at,marketing_opt_out,growth_token";
+  let profiles: Profile[];
+  try {
+    profiles = await all<Profile>((a, b) => admin.from("profiles").select(`${BASE},signup_landing,signup_referrer,signup_utm`).order("created_at").range(a, b));
+  } catch {
+    // Before supabase/growth-attribution.sql runs, the columns don't exist.
+    profiles = await all<Profile>((a, b) => admin.from("profiles").select(BASE).order("created_at").range(a, b));
+  }
   const subs = await all<{ user_id: string; plan: string; status: string }>((a, b) =>
     admin.from("subscriptions").select("user_id,plan,status").range(a, b),
   );
-  const events = await all<{ user_id: string; event: string; plan: string | null; billing: string | null; ref: string | null; created_at: string }>((a, b) =>
-    admin.from("growth_events").select("user_id,event,plan,billing,ref,created_at").gte("created_at", since90).order("created_at", { ascending: false }).range(a, b),
+  const events = await all<{ user_id: string; event: string; plan: string | null; billing: string | null; ref: string | null; meta: Record<string, unknown> | null; created_at: string }>((a, b) =>
+    admin.from("growth_events").select("user_id,event,plan,billing,ref,meta,created_at").gte("created_at", since90).order("created_at", { ascending: false }).range(a, b),
   );
   const emails = await all<{ user_id: string; template: string; ref: string; created_at: string }>((a, b) =>
     admin.from("growth_emails").select("user_id,template,ref,created_at").eq("status", "sent").order("created_at", { ascending: false }).range(a, b),
@@ -92,7 +109,12 @@ export async function loadAccounts(admin: Admin, now = Date.now()): Promise<Load
       paid: !!sub && sub.plan !== "free" && PAID.has(sub.status),
       comped: isAdminEmail(email) || isPartnerEmail(email),
       optOut: !!p.marketing_opt_out,
-      events: (evBy.get(p.id) ?? []).map((e) => ({ event: e.event, plan: e.plan, billing: e.billing, ref: e.ref, at: Date.parse(e.created_at) })),
+      events: (evBy.get(p.id) ?? []).map((e) => ({ event: e.event, plan: e.plan, billing: e.billing, ref: e.ref, meta: e.meta, at: Date.parse(e.created_at) })),
+      attribution: {
+        landing: p.signup_landing ?? null,
+        referrer: p.signup_referrer ?? null,
+        utmSource: (p.signup_utm?.utm_source as string | undefined) ?? null,
+      },
       activity: acts.length,
       lastActivityAt: acts.length ? Math.max(...acts.map((a) => Date.parse(a.created_at))) : null,
       emails: (mailBy.get(p.id) ?? []).map((e) => ({ template: e.template, ref: e.ref, at: Date.parse(e.created_at) })),

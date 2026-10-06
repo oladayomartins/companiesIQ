@@ -12,6 +12,7 @@ import { planById, type PlanId } from "@/lib/subscription";
 import { assess, openCheckout, TEMPLATE_LABELS, type Template } from "@/lib/growth/playbook";
 import { getMode, GrowthSetupError, loadAccounts, type AutopilotMode, type RunResult } from "@/lib/growth/engine";
 import { bucketBy, classifyQuery, findOpportunities, pageTemplate, type Bucket, type GscRow, type Opportunity } from "@/lib/growth/search-console";
+import { SEARCH_INTENT_LABELS, type SearchIntent } from "@/lib/growth/intent";
 
 const DAY = 86_400_000;
 const CONVERSION_WINDOW = 7 * DAY; // an email "converted" if they paid within 7 days of it
@@ -55,6 +56,20 @@ export interface TemplateStat {
   converted: number;
 }
 
+/** A row of the "where signups come from" tables. */
+export interface SourceRow {
+  label: string;
+  signups: number;
+  engaged: number;
+  checkout: number;
+  paid: number;
+}
+
+export interface OnSiteDemand {
+  byIntent: { intent: SearchIntent; label: string; searches: number; users: number; capped: number }[];
+  topQueries: { q: string; intent: SearchIntent; searches: number; users: number }[];
+}
+
 export interface SearchDemand {
   importedAt: { pages: string | null; queries: string | null };
   totals: { clicks: number; impressions: number; ctr: number } | null;
@@ -77,6 +92,8 @@ export interface RevenueDashboard {
   emails: EmailRow[];
   templates: TemplateStat[];
   search: SearchDemand;
+  sources: { byChannel: SourceRow[]; byLanding: SourceRow[]; recorded: number };
+  onSite: OnSiteDemand;
 }
 
 async function stripeMrr(): Promise<{ mrr: number; customers: number } | null> {
@@ -151,6 +168,8 @@ export async function loadRevenueDashboard(windowDays = 30): Promise<RevenueDash
     emails: [],
     templates: [],
     search: emptySearch(),
+    sources: { byChannel: [], byLanding: [], recorded: 0 },
+    onSite: { byIntent: [], topQueries: [] },
   };
 
   const admin = getSupabaseAdmin();
@@ -273,6 +292,66 @@ export async function loadRevenueDashboard(windowDays = 30): Promise<RevenueDash
       };
     });
 
+    // ---- Where signups come from (landing page → signup → revenue) ----
+    const cohort = people.filter((a) => inWindow(a.signedUpAt));
+    const outcome = (a: (typeof people)[number]) => ({
+      engaged: !!(a.lastActivityAt || a.events.length),
+      checkout: a.events.some((e) => e.event === "checkout_started"),
+      paid: a.paid || a.events.some((e) => e.event === "checkout_completed"),
+    });
+    const tally = (keyOf: (a: (typeof people)[number]) => string): SourceRow[] => {
+      const m = new Map<string, SourceRow>();
+      for (const a of cohort) {
+        const k = keyOf(a);
+        const row = m.get(k) ?? { label: k, signups: 0, engaged: 0, checkout: 0, paid: 0 };
+        const o = outcome(a);
+        row.signups++;
+        if (o.engaged) row.engaged++;
+        if (o.checkout) row.checkout++;
+        if (o.paid) row.paid++;
+        m.set(k, row);
+      }
+      return [...m.values()].sort((x, y) => y.paid - x.paid || y.signups - x.signups);
+    };
+    base.sources = {
+      byChannel: tally((a) => channelOf(a.attribution)),
+      byLanding: tally((a) => (a.attribution.landing ? pageTemplate(a.attribution.landing) : "Not recorded")),
+      recorded: cohort.filter((a) => a.attribution.landing).length,
+    };
+
+    // ---- On-site demand: what signed-in people search for ----
+    const searches = people.flatMap((a) => a.events.filter((e) => e.event === "search" && inWindow(e.at)).map((e) => ({ a, e })));
+    const caps = people.flatMap((a) => a.events.filter((e) => e.event === "search_capped" && inWindow(e.at)));
+    const intents: SearchIntent[] = ["leadgen", "trigger", "market", "lookup"];
+    base.onSite = {
+      byIntent: intents.map((intent) => {
+        const rows = searches.filter(({ e }) => (e.meta?.intent ?? "lookup") === intent);
+        return {
+          intent,
+          label: SEARCH_INTENT_LABELS[intent],
+          searches: rows.length,
+          users: new Set(rows.map(({ a }) => a.userId)).size,
+          capped: caps.filter((e) => (e.meta?.intent ?? "lookup") === intent).length,
+        };
+      }),
+      topQueries: (() => {
+        const m = new Map<string, { q: string; intent: SearchIntent; searches: number; users: Set<string> }>();
+        for (const { a, e } of searches) {
+          const intent = (e.meta?.intent as SearchIntent) ?? "lookup";
+          if (intent === "lookup" || typeof e.meta?.q !== "string") continue; // company names aren't demand
+          const q = e.meta.q.toLowerCase().trim();
+          const row = m.get(q) ?? { q, intent, searches: 0, users: new Set<string>() };
+          row.searches++;
+          row.users.add(a.userId);
+          m.set(q, row);
+        }
+        return [...m.values()]
+          .sort((x, y) => y.users.size - x.users.size || y.searches - x.searches)
+          .slice(0, 15)
+          .map((r) => ({ q: r.q, intent: r.intent, searches: r.searches, users: r.users.size }));
+      })(),
+    };
+
     base.mode = mode;
     base.lastRunAt = settings.data?.last_run_at ?? null;
     base.lastRun = (settings.data?.last_run as RevenueDashboard["lastRun"]) ?? null;
@@ -282,4 +361,20 @@ export async function loadRevenueDashboard(windowDays = 30): Promise<RevenueDash
     const msg = e instanceof Error ? e.message : String(e);
     return { ...base, setupError: `Revenue tables aren't ready: ${msg}. Run supabase/growth.sql in the Supabase SQL editor.` };
   }
+}
+
+/** Collapse a signup's referrer / UTM into a channel a person would recognise. */
+function channelOf(att: { landing: string | null; referrer: string | null; utmSource: string | null }): string {
+  if (!att.landing) return "Not recorded";
+  if (att.utmSource) return `Campaign: ${att.utmSource}`;
+  const r = (att.referrer ?? "").toLowerCase();
+  if (!r) return "Direct / unknown";
+  if (/(^|\.)google\./.test(r)) return "Google";
+  if (/(^|\.)bing\.com$/.test(r)) return "Bing";
+  if (/chatgpt\.com|chat\.openai\.com/.test(r)) return "ChatGPT";
+  if (/copilot\.microsoft\.com/.test(r)) return "Copilot";
+  if (/perplexity\.ai/.test(r)) return "Perplexity";
+  if (/duckduckgo\.com/.test(r)) return "DuckDuckGo";
+  if (/linkedin\.com|lnkd\.in/.test(r)) return "LinkedIn";
+  return r.replace(/^www\./, "");
 }

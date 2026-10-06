@@ -628,3 +628,16 @@
 .rev-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .rev-upload.is-busy { opacity: 0.6; pointer-events: none; }
 .rev-upload:focus-within { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+
+/* ---- Prospect-list header (market searches on /search) ------------------- */
+.mkt { margin: 4px 0 16px; padding: 16px 18px; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-hair)); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--accent) 5%, var(--surface-card)); }
+.mkt__eyebrow { font-size: var(--text-2xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+.mkt__title { font-family: var(--font-grotesk); font-weight: 800; font-size: var(--text-lg); letter-spacing: -0.02em; color: var(--text-strong); margin: 0 0 6px; }
+.mkt__stats { margin: 0; font-size: var(--text-ui); color: var(--text-body); }
+.mkt__stats strong { font-family: var(--font-grotesk); font-size: var(--text-md); color: var(--text-strong); }
+.mkt__sep { margin: 0 8px; color: var(--text-faint); }
+.mkt__note { margin: 6px 0 0; font-size: var(--text-xs); color: var(--text-muted); line-height: 1.5; }
+.mkt__note a { color: var(--accent); }
+.mkt__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.mkt__alert { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-hair); }
+.mkt__note svg { display: inline-block; vertical-align: -2px; margin-right: 4px; }

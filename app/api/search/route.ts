@@ -102,6 +102,8 @@ export async function GET(req: NextRequest) {
       incorporatedFrom,
       size: 40,
       startIndex,
+      // On-site search wants the real register total for sector searches.
+      sectorBySic: true,
     });
     return NextResponse.json(r);
   } catch (e) {

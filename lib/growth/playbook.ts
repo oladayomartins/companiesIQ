@@ -12,6 +12,8 @@
 // well, but 6 of 8 checkout starts didn't complete — so recovery comes first.
 // ============================================================
 
+import { SEARCH_INTENT_POINTS, type SearchIntent } from "@/lib/growth/intent";
+
 export type Template = "checkout_recovery" | "checkout_recovery_2" | "paywall_followup" | "activation";
 
 export const TEMPLATE_LABELS: Record<Template, string> = {
@@ -27,6 +29,7 @@ export interface UserEvent {
   billing: string | null;
   ref: string | null;
   at: number; // epoch ms
+  meta?: Record<string, unknown> | null;
 }
 
 export interface SentEmail {
@@ -107,6 +110,26 @@ export function scoreUser(s: UserSnapshot, now: number): { score: number; signal
     score += Math.min(24, walls * 8);
     signals.push(`${walls}× hit a paywall`);
   }
+  // On-site search: what they searched for says what job they're doing. A
+  // company look-up is research; a market, new-company or leads search is the
+  // start of a prospect list — the demand CompaniesIQ actually sells to.
+  const searches = s.events.filter((e) => e.event === "search" && e.at >= since14);
+  if (searches.length) {
+    const pts = searches.reduce((sum, e) => sum + (SEARCH_INTENT_POINTS[(e.meta?.intent as SearchIntent) ?? "lookup"] ?? 2), 0);
+    score += Math.min(25, pts);
+    const commercial = searches.filter((e) => e.meta?.intent && e.meta.intent !== "lookup").length;
+    signals.push(commercial ? `${commercial}× market/leads search` : `${searches.length}× company look-up`);
+  }
+  const capped = count(s.events, "search_capped", since14);
+  if (capped) {
+    score += Math.min(20, capped * 10);
+    signals.push(`${capped}× hit the results cap`);
+  }
+  const gated = count(s.events, "gated_action", since14);
+  if (gated) {
+    score += Math.min(24, gated * 12);
+    signals.push(`${gated}× tried a paid action`);
+  }
   if (s.activity) {
     score += Math.min(15, s.activity * 3);
     signals.push(`${s.activity} product actions`);
@@ -126,7 +149,8 @@ export function scoreUser(s: UserSnapshot, now: number): { score: number; signal
 function stageOf(s: UserSnapshot, open: UserEvent | null): string {
   if (s.paid) return "Customer";
   if (open) return "Checkout abandoned";
-  if (s.events.some((e) => ["pricing_view", "upgrade_view", "plan_select", "paywall_view"].includes(e.event))) return "Evaluating";
+  if (s.events.some((e) => ["pricing_view", "upgrade_view", "plan_select", "paywall_view", "search_capped", "gated_action"].includes(e.event))) return "Evaluating";
+  if (s.events.some((e) => e.event === "search" && e.meta?.intent && e.meta.intent !== "lookup")) return "Exploring a market";
   if (s.activity > 0) return "Active free";
   return "Signed up";
 }
@@ -165,7 +189,8 @@ export function decide(s: UserSnapshot, now: number): Decision | null {
 
   // 3. Repeated paywall / pricing interest with no checkout in 14 days.
   const since14 = now - 14 * DAY;
-  const walls = count(s.events, "paywall_view", since14);
+  // Any wall counts: a gated page, a capped result list, or a paid action clicked.
+  const walls = count(s.events, "paywall_view", since14) + count(s.events, "search_capped", since14) + count(s.events, "gated_action", since14);
   const pricing = count(s.events, "pricing_view", since14) + count(s.events, "upgrade_view", since14);
   const recentCheckout = s.events.some((e) => e.event === "checkout_started" && e.at >= since14);
   const lastPaywallMail = sentTemplate(s, "paywall_followup");
@@ -174,7 +199,7 @@ export function decide(s: UserSnapshot, now: number): Decision | null {
     (walls >= 2 || (walls >= 1 && pricing >= 1)) &&
     (!lastPaywallMail || now - lastPaywallMail.at > 30 * DAY)
   ) {
-    return { template: "paywall_followup", ref: "", plan: pitchPlan, billing: "monthly", reason: `${walls} paywall hits, no checkout` };
+    return { template: "paywall_followup", ref: "", plan: pitchPlan, billing: "monthly", reason: `${walls} paywall/cap hits, no checkout` };
   }
 
   // 4. Activation — signed up 1–4 days ago and hasn't done anything yet. Once ever.

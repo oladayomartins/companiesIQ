@@ -8,6 +8,7 @@
 import "server-only";
 import type { Company, SearchResult, Officer, Filing, Charge, OfficerProfile, PSC } from "./types";
 import * as ch from "./companies-house";
+import { sicCodesForSector } from "./sic";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getCompanyFinancials } from "./enrichment/financials";
 
@@ -30,6 +31,10 @@ export interface ExploreParams extends ch.AdvancedSearchParams {
   region?: string; // post-filter on resolved region
   regions?: string[]; // multiple selected regions (UI)
   sector?: string; // post-filter on classified sector
+  /** Query a sector as its tracked SIC codes instead of post-filtering a
+   *  location sample — gives Companies House's real total. Opt-in (on-site
+   *  search) so pages built on the sampled behaviour don't change silently. */
+  sectorBySic?: boolean;
 }
 
 // Region (ONS) isn't a Companies House search field, so we approximate it with
@@ -49,8 +54,27 @@ export async function search(q: string, startIndex = 0): Promise<{ total: number
   return { total: r.total, results: r.results, live: true };
 }
 
-export async function explore(params: ExploreParams): Promise<{ total: number; results: EnrichedResult[]; live: boolean }> {
+export async function explore(params: ExploreParams): Promise<{ total: number; results: EnrichedResult[]; live: boolean; exact?: boolean }> {
   const regions = params.regions?.length ? params.regions : params.region ? [params.region] : [];
+
+  // Sector as SIC codes: Companies House filters and counts it, so the total is
+  // real. Only a region post-filter (abstract English regions) makes it a sample.
+  if (params.sectorBySic && params.sector && !params.sicCodes?.length) {
+    const sicCodes = sicCodesForSector(params.sector);
+    if (sicCodes.length) {
+      const regionText = regions.length === 1 ? REGION_TO_LOCATION[regions[0]] : undefined;
+      const needsRegionFilter = regions.length > 0 && !params.location && !regionText;
+      const r = await ch.advancedSearch({
+        ...params,
+        sicCodes,
+        location: params.location ?? regionText,
+        size: needsRegionFilter ? 100 : params.size ?? 40,
+      });
+      if (!needsRegionFilter) return { total: r.total, results: r.results, live: true, exact: true };
+      const inRegion = r.results.filter((x) => x.region && regions.includes(x.region));
+      return { total: inRegion.length, results: inRegion.slice(0, params.size ?? 40), live: true, exact: false };
+    }
+  }
 
   const filtering = regions.length > 0 || !!params.sector;
 

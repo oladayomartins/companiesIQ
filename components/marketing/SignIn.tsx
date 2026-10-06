@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button, Input, Badge } from "@/components/ds";
 import { getSupabaseBrowser, isSupabaseConfigured } from "@/lib/supabase/client";
 import { toast } from "@/lib/toast";
+import { sendSignupAttribution } from "@/lib/growth/visit";
 import { track } from "@/lib/track";
 
 // Passwordless sign-in via a one-time email CODE (not a magic link). A code
@@ -101,6 +102,9 @@ export function SignInForm() {
     const created = data?.user?.created_at ? Date.parse(data.user.created_at) : 0;
     const isNew = created > 0 && Date.now() - created < 30 * 60_000;
     track(isNew ? "sign_up" : "login", { method: "otp" });
+    // Record where this new account's visit started (landing page, referrer,
+    // UTM) — the landing page → signup → revenue link on the Revenue screen.
+    if (isNew) await sendSignupAttribution();
     // verifyOtp has written the session cookies. Do a full navigation (not a
     // client push) so middleware + server components pick up the new session.
     toast("Signed in — taking you in…", { tone: "info" });
