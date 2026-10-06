@@ -46,7 +46,14 @@ export function ageLabel(iso?: string): string {
 
 /** Title-cases Companies House SHOUTING names while keeping LTD/PLC etc. */
 const KEEP_UPPER = new Set(["LTD", "PLC", "LLP", "LP", "UK", "CIC", "CIO", "C.I.C."]);
-export function titleCaseName(name: string): string {
+// "DHC PROPERTIES LTD" is an acronym, not a word: title-casing it to "Dhc"
+// misspells the name in the page title and every search snippet. Short tokens
+// with no vowel can't be words, so keep them upper. Company names only (opt-in):
+// in a person's name the same rule would turn "Ng" into "NG".
+const NOT_ACRONYMS = new Set(["ST", "DR", "MR", "MRS", "MS", "MT", "JR", "SR"]);
+const isAcronym = (u: string) => /^[A-Z]{2,4}$/.test(u) && !/[AEIOUY]/.test(u) && !NOT_ACRONYMS.has(u);
+
+export function titleCaseName(name: string, opts: { acronyms?: boolean } = {}): string {
   if (!name) return name;
   // Only transform if the name is mostly uppercase (CH returns SHOUTING).
   const letters = name.replace(/[^A-Za-z]/g, "");
@@ -58,6 +65,7 @@ export function titleCaseName(name: string): string {
     .map((w) => {
       const u = w.toUpperCase();
       if (KEEP_UPPER.has(u)) return u;
+      if (opts.acronyms && isAcronym(u)) return u;
       return w.replace(/^[a-z]/, (c) => c.toUpperCase());
     })
     .join("");

@@ -161,6 +161,26 @@
 .blog-faq__q { font-family: var(--font-grotesk); font-weight: 700; font-size: var(--text-md); color: var(--text-strong); margin: 18px 0 6px; }
 .blog-faq__a { color: var(--text-muted); line-height: 1.6; margin: 0; }
 .blog-related { margin-top: 28px; }
+/* Article structure the template guarantees on every post: standfirst, byline
+   row, key-takeaways box, contents list, editorial note. Token-based, so they
+   work in the light marketing chrome and under .ciq-dark. */
+.blog-post__lede { font-size: var(--text-prose); line-height: 1.55; color: var(--text-body); margin: 4px 0 14px; max-width: 64ch; }
+.blog-post__meta { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.blog-takeaways { margin: 0 0 26px; padding: 18px 20px 16px; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-hair)); border-left: 4px solid var(--accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--accent) 6%, var(--surface-card)); }
+.blog-takeaways__title { font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+.blog-takeaways__list { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.blog-takeaways__list li { color: var(--text-strong); line-height: 1.55; font-size: var(--text-ui); }
+.blog-toc { margin: 0 0 28px; padding: 14px 18px; border: 1px solid var(--border-hair); border-radius: var(--radius-lg); background: var(--surface-sunken); }
+.blog-toc__title { font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 8px; }
+.blog-toc__list { margin: 0; padding-left: 20px; display: grid; gap: 5px; font-size: var(--text-sm); }
+.blog-toc__list a { color: var(--text-body); text-decoration: none; }
+.blog-toc__list a:hover { color: var(--accent); text-decoration: underline; }
+/* Anchor targets clear the sticky site header. */
+.blog-prose h2[id], .blog-prose h3[id], .blog-faq__title[id] { scroll-margin-top: 88px; }
+.blog-about { margin-top: 32px; padding: 16px 18px; border-radius: var(--radius-lg); border: 1px solid var(--border-hair); background: var(--surface-card); }
+.blog-about__head { font-family: var(--font-grotesk); font-weight: 700; font-size: var(--text-sm); color: var(--text-strong); margin-bottom: 4px; }
+.blog-about p { margin: 0; color: var(--text-muted); font-size: var(--text-sm); line-height: 1.55; }
+.blog-about a { color: var(--accent); }
 /* Public blog now lives in the (marketing) route group under the light .site
    chrome. These layout wrappers centre the list + article the same way the
    about/pricing pages do; all blog styles above are token-based, so they render
