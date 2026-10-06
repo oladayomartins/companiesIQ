@@ -12,6 +12,7 @@
     "check:ui": "node scripts/ui-checks.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
     "ag-grid-community": "^35.3.1",
