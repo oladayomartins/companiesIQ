@@ -9,7 +9,19 @@ import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 /** Events a browser may report (via /api/growth/event). */
-export const CLIENT_EVENTS = ["paywall_view", "pricing_view", "upgrade_view", "plan_select"] as const;
+export const CLIENT_EVENTS = [
+  "paywall_view",
+  "pricing_view",
+  "upgrade_view",
+  "plan_select",
+  // On-site search — the demand signal Search Console can't give us per user.
+  "search", // meta: q, intent, sector, region, place, results
+  "search_filter", // refined the results (meta: filters)
+  "search_capped", // results hidden behind the plan's row cap (meta: hidden, total)
+  "gated_action", // clicked a paid action without the plan (ref: save_search | export | …)
+  "save_search", // Pro: saved a search
+  "export", // Pro: exported results
+] as const;
 /** Events only the server records (subscribe route, Stripe webhook). */
 export const SERVER_EVENTS = ["checkout_started", "checkout_completed", "checkout_expired"] as const;
 

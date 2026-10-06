@@ -8,6 +8,8 @@ import { toast } from "@/lib/toast";
 import type { RevenueDashboard } from "@/lib/growth/dashboard";
 import type { AutopilotMode } from "@/lib/growth/engine";
 import type { Opportunity } from "@/lib/growth/search-console";
+import type { SourceRow } from "@/lib/growth/dashboard";
+import { SEARCH_INTENT_LABELS } from "@/lib/growth/intent";
 
 const gbp = (n: number) => `£${n.toLocaleString("en-GB", { maximumFractionDigits: n % 1 ? 2 : 0 })}`;
 const pct = (n: number, dp = 1) => `${(n * 100).toFixed(dp)}%`;
@@ -36,6 +38,39 @@ function Empty({ cols, children }: { cols: number; children: React.ReactNode }) 
     <tr className="empty-row">
       <td colSpan={cols}>{children}</td>
     </tr>
+  );
+}
+
+function SourceTable({ rows, first, empty }: { rows: SourceRow[]; first: string; empty: string }) {
+  return (
+    <div className="table-scroll">
+      <table className="data-table data-table--full rev-table">
+        <thead>
+          <tr>
+            <th>{first}</th>
+            <th className="num">Signups</th>
+            <th className="num">Engaged</th>
+            <th className="num">Checkout</th>
+            <th className="num">Paid</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length ? (
+            rows.map((r) => (
+              <tr key={r.label}>
+                <td className={first === "Landing page" ? "mono" : undefined}>{r.label}</td>
+                <td className="num mono">{r.signups}</td>
+                <td className="num mono">{r.engaged}</td>
+                <td className="num mono">{r.checkout}</td>
+                <td className="num mono">{r.paid}</td>
+              </tr>
+            ))
+          ) : (
+            <Empty cols={5}>{empty}</Empty>
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -261,6 +296,81 @@ export function RevenueScreen({ data }: { data: RevenueDashboard }) {
                 ))}
               </tbody>
             </table>
+          </CardBody>
+        </Card>
+      </div>
+
+      <div className="dash-cols" style={{ marginTop: 18 }}>
+        <Card>
+          <CardHeader
+            subtitle={`New accounts in the last ${data.windowDays} days, followed to checkout and payment`}
+            title="Where signups come from"
+            titleAs="h2"
+          />
+          <CardBody flush>
+            <SourceTable rows={data.sources.byChannel} first="Source" empty="No new accounts in this window." />
+            <SourceTable rows={data.sources.byLanding} first="Landing page" empty="—" />
+            <p className="muted rev-note" style={{ padding: "0 16px 14px" }}>
+              Recorded for {data.sources.recorded} of {data.sources.byChannel.reduce((n, r) => n + r.signups, 0)} signups —
+              attribution started with this release, so older accounts show as “Not recorded”.
+            </p>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader subtitle="What signed-in people search for — company look-ups vs prospect lists" title="On-site demand" titleAs="h2" />
+          <CardBody flush>
+            <div className="table-scroll">
+              <table className="data-table data-table--full rev-table">
+                <thead>
+                  <tr>
+                    <th>Intent</th>
+                    <th className="num">Searches</th>
+                    <th className="num">People</th>
+                    <th className="num">Hit cap</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.onSite.byIntent.map((r) => (
+                    <tr key={r.intent}>
+                      <td>
+                        <Badge tone={r.intent === "lookup" ? "neutral" : "accent"}>{r.label}</Badge>
+                      </td>
+                      <td className="num mono">{r.searches}</td>
+                      <td className="num mono">{r.users}</td>
+                      <td className="num mono">{r.capped}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="table-scroll">
+              <table className="data-table data-table--full rev-table">
+                <thead>
+                  <tr>
+                    <th>Top market &amp; leads searches</th>
+                    <th className="num">People</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.onSite.topQueries.length ? (
+                    data.onSite.topQueries.map((r) => (
+                      <tr key={r.q}>
+                        <td className="rev-key">
+                          {r.q}
+                          <div className="rev-tags">
+                            <Badge tone="info">{SEARCH_INTENT_LABELS[r.intent]}</Badge>
+                          </div>
+                        </td>
+                        <td className="num mono">{r.users}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <Empty cols={2}>No market or leads searches yet — these appear as signed-in users search.</Empty>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </CardBody>
         </Card>
       </div>

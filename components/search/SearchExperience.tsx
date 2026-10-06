@@ -23,6 +23,8 @@ import { slugify } from "@/lib/slug";
 import { LENSES, lensForProfile, scorePeerLite } from "@/lib/lens";
 import { LensBar, useLensProfile } from "@/components/app/LensBar";
 import type { SearchResult } from "@/lib/types";
+import { growthEvent } from "@/lib/growth/beacon";
+import { classifySearch } from "@/lib/growth/intent";
 
 export interface SavedSearch {
   id: string;
@@ -155,7 +157,7 @@ export function SearchExperience({
   const ranReading = useMemo(() => readQuery(ran), [ran]);
 
   const runSearch = useCallback(
-    async (query: string, advanced: Adv = EMPTY_ADV) => {
+    async (query: string, advanced: Adv = EMPTY_ADV, kind: "search" | "refine" = "search") => {
       const r = readQuery(query);
       const sp = new URLSearchParams();
       if (r.name) sp.set("q", r.name);
@@ -180,6 +182,19 @@ export function SearchExperience({
         const data = (await res.json()) as { total: number; results: SearchResult[] };
         setRows(data.results ?? []);
         setTotal(data.total ?? 0);
+        // Funnel signal: what was searched and what kind of job it is. Recorded
+        // for signed-in users only (server side); GA never sees the query text.
+        growthEvent(kind === "search" ? "search" : "search_filter", {
+          meta: {
+            q: query.trim(),
+            intent: classifySearch(query, r),
+            sector: r.sector ?? null,
+            region: r.region ?? null,
+            place: r.place ?? null,
+            results: data.total ?? 0,
+            advanced: kind === "refine",
+          },
+        });
         // Sector, region and town are narrowed by us AFTER Companies House
         // returns a page, so the count is "matches in the sample", not a
         // register-wide total. Say which one the number is.
@@ -206,7 +221,7 @@ export function SearchExperience({
   function applyAdv(nextAdv: Adv) {
     setAdv(nextAdv);
     setSelected(new Set());
-    if (ran) void runSearch(ran, nextAdv);
+    if (ran) void runSearch(ran, nextAdv, "refine");
   }
 
   function submit(next?: string) {
@@ -276,7 +291,12 @@ export function SearchExperience({
     [scored, filters]
   );
 
+  const reportedRefine = useRef<string | null>(null);
   const toggle = (group: keyof Filters, id: string) => {
+    if (reportedRefine.current !== ran) {
+      reportedRefine.current = ran;
+      growthEvent("search_filter", { meta: { facet: group, value: id, intent: classifySearch(ran, ranReading) } });
+    }
     setFilters((f) => ({
       ...f,
       [group]: f[group].includes(id) ? f[group].filter((x) => x !== id) : [...f[group], id],
@@ -307,6 +327,17 @@ export function SearchExperience({
   const hidden = sorted.slice(visibleCount);
   const next = encodeURIComponent(`/search${ran ? `?q=${encodeURIComponent(ran)}` : ""}`);
 
+  // Hitting the row cap is the search equivalent of an export limit: they asked
+  // for a list and we showed them part of it. Strong upgrade intent — once per query.
+  const reportedCap = useRef<string | null>(null);
+  useEffect(() => {
+    if (loading || tier.pro || !hidden.length || reportedCap.current === ran) return;
+    reportedCap.current = ran;
+    growthEvent("search_capped", {
+      meta: { hidden: hidden.length, total: sorted.length, intent: classifySearch(ran, ranReading) },
+    });
+  }, [loading, tier.pro, hidden.length, sorted.length, ran, ranReading]);
+
   // ---- Bulk actions ----------------------------------------------------------
 
   const selectedRows = useMemo(() => visible.filter((r) => selected.has(r.number)), [visible, selected]);
@@ -330,6 +361,7 @@ export function SearchExperience({
       )
     );
     toast(`Exported ${list.length} ${list.length === 1 ? "company" : "companies"} to CSV`, { tone: "info" });
+    growthEvent("export", { meta: { rows: list.length, intent: classifySearch(ran, ranReading) } });
   }
 
   async function saveSearch() {
@@ -353,6 +385,7 @@ export function SearchExperience({
       if (!res.ok) throw new Error(data?.error ?? "failed");
       setSaved((s) => [data.search as SavedSearch, ...s]);
       toast("Search saved", { tone: "info" });
+      growthEvent("save_search", { meta: { intent: classifySearch(ran, ranReading) } });
     } catch {
       toast("Couldn’t save that search", { tone: "error" });
     } finally {
@@ -749,7 +782,10 @@ export function SearchExperience({
                 {savingSearch ? "Saving…" : "Save this search"}
               </Button>
             ) : (
-              <Link href={tier.signedIn ? "/app/upgrade" : "/pricing"}>
+              <Link
+                href={tier.signedIn ? "/app/upgrade" : "/pricing"}
+                onClick={() => growthEvent("gated_action", { ref: "save_search", meta: { intent: classifySearch(ran, ranReading) } })}
+              >
                 <Button variant="secondary">Save this search</Button>
               </Link>
             )}
@@ -863,7 +899,10 @@ export function SearchExperience({
                         ? `Your free account previews the first ${FREE_VISIBLE}. Pro adds the full set, filters, sorting, exports and saved searches.`
                         : `You're previewing the top ${ANON_VISIBLE} — every profile above is free to open. Sign up free to search deeper.`}
                     </p>
-                    <Link href={tier.signedIn ? "/app/upgrade" : `/sign-in?next=${next}`}>
+                    <Link
+                      href={tier.signedIn ? "/app/upgrade" : `/sign-in?next=${next}`}
+                      onClick={() => growthEvent("gated_action", { ref: "see_all_matches", meta: { total: sorted.length } })}
+                    >
                       <Button variant="primary" iconRight="arrowRight">
                         {tier.signedIn ? "See plans" : "Create free account"}
                       </Button>

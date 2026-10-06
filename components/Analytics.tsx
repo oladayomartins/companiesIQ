@@ -2,6 +2,7 @@
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { captureVisit } from "@/lib/growth/visit";
 
 // GA4 measurement ID (public by design). Override per-env with NEXT_PUBLIC_GA_ID.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-34HW7P1KJD";
@@ -31,6 +32,12 @@ type Gtag = (...args: unknown[]) => void;
 export function Analytics() {
   const pathname = usePathname();
   const configured = useRef(false);
+
+  // Remember how this visit started (first page wins) for signup attribution.
+  // Runs everywhere — it is first-party and leaves nothing behind the tab.
+  useEffect(() => {
+    captureVisit();
+  }, []);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return; // don't track localhost
