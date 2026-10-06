@@ -10,10 +10,10 @@ import { track } from "@/lib/track";
 // straight on the prospect-list search (/search frames it with live counts and
 // Save / weekly alert / export). No sign-up needed to see the list — the
 // account ask comes when they want more of it.
-export function LeadListBuilder() {
+export function LeadListBuilder({ defaultSector = "Construction", defaultCity = "Manchester" }: { defaultSector?: string; defaultCity?: string } = {}) {
   const router = useRouter();
-  const [sector, setSector] = useState("Construction");
-  const [city, setCity] = useState("Manchester");
+  const [sector, setSector] = useState(defaultSector);
+  const [city, setCity] = useState(defaultCity);
   const [fresh, setFresh] = useState(true);
 
   function go(e: React.FormEvent) {
