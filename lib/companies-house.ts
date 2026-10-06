@@ -135,6 +135,12 @@ export interface AdvancedSearchParams {
   startIndex?: number;
 }
 
+/** One page of search results plus the register's total for the query. */
+export interface SearchResultPage {
+  total: number;
+  results: SearchResult[];
+}
+
 export async function advancedSearch(params: AdvancedSearchParams): Promise<{ total: number; results: SearchResult[] }> {
   const qs = new URLSearchParams();
   if (params.q) qs.set("company_name_includes", params.q);
