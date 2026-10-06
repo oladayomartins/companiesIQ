@@ -7,15 +7,20 @@ import { fmtNumber } from "@/lib/format";
 import { getRegisterKpis } from "@/lib/live-stats";
 import { breadcrumbLd, webPageLd, faqLd } from "@/lib/seo-schema";
 import { SITE_URL } from "@/lib/site";
+import { slugify } from "@/lib/slug";
+import { getMarketSummary } from "@/lib/market-summary";
+import { LeadListBuilder } from "@/components/marketing/LeadListBuilder";
+import { FreeAlertForm } from "@/components/FreeAlertForm";
 
 export const revalidate = 3600;
 
 const PATH = "/business-leads";
 
 export const metadata: Metadata = {
-  title: "UK Business Leads — B2B prospect lists from Companies House data",
+  // ~60 chars incl. brand; matches "business leads", "uk business leads", "b2b leads".
+  title: { absolute: "UK Business Leads: Free B2B Prospect Lists · CompaniesIQ" },
   description:
-    "Build fresh UK B2B leads from the Companies House register: filter newly registered companies by industry, location, size and age, enrich them, and export a targeted prospect list to CSV. Free to start.",
+    "Build UK business leads from the live Companies House register: pick an industry and town, see every new and active company, and export a B2B prospect list. Free to search.",
   alternates: { canonical: PATH },
   openGraph: {
     title: "CompaniesIQ — UK business leads & B2B prospect lists",
@@ -32,14 +37,21 @@ const STEPS: [string, string, string][] = [
   ["03", "Export & reach out", "Export the targeted list to CSV or push it through the API into your CRM, then reach out before competitors even know the companies exist."],
 ];
 
-const AUDIENCES: { icon: IconName; who: string; body: string }[] = [
-  { icon: "file", who: "Accountants & bookkeepers", body: "Newly incorporated companies that need accounting, tax and compliance support — reach them in their first weeks." },
-  { icon: "users", who: "Recruiters", body: "Fast-growing and newly formed employers about to hire — get in before the vacancy is even posted." },
-  { icon: "briefcase", who: "Marketing & web agencies", body: "New businesses that need a website, branding and marketing — the moment they incorporate is the moment to pitch." },
-  { icon: "barChart", who: "Finance & insurance", body: "New companies that need banking, finance, insurance and payroll — a fresh, dated pipeline every week." },
-  { icon: "building", who: "B2B sales teams", body: "Target accounts by sector, size and location, build the list, and hand sales a clean, exportable set of prospects." },
-  { icon: "globe", who: "Commercial property & services", body: "Growing and relocating companies that need office space, IT, telecoms and professional services." },
+// Each audience links to its own use-case guide — the page used to describe
+// them and link nowhere.
+const AUDIENCES: { icon: IconName; who: string; body: string; href: string; cta: string }[] = [
+  { icon: "file", who: "Accountants & bookkeepers", body: "Newly incorporated companies that need accounting, tax and compliance support — reach them in their first weeks.", href: "/use-cases/accountants", cta: "Accountancy leads" },
+  { icon: "users", who: "Recruiters", body: "Fast-growing and newly formed employers about to hire — get in before the vacancy is even posted.", href: "/use-cases/recruiters", cta: "Recruitment leads" },
+  { icon: "briefcase", who: "Marketing & web agencies", body: "New businesses that need a website, branding and marketing — the moment they incorporate is the moment to pitch.", href: "/use-cases/marketing-agencies", cta: "Agency leads" },
+  { icon: "shield", who: "Commercial insurance brokers", body: "Every new company needs business insurance — employers' liability, public liability, cover for premises and vehicles. Reach them before renewal is someone else's.", href: "/use-cases/insurance-brokers", cta: "Business insurance leads" },
+  { icon: "building", who: "B2B sales teams", body: "Target accounts by sector, size and location, build the list, and hand sales a clean, exportable set of prospects.", href: "/use-cases/sales-teams", cta: "Sales prospecting" },
+  { icon: "globe", who: "Commercial property & services", body: "Growing and relocating companies that need office space, IT, telecoms and professional services.", href: "/company-database", cta: "UK company database" },
 ];
+
+// Sectors shown with live register counts (UK-wide). Bounded so the page costs a
+// fixed handful of cached Companies House calls (getMarketSummary, 6h cache).
+const LEAD_SECTORS = ["Construction", "Technology", "Professional services", "Hospitality", "Real estate", "Retail & wholesale"];
+const LEAD_CITIES = ["London", "Manchester", "Birmingham"];
 
 const FAQS: [string, string][] = [
   [
@@ -73,7 +85,10 @@ const FAQS: [string, string][] = [
 ];
 
 export default async function BusinessLeadsPage() {
-  const kpis = await getRegisterKpis(30).catch(() => null);
+  const [kpis, sectors] = await Promise.all([
+    getRegisterKpis(30).catch(() => null),
+    Promise.all(LEAD_SECTORS.map(async (sector) => ({ sector, m: await getMarketSummary({ sector }) }))),
+  ]);
   const delta =
     kpis && kpis.prevIncorporations > 0
       ? ((kpis.incorporations - kpis.prevIncorporations) / kpis.prevIncorporations) * 100
@@ -123,13 +138,59 @@ export default async function BusinessLeadsPage() {
           <Badge tone="neutral">Export to CSV</Badge>
         </div>
         <div className="hero__actions" style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 26 }}>
-          <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
-            Find B2B prospects
+          <Button href="#build" variant="primary" size="lg" iconRight="arrowRight">
+            Build a lead list — free
           </Button>
-          <Button href="/signals" variant="secondary" size="lg">
-            See what&apos;s forming
+          <Button href="#weekly" variant="secondary" size="lg">
+            Get new leads weekly
           </Button>
         </div>
+      </section>
+
+      <section className="section" id="build">
+        <div className="section__head">
+          <span className="eyebrow">Build a lead list</span>
+          <h2 className="section__title">Pick an industry and a town. See every company.</h2>
+        </div>
+        <LeadListBuilder />
+        <p className="lead-builder__note mono">
+          Live from Companies House · free to search, no card · upgrade to save, track and export the full list
+        </p>
+      </section>
+
+      <section className="section section--alt">
+        <div className="section__head">
+          <span className="eyebrow">Live on the register</span>
+          <h2 className="section__title">New business leads this month, by industry.</h2>
+        </div>
+        <div className="lead-sectors">
+          {sectors.map(({ sector, m }) => (
+            <div className="lead-sector" key={sector}>
+              <h3 className="lead-sector__name">{sector}</h3>
+              {m ? (
+                <p className="lead-sector__stats">
+                  <strong>{fmtNumber(m.new30)}</strong> new in the last 30 days
+                  <span className="lead-sector__sub mono">{fmtNumber(m.active)} active UK companies</span>
+                </p>
+              ) : (
+                <p className="lead-sector__stats muted">Live counts unavailable right now</p>
+              )}
+              <Link className="lead-sector__cta" href={`/search?q=${encodeURIComponent(`new ${sector} companies`)}`}>
+                See the newest {sector.toLowerCase()} leads →
+              </Link>
+              <div className="signal-chips">
+                {LEAD_CITIES.map((c) => (
+                  <Link key={c} className="signal-chip" href={`/industry/${slugify(sector)}/${slugify(c)}`}>
+                    {c}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="lead-builder__note mono">
+          Counts are Companies House totals for the SIC codes CompaniesIQ tracks in each industry.
+        </p>
       </section>
 
       <section className="section">
@@ -161,6 +222,9 @@ export default async function BusinessLeadsPage() {
               </span>
               <h3 className="feat__title">{a.who}</h3>
               <p className="feat__body">{a.body}</p>
+              <Link className="lead-sector__cta" href={a.href}>
+                {a.cta} →
+              </Link>
             </div>
           ))}
         </div>
@@ -203,6 +267,16 @@ export default async function BusinessLeadsPage() {
         </div>
       </section>
 
+      <section className="section section--alt" id="weekly">
+        <div className="section__head">
+          <span className="eyebrow">Free weekly email</span>
+          <h2 className="section__title">Get new business leads in your inbox every week.</h2>
+        </div>
+        <div className="fa-card" style={{ maxWidth: 560, margin: "0 auto" }}>
+          <FreeAlertForm source="business-leads" />
+        </div>
+      </section>
+
       <section className="faq">
         <div className="section__head">
           <span className="eyebrow">FAQ</span>
@@ -223,8 +297,8 @@ export default async function BusinessLeadsPage() {
           <h2 className="cta__title">Find your next customers before anyone else.</h2>
           <p className="cta__sub">Free to search the register. Upgrade to build, enrich and export targeted prospect lists.</p>
           <div className="cta__actions">
-            <Button href="/sign-in" variant="primary" size="lg" iconRight="arrowRight">
-              Find B2B prospects
+            <Button href="#build" variant="primary" size="lg" iconRight="arrowRight">
+              Build a lead list
             </Button>
             <Button href="/pricing" variant="ghost" size="lg">
               See pricing

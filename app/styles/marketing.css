@@ -390,3 +390,21 @@
 .prose pre { background: var(--surface-sunken); border: 1px solid var(--border-hair); border-radius: var(--radius-md); padding: 12px 14px; font-size: var(--text-sm); color: var(--text-body); overflow-x: auto; white-space: pre-wrap; }
 .suppress-form { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; max-width: 420px; margin: 16px 0 0; }
 .suppress-form .ciq-field { width: 100%; }
+
+/* ---- Business leads: list builder + live sector counts ------------------- */
+.lead-builder { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; gap: 12px 16px; max-width: 860px; margin: 0 auto; padding: 20px; border: 1px solid var(--border-hair); border-radius: var(--radius-lg); background: var(--surface-card); }
+.lead-builder__field { display: flex; flex-direction: column; gap: 6px; min-width: 200px; flex: 1; }
+.lead-builder__field span { font-size: var(--text-2xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.lead-builder__field select { height: 44px; padding: 0 12px; border-radius: var(--radius-md); border: 1px solid var(--border-hair); background: var(--bg-page); color: var(--text-strong); font: inherit; font-size: var(--text-ui); }
+.lead-builder__check { display: flex; align-items: center; gap: 8px; height: 44px; font-size: var(--text-ui); color: var(--text-body); }
+.lead-builder__note { text-align: center; font-size: var(--text-2xs); color: var(--text-faint); margin: 12px auto 0; }
+.lead-sectors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.lead-sector { padding: 18px; border: 1px solid var(--border-hair); border-radius: var(--radius-lg); background: var(--surface-card); display: flex; flex-direction: column; gap: 10px; }
+.lead-sector__name { font-family: var(--font-grotesk); font-weight: 800; font-size: var(--text-md); color: var(--text-strong); margin: 0; }
+.lead-sector__stats { margin: 0; color: var(--text-body); font-size: var(--text-ui); display: flex; flex-direction: column; gap: 2px; }
+.lead-sector__stats strong { font-family: var(--font-grotesk); font-size: var(--text-lg); color: var(--text-strong); }
+.lead-sector__sub { font-size: var(--text-2xs); color: var(--text-faint); }
+.lead-sector__cta { color: var(--accent); font-weight: 600; font-size: var(--text-sm); text-decoration: none; }
+.lead-sector__cta:hover { text-decoration: underline; }
+@media (max-width: 900px) { .lead-sectors { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .lead-sectors { grid-template-columns: minmax(0, 1fr); } .lead-builder__field { min-width: 100%; } }
