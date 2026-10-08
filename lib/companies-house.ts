@@ -15,13 +15,14 @@ import type { Company, Officer, Filing, Charge, SearchResult, OfficerAppointment
 import { classifyMany, classifySic } from "./sic";
 import { resolveGeo } from "./geography";
 import { titleCaseName } from "./format";
+import { quota, type Priority } from "./ch-quota";
 
 const BASE = "https://api.company-information.service.gov.uk";
 
 /** Why a Companies House call failed. Callers branch on this rather than on
  *  the message: "we are misconfigured" and "the register is busy" look the
  *  same to a fetch but must not read the same to a visitor. */
-export type CompaniesHouseErrorKind = "unconfigured" | "not_found" | "rate_limited" | "upstream";
+export type CompaniesHouseErrorKind = "unconfigured" | "not_found" | "rate_limited" | "upstream" | "deferred";
 
 export class CompaniesHouseError extends Error {
   status: number;
@@ -38,7 +39,61 @@ export function hasApiKey(): boolean {
   return !!process.env.COMPANIES_HOUSE_API_KEY;
 }
 
-async function chFetch<T>(path: string, init?: RequestInit): Promise<T> {
+/**
+ * One Companies House GET. `priority: "low"` marks aggregate work (sector
+ * counts, trends, market summaries) that must never starve company lookups:
+ * it is refused — without spending a request — once the key's 5-minute budget
+ * drops to the reserve, and limited in concurrency. See lib/ch-quota.ts.
+ */
+async function chFetch<T>(path: string, init?: RequestInit, requested: Priority = "high"): Promise<T> {
+  // During `next build` (every deploy) ~290 pages are pre-rendered from the
+  // register. That burst shares the live site's quota, so ALL build-time calls
+  // are low priority: a deploy can never eat the reserve that company pages
+  // need. Every pre-rendered page already renders a fallback when a call fails,
+  // and ISR refreshes it at runtime.
+  const priority: Priority = process.env.NEXT_PHASE === "phase-production-build" ? "low" : requested;
+  if (priority === "low") {
+    if (!quota.allowsLow()) throw deferred();
+    const release = await quota.acquireLow();
+    try {
+      // The budget may have fallen while this call waited for a slot.
+      if (!quota.allowsLow()) throw deferred();
+      return await chFetchNow<T>(path, init);
+    } finally {
+      release();
+    }
+  }
+  return chFetchNow<T>(path, init);
+}
+
+/** Can low-priority work needing about `cost` requests start now? */
+export function canAffordLow(cost: number): boolean {
+  if (quota.allowsLow(cost)) return true;
+  if (quota.shouldWarn()) {
+    console.warn(`[companies-house] deferring a ${cost}-request job: ${quota.remaining()} left in this window, reserve kept for company lookups`);
+  }
+  return false;
+}
+
+/** Requests countCompaniesAcross will make for these params (one per SIC chunk). */
+export function requestsFor(params: AdvancedSearchParams): number {
+  return (params.sicCodes ?? []).length ? chunkSicCodes({ ...params, size: 1 }).length : 1;
+}
+
+function deferred(): CompaniesHouseError {
+  if (quota.shouldWarn()) {
+    console.warn(`[companies-house] deferring low-priority requests: ${quota.remaining()} left in this window, reserve kept for company lookups`);
+  }
+  return new CompaniesHouseError("Deferred to protect the Companies House quota.", 429, "deferred");
+}
+
+const headerNum = (res: Response, name: string): number | null => {
+  const v = res.headers.get(name);
+  const n = v == null ? NaN : Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+async function chFetchNow<T>(path: string, init?: RequestInit): Promise<T> {
   const key = process.env.COMPANIES_HOUSE_API_KEY;
   if (!key) {
     // The fix is ours, not the visitor's — the env var name and where to get a
@@ -60,8 +115,15 @@ async function chFetch<T>(path: string, init?: RequestInit): Promise<T> {
     // within rate limits (600 requests / 5 min).
     next: { revalidate: 300 },
   });
+  // Every live response carries the key's remaining budget — the one signal
+  // all server instances share. (Cached responses carry an expired window,
+  // which the guard ignores.)
+  if (res.status === 429) {
+    quota.exhausted(headerNum(res, "x-ratelimit-reset"));
+    throw new CompaniesHouseError("Rate limited by Companies House — try again shortly.", 429, "rate_limited");
+  }
+  quota.observe(headerNum(res, "x-ratelimit-remain"), headerNum(res, "x-ratelimit-reset"));
   if (res.status === 404) throw new CompaniesHouseError("Not found", 404, "not_found");
-  if (res.status === 429) throw new CompaniesHouseError("Rate limited by Companies House — try again shortly.", 429, "rate_limited");
   if (!res.ok) throw new CompaniesHouseError(`Companies House returned ${res.status}`, res.status, "upstream");
   return (await res.json()) as T;
 }
@@ -133,6 +195,8 @@ export interface AdvancedSearchParams {
   dissolvedTo?: string;
   size?: number;
   startIndex?: number;
+  /** Not a query param — "low" for aggregate counts (see chFetch). */
+  priority?: Priority;
 }
 
 /** One page of search results plus the register's total for the query. */
@@ -162,7 +226,7 @@ export async function advancedSearch(params: AdvancedSearchParams): Promise<{ to
   // zero instead of a "Not found" page.
   let data: CHAdvancedResponse;
   try {
-    data = await chFetch<CHAdvancedResponse>(`/advanced-search/companies?${qs.toString()}`);
+    data = await chFetch<CHAdvancedResponse>(`/advanced-search/companies?${qs.toString()}`, undefined, params.priority);
   } catch (e) {
     if (e instanceof CompaniesHouseError && e.status === 404) return { total: 0, results: [] };
     throw e;
@@ -190,6 +254,93 @@ export async function advancedSearch(params: AdvancedSearchParams): Promise<{ to
 export async function countCompanies(params: AdvancedSearchParams): Promise<number> {
   const r = await advancedSearch({ ...params, size: 1 });
   return r.total;
+}
+
+// Companies House's edge rejects long advanced-search URLs with a 403.
+// Measured 2026-10-08: 2,119 chars passed, 2,215 failed. Stay under 2,000.
+const MAX_SEARCH_URL = 2000;
+
+/**
+ * countCompanies for any number of SIC codes. A code list is OR — a company
+ * matching several codes counts once — so when the list fits one URL the total
+ * is exact. Longer lists are packed into as few URL-sized requests as possible
+ * and summed; a company listing codes from two different chunks is then
+ * counted twice (measured at ~2% for Manufacturing, the only sector that needs
+ * splitting). Codes stay in order, so related divisions share a chunk.
+ */
+/** Split a SIC list into as few URL-sized groups as the other params allow (order kept). */
+function chunkSicCodes(params: AdvancedSearchParams): string[][] {
+  const codes = params.sicCodes ?? [];
+  const other = { ...params, sicCodes: [] as string[] };
+  const fixed =
+    BASE.length +
+    "/advanced-search/companies?".length +
+    // Every non-SIC param the request will carry, measured the way advancedSearch encodes it.
+    [
+      other.q && `company_name_includes=${encodeURIComponent(other.q)}`,
+      ...(other.status ?? []).map((v) => `company_status=${v}`),
+      ...(other.companyType ?? []).map((v) => `company_type=${v}`),
+      other.location && `location=${encodeURIComponent(other.location)}`,
+      other.incorporatedFrom && `incorporated_from=${other.incorporatedFrom}`,
+      other.incorporatedTo && `incorporated_to=${other.incorporatedTo}`,
+      other.dissolvedFrom && `dissolved_from=${other.dissolvedFrom}`,
+      other.dissolvedTo && `dissolved_to=${other.dissolvedTo}`,
+      `size=${other.size ?? 40}`,
+      other.startIndex && `start_index=${other.startIndex}`,
+    ]
+      .filter(Boolean)
+      .join("&").length +
+    16;
+  const room = MAX_SEARCH_URL - fixed;
+  const chunks: string[][] = [];
+  let cur: string[] = [];
+  let len = 0;
+  for (const c of codes) {
+    const add = `&sic_codes=${c}`.length;
+    if (cur.length && len + add > room) {
+      chunks.push(cur);
+      cur = [];
+      len = 0;
+    }
+    cur.push(c);
+    len += add;
+  }
+  if (cur.length) chunks.push(cur);
+  return chunks;
+}
+
+export async function countCompaniesAcross(params: AdvancedSearchParams): Promise<{ total: number; requests: number }> {
+  if (!(params.sicCodes ?? []).length) return { total: await countCompanies(params), requests: 1 };
+  const chunks = chunkSicCodes({ ...params, size: 1 });
+  const totals = await Promise.all(chunks.map((sicCodes) => countCompanies({ ...params, sicCodes })));
+  return { total: totals.reduce((t, n) => t + n, 0), requests: chunks.length };
+}
+
+/**
+ * advancedSearch for any number of SIC codes. One request when the list fits
+ * (exact). Otherwise the chunks are treated as one list laid end to end: each
+ * chunk is counted, `startIndex` is mapped into the right chunk, and a page
+ * that crosses a boundary is filled from the next. The total matches
+ * countCompaniesAcross (same ~2% double-count caveat).
+ */
+export async function advancedSearchAcross(params: AdvancedSearchParams): Promise<{ total: number; results: SearchResult[]; split: boolean }> {
+  const chunks = (params.sicCodes ?? []).length ? chunkSicCodes(params) : [params.sicCodes ?? []];
+  if (chunks.length <= 1) return { ...(await advancedSearch(params)), split: false };
+  const totals = await Promise.all(chunks.map((sicCodes) => countCompanies({ ...params, sicCodes, startIndex: undefined })));
+  const total = totals.reduce((t, n) => t + n, 0);
+  const size = params.size ?? 40;
+  let start = params.startIndex ?? 0;
+  const results: SearchResult[] = [];
+  for (let k = 0; k < chunks.length && results.length < size; k++) {
+    if (start >= totals[k]) {
+      start -= totals[k];
+      continue;
+    }
+    const page = await advancedSearch({ ...params, sicCodes: chunks[k], startIndex: start, size: size - results.length });
+    results.push(...page.results);
+    start = 0;
+  }
+  return { total, results, split: true };
 }
 
 export function isoDaysAgo(days: number): string {

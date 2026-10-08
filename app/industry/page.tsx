@@ -6,6 +6,7 @@
 // list, never the only way to reach a sector.
 import type { Metadata } from "next";
 import { SECTOR_STATS } from "@/lib/ons";
+import { getSectorFormationTrends, newRegistrations } from "@/lib/sector-trend";
 import { fmtNumber, fmtDate } from "@/lib/format";
 import { getRegisterAsOf } from "@/lib/live-stats";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
@@ -31,17 +32,35 @@ export default async function IndustriesIndex() {
   // claim freshness the data doesn't have.
   const asOf = await getRegisterAsOf().catch(() => null);
 
+  // New registrations are live Companies House sector totals (every SIC code
+  // in the sector, last four completed quarters). Shared 6h cache with the
+  // sector pages, fetched four sectors at a time on a cold cache.
+  const trends = await getSectorFormationTrends(sectors.map((s) => s.sector));
+  const nr = new Map(sectors.map((s) => [s.sector, newRegistrations(trends.get(s.sector) ?? null, s.newLastYear)]));
+  const liveCount = [...nr.values()].filter((n) => n.live).length;
+
   const totalActive = sectors.reduce((n, s) => n + s.businesses, 0);
-  const totalNew = sectors.reduce((n, s) => n + s.newLastYear, 0);
+  // The headline only sums like with like: all-live, or say what's missing.
+  const totalNew = [...nr.values()].filter((n) => n.live).reduce((t, n) => t + n.value, 0);
   const fastest = sectors.reduce((a, b) => (b.annualGrowth > a.annualGrowth ? b : a));
 
   // `count` carries the raw number so the figure can animate from the value the
   // server already painted; `value` is the string that renders without JS.
   const headline: { label: string; value: string; note: string; count?: number }[] = [
     { label: "Active companies", value: fmtNumber(totalActive), note: "across all sectors", count: totalActive },
-    // Modelled (ONS), so it says so — live Companies House counts only cover
-    // a few tracked SIC codes per sector and are not comparable sector totals.
-    { label: "New · 12 months", value: fmtNumber(totalNew), note: "incorporations, ONS estimate", count: totalNew },
+    ...(liveCount
+      ? [
+          {
+            label: "New · last 4 quarters",
+            value: fmtNumber(totalNew),
+            note:
+              liveCount === sectors.length
+                ? "incorporations, live from Companies House"
+                : `incorporations, ${liveCount} of ${sectors.length} sectors`,
+            count: totalNew,
+          },
+        ]
+      : []),
     { label: "Sectors", value: String(sectors.length), note: "SIC groupings" },
     // The figure slot stays numeric across all four — a long sector name set at
     // 34px breaks the rhythm and wraps unpredictably. The name is the caption.
@@ -92,14 +111,16 @@ export default async function IndustriesIndex() {
           sectors={sectors.map((s) => ({
             sector: s.sector,
             businesses: s.businesses,
-            newLastYear: s.newLastYear,
+            newValue: nr.get(s.sector)!.value,
+            newLive: nr.get(s.sector)!.live,
             annualGrowth: s.annualGrowth,
           }))}
         />
 
         <p className="dx-source mono">
-          Source · Companies House register, reused under the Open Government Licence v3.0 · sector totals, new
-          registrations (estimated) and growth from ONS business demography
+          Source · Companies House register, reused under the Open Government Licence v3.0 · new registrations are
+          live incorporations over the last four completed quarters across every SIC code in each sector (“est.” marks
+          an ONS estimate where the register didn&rsquo;t answer) · sector totals and growth from ONS business demography
           {asOf ? ` · register queried ${fmtDate(asOf)}` : ""}
         </p>
 

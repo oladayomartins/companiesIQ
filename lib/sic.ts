@@ -11,6 +11,7 @@
 // Source: ONS UK SIC 2007.
 // ============================================================
 import type { SicClassification } from "./types";
+import { SIC_2007 } from "./sic-2007";
 
 // --- SIC sections → high-level sector (by 2-digit division range) ---
 interface SectionDef {
@@ -210,21 +211,25 @@ export const FEATURED_SECTORS = [
   "Healthcare & social",
 ];
 
+// Codes that are not trades: "Non-trading company" and "Dormant Company".
+// Counting them would inflate Professional services and Households.
+const NOT_A_TRADE = new Set(["74990", "99999"]);
+
 /**
- * The curated SIC codes we track inside a sector.
+ * EVERY SIC 2007 code in a sector's divisions — how a sector is queried.
  *
- * Sectors are SIC division RANGES, but Companies House advanced search can only
- * filter on an explicit list of codes — it has no notion of a range. So a query
- * "for this sector" is really a query for the codes we happen to track in it,
- * which is a subset of the division. Anything built on this must say so; see
- * getSectorFormationTrend, which labels its chart with the code count rather
- * than presenting a partial total as the sector's.
+ * Sectors are SIC division RANGES, but Companies House advanced search only
+ * takes an explicit list of codes, and rejects URLs past ~2 KB. So query with
+ * countCompaniesAcross / advancedSearchAcross, which keep the list in one
+ * request where it fits (every sector except Manufacturing) and split it
+ * otherwise. Counts are then real sector totals, not a curated subset.
  */
-export function sicCodesForSector(sector: string, limit = 25): string[] {
+export function allSicCodesForSector(sector: string): string[] {
   const section = SECTIONS.find((s) => s.sector === sector);
   if (!section) return [];
-  return CURATED_SIC_CODES.filter((code) => {
+  return SIC_2007.map(([code]) => code).filter((code) => {
+    if (NOT_A_TRADE.has(code)) return false;
     const div = Number(code.slice(0, 2));
-    return Number.isFinite(div) && div >= section.min && div <= section.max;
-  }).slice(0, limit);
+    return div >= section.min && div <= section.max;
+  });
 }

@@ -8,8 +8,10 @@
 // (its own `hits` total), not from the sampled page the results table shows.
 //
 // Honesty notes the UI must carry (see MarketHeader):
-//   • a sector is queried as the SIC codes we track in it (sicCodesForSector) —
-//     a subset of its SIC division, so the count is "across N tracked codes";
+//   • a sector is queried as every SIC 2007 code in its divisions
+//     (allSicCodesForSector), so counts are real sector totals and the
+//     newest-companies list draws from the same set (split across requests
+//     only for Manufacturing — see countCompaniesAcross);
 //   • place is Companies House's registered-office `location` text match, so it
 //     is where companies are registered, not necessarily where they trade.
 // Cached for 6 hours per (sector, location) — the register moves daily, not by
@@ -18,7 +20,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import * as ch from "@/lib/companies-house";
-import { sicCodesForSector } from "@/lib/sic";
+import { allSicCodesForSector } from "@/lib/sic";
 
 /** Regions Companies House's location text can match reliably (as data.ts does). */
 const REGION_LOCATION: Record<string, string> = {
@@ -31,7 +33,7 @@ const REGION_LOCATION: Record<string, string> = {
 export interface MarketSummary {
   sector: string | null;
   location: string | null; // the place / region text actually queried
-  sicCodes: number; // tracked SIC codes the sector was queried as (0 = any sector)
+  sicCodes: number; // SIC codes counted — all of the sector's (0 = any sector)
   active: number; // active companies matching
   new30: number; // incorporated in the last 30 days (active)
   new12m: number; // incorporated in the last 12 months (active)
@@ -40,18 +42,22 @@ export interface MarketSummary {
 const isoDaysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
 
 async function compute(sector: string | null, location: string | null): Promise<MarketSummary | null> {
-  const sicCodes = sector ? sicCodesForSector(sector) : [];
+  const sicCodes = sector ? allSicCodesForSector(sector) : [];
   if (sector && !sicCodes.length) return null; // unknown sector — don't guess
-  const base: ch.AdvancedSearchParams = { sicCodes, location: location ?? undefined, status: ["active"], size: 1 };
+  // Low priority: these counts decorate pages; company lookups come first.
+  const base: ch.AdvancedSearchParams = { sicCodes, location: location ?? undefined, status: ["active"], size: 1, priority: "low" };
+  // Three counts; check the whole cost before spending any of it.
+  if (!ch.canAffordLow(3 * ch.requestsFor(base))) throw new Error("deferred: Companies House budget near reserve");
   const [all, fresh, year] = await Promise.all([
-    ch.advancedSearch(base),
-    ch.advancedSearch({ ...base, incorporatedFrom: isoDaysAgo(30) }),
-    ch.advancedSearch({ ...base, incorporatedFrom: isoDaysAgo(365) }),
+    ch.countCompaniesAcross(base),
+    ch.countCompaniesAcross({ ...base, incorporatedFrom: isoDaysAgo(30) }),
+    ch.countCompaniesAcross({ ...base, incorporatedFrom: isoDaysAgo(365) }),
   ]);
   return { sector, location, sicCodes: sicCodes.length, active: all.total, new30: fresh.total, new12m: year.total };
 }
 
-const cached = unstable_cache(compute, ["market-summary-v2"], { revalidate: 6 * 3600 });
+// v3: counts moved to full SIC coverage — a new key so v2's subset counts aren't served.
+const cached = unstable_cache(compute, ["market-summary-v3"], { revalidate: 6 * 3600 });
 
 /**
  * Summary for a sector and/or place. Needs at least one of them; a region only
@@ -76,20 +82,21 @@ export async function getMarketSummary(input: { sector?: string | null; place?: 
  * page, used for "most common activity" — labelled as recent formations.
  */
 async function newest(sector: string | null, location: string | null): Promise<ch.SearchResultPage | null> {
-  const sicCodes = sector ? sicCodesForSector(sector) : [];
+  const sicCodes = sector ? allSicCodesForSector(sector) : [];
   if (sector && !sicCodes.length) return null;
-  const r = await ch.advancedSearch({
+  const r = await ch.advancedSearchAcross({
     sicCodes,
     location: location ?? undefined,
     status: ["active"],
     incorporatedFrom: isoDaysAgo(365),
     size: 100,
+    priority: "low",
   });
   const sample = [...r.results].sort((a, b) => (b.incorporated ?? "").localeCompare(a.incorporated ?? ""));
   return { total: r.total, results: sample };
 }
 
-const cachedNewest = unstable_cache(newest, ["market-newest-v1"], { revalidate: 3600 });
+const cachedNewest = unstable_cache(newest, ["market-newest-v2"], { revalidate: 3600 });
 
 export async function getNewestInMarket(input: { sector?: string | null; place?: string | null }): Promise<ch.SearchResultPage | null> {
   const sector = input.sector?.trim() || null;
