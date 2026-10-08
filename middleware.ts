@@ -13,7 +13,38 @@ import { METER_COOKIE, readMeter, serialiseMeter, meterAllows, meterRemaining } 
 //
 // When Supabase isn't configured (local dev without keys) this is a no-op, so
 // the app stays fully browsable during development.
+// HEAD requests for company pages and their preview images are answered here,
+// before any page code runs. Next.js renders the whole page for a HEAD and then
+// discards the body — for a company page that is ~6 Companies House calls on
+// the shared key (600 req / 5 min). On 2026-10-08 ShapBot sent mostly HEADs at
+// well over 1,000 company pages a minute and emptied the key.
+// Trade-off: a HEAD for a company number that doesn't exist gets 200, not the
+// 404 a GET returns — knowing would cost the very call this avoids. GET (what
+// search engines index from) is unaffected.
+const COMPANY_PAGE = /^\/company\/[^/]+\/?$/;
+const COMPANY_OG_IMAGE = /^\/company\/[^/]+\/opengraph-image(?:-[\w]+)?\/?$/;
+
+function headShortCircuit(req: NextRequest): Response | null {
+  if (req.method !== "HEAD") return null;
+  const path = req.nextUrl.pathname;
+  const type = COMPANY_PAGE.test(path) ? "text/html; charset=utf-8" : COMPANY_OG_IMAGE.test(path) ? "image/png" : null;
+  if (!type) return null;
+  return new Response(null, {
+    status: 200,
+    headers: {
+      "content-type": type,
+      // Same freshness the pages declare (revalidate 300), so a HEAD-based
+      // freshness check doesn't come back every few seconds.
+      "cache-control": "public, max-age=0, s-maxage=300, must-revalidate",
+      "x-ciq-head": "short-circuit",
+    },
+  });
+}
+
 export async function middleware(req: NextRequest) {
+  const head = headShortCircuit(req);
+  if (head) return head;
+
   let res = NextResponse.next({ request: req });
 
   // Auth-code rescue: if Supabase verified a magic link / email confirmation and
