@@ -34,6 +34,19 @@ export default function robots(): MetadataRoute.Robots {
         disallow: DISALLOW,
         crawlDelay: 10,
       },
+      // ShapBot (Parallel's AI search/research crawler) hit ~145 company pages
+      // a minute on 2026-10-08 and emptied the shared Companies House key.
+      // Company pages are the only pages that cost Companies House calls, so
+      // ShapBot is kept off /company/ but may crawl everything else (so the
+      // site can still appear in Parallel's results). Allow lists only "/":
+      // an equally specific Allow: /company/ would beat the Disallow.
+      // Crawl-delay is added in case it honours it; that isn't documented.
+      {
+        userAgent: "ShapBot",
+        allow: ["/"],
+        disallow: [...DISALLOW, "/company/"],
+        crawlDelay: 10,
+      },
     ],
     sitemap: [`${SITE_URL}/sitemap.xml`, `${SITE_URL}/companies-sitemap.xml`],
     host: SITE_URL,
