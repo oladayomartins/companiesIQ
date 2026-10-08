@@ -139,4 +139,6 @@ export interface Study {
   slugFor(period: Period): string;
   collect(period: Period, comparison: Period | null): Promise<Dataset>;
   render(dataset: Dataset): PostDraft;
+  /** Study-specific integrity checks, run alongside the shared gates. */
+  check?(dataset: Dataset): import("./validate").Issue[];
 }

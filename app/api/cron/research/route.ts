@@ -34,6 +34,9 @@ export async function GET(req: Request) {
   const only = url.searchParams.get("study");
   const force = url.searchParams.get("force") === "1";
   const dryRun = url.searchParams.get("dry") === "1";
+  // Write the edition as a draft even if every gate passes — for staging a new
+  // study for editorial review before it goes live.
+  const forceDraft = url.searchParams.get("draft") === "1";
 
   const studies = only ? [studyById(only)].filter(Boolean) : STUDIES;
   if (!studies.length) return NextResponse.json({ error: `Unknown study: ${only}` }, { status: 400 });
@@ -61,7 +64,7 @@ export async function GET(req: Request) {
   }
 
   const toRun = all ? pending : pending.slice(0, 1);
-  for (const { study, period } of toRun) results.push({ ...(await runStudy(study, period, { dryRun })) });
+  for (const { study, period } of toRun) results.push({ ...(await runStudy(study, period, { dryRun, forceDraft })) });
   for (const { study, period } of pending.slice(toRun.length)) {
     results.push({ study: study.id, period: period.id, slug: study.slugFor(period), status: "deferred", reason: "one study per run; next invocation picks it up" });
   }
