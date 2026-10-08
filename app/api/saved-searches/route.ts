@@ -29,6 +29,7 @@ export interface SavedSearchQuery {
   status?: string[];
   incorporated?: string;
   sic?: string;
+  name?: string;
 }
 
 export async function GET() {

@@ -31,7 +31,7 @@ import { marketSearchHref, presetApiParams, type MarketPreset } from "@/lib/mark
 export interface SavedSearch {
   id: string;
   label: string | null;
-  query: { q?: string; sector?: string; region?: string; place?: string; status?: string[]; incorporated?: string; sic?: string };
+  query: { q?: string; sector?: string; region?: string; place?: string; status?: string[]; incorporated?: string; sic?: string; name?: string };
   created_at: string;
 }
 
@@ -442,7 +442,7 @@ export function SearchExperience({
             region: ranReading.region,
             place: ranReading.place,
             status: ranReading.status,
-            ...(preset ? { sic: preset.sic, incorporated: preset.incorporated } : {}),
+            ...(preset ? { sic: preset.sic, name: preset.name, incorporated: preset.incorporated } : {}),
           },
         }),
       });
@@ -503,7 +503,7 @@ export function SearchExperience({
       ))}
       {presetShown && preset?.sic ? (
         <span className="sx-chip is-sector">
-          {preset.sic}
+          {preset.sic.split(",").join(", ")}
           <span className="sx-chip__kind mono">SIC</span>
         </span>
       ) : null}
@@ -624,6 +624,7 @@ export function SearchExperience({
                                   place: s.query.place,
                                   region: s.query.region,
                                   sic: s.query.sic,
+                                  name: s.query.name,
                                   incorporated: s.query.incorporated as MarketPreset["incorporated"],
                                 }))
                               : submit(s.query.q ?? s.label ?? "")
