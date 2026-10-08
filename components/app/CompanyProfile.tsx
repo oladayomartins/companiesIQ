@@ -858,7 +858,7 @@ export function CompanyProfile({
                       <span className="bigstat__k mono">New registrations (last 4 quarters)</span>
                       <span className="bigstat__v">{num(trend.points.slice(-4).reduce((t, p) => t + p.value, 0))}</span>
                       <span className="bigstat__note">
-                        live · all {trend.codeCount} SIC codes in the sector
+                        across {trend.codeCount} tracked SIC code{trend.codeCount === 1 ? "" : "s"}
                       </span>
                     </div>
                   ) : null}
@@ -875,12 +875,11 @@ export function CompanyProfile({
                       points={trend.points}
                       label={`New ${report.industry.sector.toLowerCase()} companies per quarter, last ${trend.points.length} quarters`}
                     />
-                    {/* Every SIC code in the sector is counted, so this is a sector
-                        total; the overcount caveat shows when the codes needed
-                        several requests per quarter. */}
+                    {/* Companies House filters on explicit SIC codes only, so
+                        say what is counted rather than implying a sector total. */}
                     <p className="icard__src mono">
-                      Companies House · every incorporation with a SIC code in this sector ({trend.codeCount} codes)
-                      {trend.split ? " · a company listing codes in more than one group can be counted twice (~2%)" : ""}
+                      Companies House · incorporations across {trend.codeCount} tracked SIC code{trend.codeCount === 1 ? "" : "s"} in
+                      this sector
                     </p>
                   </div>
                 ) : null}

@@ -8,7 +8,7 @@
 import "server-only";
 import type { Company, SearchResult, Officer, Filing, Charge, OfficerProfile, PSC } from "./types";
 import * as ch from "./companies-house";
-import { allSicCodesForSector } from "./sic";
+import { sicCodesForSector } from "./sic";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getCompanyFinancials } from "./enrichment/financials";
 
@@ -31,7 +31,7 @@ export interface ExploreParams extends ch.AdvancedSearchParams {
   region?: string; // post-filter on resolved region
   regions?: string[]; // multiple selected regions (UI)
   sector?: string; // post-filter on classified sector
-  /** Query a sector as all its SIC codes instead of post-filtering a
+  /** Query a sector as its tracked SIC codes instead of post-filtering a
    *  location sample — gives Companies House's real total. Opt-in (on-site
    *  search) so pages built on the sampled behaviour don't change silently. */
   sectorBySic?: boolean;
@@ -60,13 +60,11 @@ export async function explore(params: ExploreParams): Promise<{ total: number; r
   // Sector as SIC codes: Companies House filters and counts it, so the total is
   // real. Only a region post-filter (abstract English regions) makes it a sample.
   if (params.sectorBySic && params.sector && !params.sicCodes?.length) {
-    // Every SIC code in the sector, so the total is the real sector total (and
-    // matches the market header above the results).
-    const sicCodes = allSicCodesForSector(params.sector);
+    const sicCodes = sicCodesForSector(params.sector);
     if (sicCodes.length) {
       const regionText = regions.length === 1 ? REGION_TO_LOCATION[regions[0]] : undefined;
       const needsRegionFilter = regions.length > 0 && !params.location && !regionText;
-      const r = await ch.advancedSearchAcross({
+      const r = await ch.advancedSearch({
         ...params,
         sicCodes,
         location: params.location ?? regionText,
