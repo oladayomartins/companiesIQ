@@ -217,6 +217,7 @@ export function CompanyProfile({
   const incDays = c.incorporated ? Math.floor((Date.now() - Date.parse(c.incorporated)) / DAY) : null;
   const daysTo = (iso?: string) => (iso ? Math.round((Date.parse(iso) - Date.now()) / DAY) : null);
   const accountsDays = daysTo(c.accounts?.nextDue);
+  const accountsLate = !!c.accounts?.overdue || (accountsDays != null && accountsDays < 0);
   const hasFiledAccounts = !!c.accounts?.lastMadeUpTo || filings.some((f) => f.type === "AA");
   // Display only — every score and signal above still reads the full list.
   const shownFilings = filingLimit == null ? filings : filings.slice(0, filingLimit);
@@ -290,10 +291,11 @@ export function CompanyProfile({
   };
   const summary =
     lead +
-    (c.incorporated ? ` incorporated on ${fmtDate(c.incorporated)}` : "") +
+    // One mention of incorporation, not three — the header meta already
+    // carries the date, so the prose adds only how long ago that was.
+    (c.incorporated ? ` incorporated on ${fmtDate(c.incorporated)}${incDays != null ? ` (${agoText(incDays)})` : ""}` : "") +
     (place ? `, with its registered office in ${place}` : "") +
     "." +
-    (incDays != null ? ` It was registered ${agoText(incDays)}.` : "") +
     (summarySector ? ` The company operates in ${summarySector}.` : "");
 
   const fmtDue = (d?: { nextDue?: string; overdue?: boolean }) =>
@@ -506,19 +508,21 @@ export function CompanyProfile({
           <CardBody>
             <div className="icard__head">
               <span className="app-eyebrow">Financial intelligence</span>
-              <Badge tone="neutral">Awaiting first accounts</Badge>
+              <Badge tone={accountsLate ? "warn" : "neutral"}>{accountsLate ? "Accounts overdue" : "Awaiting first accounts"}</Badge>
             </div>
+            {/* A first-accounts date in the past is a missed deadline, not a
+                countdown — and "expected rather than a gap" stops being true. */}
             <p className="icard__note" style={{ marginTop: 0 }}>
-              {incDays != null ? `Incorporated ${agoText(incDays)}. ` : ""}
-              {c.accounts?.nextDue
-                ? `First accounts are due ${fmtDate(c.accounts.nextDue)}.`
-                : "No accounts deadline is published yet."}{" "}
-              A new company has nothing to file for its first 21 months, so this is expected rather than a gap.
+              {accountsLate && c.accounts?.nextDue
+                ? `First accounts were due ${fmtDate(c.accounts.nextDue)} and are not on the register.`
+                : c.accounts?.nextDue
+                  ? `First accounts are due ${fmtDate(c.accounts.nextDue)}. A new company has nothing to file for its first 21 months, so this is expected rather than a gap.`
+                  : "No accounts deadline is published yet. A new company has nothing to file for its first 21 months, so this is expected rather than a gap."}
             </p>
             {accountsDays != null ? (
               <div className="empty-metric">
-                <span className="empty-metric__label mono">Days to first filing</span>
-                <span className="empty-metric__value">{accountsDays}</span>
+                <span className="empty-metric__label mono">{accountsDays < 0 ? "Days overdue" : "Days to first filing"}</span>
+                <span className="empty-metric__value">{Math.abs(accountsDays).toLocaleString("en-GB")}</span>
               </div>
             ) : null}
             <div className="icard__foot">

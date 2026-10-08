@@ -186,6 +186,32 @@ function daysUntil(iso?: string): number | null {
   return Number.isFinite(t) ? Math.round((t - Date.now()) / DAY) : null;
 }
 
+/** The next statutory deadline, which may already have passed (days < 0). */
+export interface Deadline {
+  what: "Accounts" | "Confirmation statement";
+  days: number;
+}
+
+export function soonestDeadline(c: Company): Deadline | null {
+  const all: Deadline[] = [];
+  const a = daysUntil(c.accounts?.nextDue);
+  const cs = daysUntil(c.confirmationStatement?.nextDue);
+  if (a != null) all.push({ what: "Accounts", days: a });
+  if (cs != null) all.push({ what: "Confirmation statement", days: cs });
+  return all.sort((x, y) => x.days - y.days)[0] ?? null;
+}
+
+/**
+ * A deadline as words. Never prints a negative day count: a date in the past
+ * reads "overdue by N days", because "due in −1609 days" is a bug, not a fact.
+ */
+export function deadlinePhrase(d: Deadline): string {
+  const n = Math.abs(d.days).toLocaleString("en-GB");
+  if (d.days < 0) return `${d.what} overdue by ${n} day${Math.abs(d.days) === 1 ? "" : "s"}`;
+  if (d.days === 0) return `${d.what} due today`;
+  return `${d.what} due in ${n} day${d.days === 1 ? "" : "s"}`;
+}
+
 const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 const isActive = (s?: string) => (s ?? "").toLowerCase() === "active";
 const isDistressed = (s?: string) => ["liquidation", "administration", "receivership", "insolvency-proceedings"].includes((s ?? "").toLowerCase());
@@ -250,7 +276,6 @@ function buildSignals(input: LensInput): Signals {
   const years = days == null ? null : days / 365.25;
   const activeDirectors = officers.filter((o) => o.status !== "resigned").length;
   const activePscs = pscs.filter((p) => p.active).length;
-  const accountsDue = daysUntil(c.accounts?.nextDue);
   const csDue = daysUntil(c.confirmationStatement?.nextDue);
   const overdue = !!c.accounts?.overdue || !!c.confirmationStatement?.overdue;
   const hasFiledAccounts = !!c.accounts?.lastMadeUpTo || filings.some((f) => f.type === "AA");
@@ -499,19 +524,21 @@ function buildSignals(input: LensInput): Signals {
   };
 
   // --- service need ---------------------------------------------------------
-  const soonest = [accountsDue, csDue].filter((d): d is number => d != null).sort((a, b) => a - b)[0] ?? null;
+  const next = soonestDeadline(c);
+  const soonest = next?.days ?? null;
+  const passed = soonest != null && soonest < 0;
   const needPct = overdue ? 95 : soonest == null ? 40 : soonest <= 60 ? 88 : soonest <= 180 ? 62 : 45;
   const filingNeed: LedgerRow = {
     label: "Filing need",
     weight: 0,
     pct: needPct,
-    state: overdue ? "Overdue" : soonest != null && soonest <= 60 ? "Immediate" : soonest != null ? "Scheduled" : "Unknown",
+    state: overdue || passed ? "Overdue" : soonest != null && soonest <= 60 ? "Immediate" : soonest != null ? "Scheduled" : "Unknown",
     tone: needPct >= 80 ? "good" : "watch",
     measured: true,
     reason: overdue
       ? "A statutory filing is already overdue — the strongest possible service signal."
-      : soonest != null
-        ? `Next statutory deadline in ${soonest} days.`
+      : next
+        ? `${deadlinePhrase(next)}.`
         : "No filing dates published yet.",
   };
   const agentOnRecord = notChecked(
@@ -523,10 +550,10 @@ function buildSignals(input: LensInput): Signals {
     label: "Deadline proximity",
     weight: 0,
     pct: soonest == null ? 30 : clamp(100 - Math.min(soonest, 365) / 3.65),
-    state: soonest == null ? "Unknown" : `${soonest} days`,
+    state: soonest == null ? "Unknown" : passed ? "Overdue" : `${soonest.toLocaleString("en-GB")} days`,
     tone: soonest != null && soonest <= 60 ? "good" : "watch",
     measured: soonest != null,
-    reason: soonest == null ? "No due dates on the register yet." : `Soonest statutory deadline is ${soonest} days away.`,
+    reason: next ? `${deadlinePhrase(next)}.` : "No due dates on the register yet.",
   };
   const vat = notChecked("VAT registration", 0, "HMRC VAT status is not connected to this profile.");
   const complexity = activeDirectors + activePscs + charges.length;
