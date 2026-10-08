@@ -45,12 +45,22 @@ export interface UseCase {
   sectorFocus?: { sector: string; need: string }[];
   /** Industry pre-selected in the page's lead-list builder. */
   builderSector?: string;
+  /** Commercial Opportunity markets this audience sells into (ids from
+   *  lib/research/markets.ts), with why each matters to them. The page links
+   *  the latest published edition of each. */
+  markets?: { id: string; angle: string }[];
 }
 
 export const USE_CASES: UseCase[] = [
   // ---------------------------------------------------------- Accountants
   {
     slug: "accountants",
+    markets: [
+      { id: "building-trades", angle: "New trade companies working for contractors fall under the Construction Industry Scheme \u2014 they need an accountant who knows it." },
+      { id: "software-and-it", angle: "Contractor income, R&D activity and early tax choices make new software and IT companies a natural fit for specialist accountants." },
+      { id: "marketing-agencies", angle: "Retainer billing, VAT and freelancer payments make an agency's first bookkeeping decisions matter." },
+      { id: "accountancy-firms", angle: "Your own market: how many new practices are registering, where, and how long they last." },
+    ],
     persona: "Accountants",
     forLabel: "For accountants",
     cardTitle: "Accountants & bookkeepers",
@@ -98,6 +108,12 @@ export const USE_CASES: UseCase[] = [
   // ---------------------------------------------------------- Recruiters
   {
     slug: "recruiters",
+    markets: [
+      { id: "software-and-it", angle: "Software and IT companies that grow past a founder or contractor hire engineers, often through agencies." },
+      { id: "care-providers", angle: "Care services can't open until recruitment, DBS checks and training are done." },
+      { id: "accountancy-firms", angle: "Growing practices add bookkeepers and trainees as their client base builds." },
+      { id: "marketing-agencies", angle: "New agencies scale delivery with freelancers before they hire." },
+    ],
     persona: "Recruiters",
     forLabel: "For recruiters",
     cardTitle: "Recruitment agencies",
@@ -145,6 +161,10 @@ export const USE_CASES: UseCase[] = [
   // ---------------------------------------------------------- Marketing agencies
   {
     slug: "marketing-agencies",
+    markets: [
+      { id: "accountancy-firms", angle: "A new practice's first clients come from referrals and local search \u2014 a site and listings come early." },
+      { id: "marketing-agencies", angle: "Your own market: how many new agencies are registering, where, and how long they last." },
+    ],
     persona: "Marketing agencies",
     forLabel: "For agencies",
     cardTitle: "Marketing, web & SEO agencies",
@@ -192,6 +212,14 @@ export const USE_CASES: UseCase[] = [
   // ---------------------------------------------------------- Sales teams
   {
     slug: "sales-teams",
+    markets: [
+      { id: "software-and-it", angle: "" },
+      { id: "building-trades", angle: "" },
+      { id: "restaurants-and-takeaways", angle: "" },
+      { id: "care-providers", angle: "" },
+      { id: "marketing-agencies", angle: "" },
+      { id: "accountancy-firms", angle: "" },
+    ],
     persona: "B2B sales teams",
     forLabel: "For sales teams",
     cardTitle: "B2B sales teams",
@@ -239,6 +267,11 @@ export const USE_CASES: UseCase[] = [
   // ---------------------------------------------------------- Investors
   {
     slug: "investors",
+    markets: [
+      { id: "software-and-it", angle: "Where new technology companies are forming, quarter by quarter, and how fast the market is moving." },
+      { id: "care-providers", angle: "A regulated market where new entrants spend their first months in registration and set-up." },
+      { id: "building-trades", angle: "A large market of owner-operated trade companies — how many form each quarter, where, and how long they last." },
+    ],
     persona: "Investors & analysts",
     forLabel: "For investors",
     cardTitle: "Investors & analysts",
@@ -286,6 +319,14 @@ export const USE_CASES: UseCase[] = [
   // ---------------------------------------------------------- Insurance / finance brokers
   {
     slug: "insurance-brokers",
+    markets: [
+      { id: "building-trades", angle: "Public liability is a standard requirement for site work and most contractor agreements." },
+      { id: "restaurants-and-takeaways", angle: "Premises, liability and energy contracts are arranged before a food business trades." },
+      { id: "care-providers", angle: "Care providers need liability cover \u2014 and for clinical care, malpractice cover \u2014 before operating." },
+      { id: "software-and-it", angle: "Client contracts for software and IT work commonly require indemnity and cyber cover." },
+      { id: "marketing-agencies", angle: "Client contracts commonly ask agencies to hold professional indemnity cover." },
+      { id: "accountancy-firms", angle: "Accountancy bodies require professional indemnity cover as a condition of practising." },
+    ],
     persona: "Commercial insurance brokers",
     forLabel: "For insurance brokers",
     cardTitle: "Commercial insurance brokers",
