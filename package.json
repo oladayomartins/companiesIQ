@@ -10,7 +10,7 @@
     "lint": "next lint",
     "worker": "node worker/ingest-worker.mjs",
     "check:ui": "node scripts/ui-checks.mjs",
-    "test:quota": "node --test scripts/test-ch-quota.mjs scripts/test-ch-telemetry.mjs scripts/test-ch-cache-policy.mjs"
+    "test:quota": "node --test scripts/test-ch-quota.mjs scripts/test-ch-telemetry.mjs scripts/test-ch-cache-policy.mjs scripts/test-agent-telemetry.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
