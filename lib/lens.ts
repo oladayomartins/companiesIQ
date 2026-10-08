@@ -64,6 +64,7 @@ export interface LensMeta {
   tabTitle: string; // "Digital footprint · evidence"
   question: string; // what the tab answers
   desc: string; // one line, shown in the picker
+  audience: string; // who this lens is for — "In short · for insurers & brokers"
 }
 
 export const LENSES: Record<LensKey, LensMeta> = {
@@ -75,6 +76,7 @@ export const LENSES: Record<LensKey, LensMeta> = {
     tabTitle: "Digital footprint · evidence",
     question: "What does this company's digital presence look like, and what is actually evidenced?",
     desc: "Weights market growth and reachability. For agencies, SaaS and IT sellers.",
+    audience: "digital & marketing sellers",
   },
   banking: {
     key: "banking",
@@ -84,6 +86,7 @@ export const LENSES: Record<LensKey, LensMeta> = {
     tabTitle: "Credit & exposure · evidence",
     question: "What does the public register show about creditworthiness and security — and what is missing?",
     desc: "Weights absence of adverse records, trading history and filed accounts.",
+    audience: "banks & lenders",
   },
   legal: {
     key: "legal",
@@ -93,6 +96,7 @@ export const LENSES: Record<LensKey, LensMeta> = {
     tabTitle: "Compliance & legal · evidence",
     question: "Is this company filing on time, and is its ownership properly disclosed?",
     desc: "Weights filing timeliness, register standing and governance disclosure.",
+    audience: "legal & compliance firms",
   },
   insurance: {
     key: "insurance",
@@ -102,6 +106,7 @@ export const LENSES: Record<LensKey, LensMeta> = {
     tabTitle: "Risk & exposure · evidence",
     question: "Can this company's exposure be classified and sized from public data?",
     desc: "Weights trade classification, premises and asset disclosure.",
+    audience: "insurers & brokers",
   },
   accountancy: {
     key: "accountancy",
@@ -111,6 +116,7 @@ export const LENSES: Record<LensKey, LensMeta> = {
     tabTitle: "Filing & service need · evidence",
     question: "What does this company have to file, when — and is anyone already doing it?",
     desc: "Weights immediate filing need, deadlines and whether an agent is on record.",
+    audience: "accountants",
   },
   general: {
     key: "general",
@@ -120,6 +126,7 @@ export const LENSES: Record<LensKey, LensMeta> = {
     tabTitle: "Commercial fit · evidence",
     question: "Is this a live, reachable business in a market worth being in?",
     desc: "A balanced model. Nothing weighted toward a specific service.",
+    audience: "any seller",
   },
 };
 

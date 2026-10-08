@@ -13,12 +13,16 @@
 // decoration. Every score row carries its weight and its reason, and anything
 // we could not measure says "Not checked" rather than being guessed.
 import { GrowthBeacon } from "@/components/app/GrowthBeacon";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Card, CardHeader, CardBody, Tabs, StatusPill, Badge, Tag, CompanyAvatar, Icon, Button, IconButton } from "@/components/ds";
+import { Card, CardHeader, CardBody, Tabs, tabButtonId, tabPanelId, StatusPill, Badge, Tag, CompanyAvatar, Icon, Button } from "@/components/ds";
 import { IntelligenceReport } from "@/components/app/IntelligenceReport";
 import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
+import type { SectorTrend } from "@/lib/sector-trend";
+import { QuarterBars } from "@/components/public/QuarterBars";
+import { RecordsPanel } from "@/components/report/RecordsPanel";
+import { FilingStatusCard } from "@/components/report/FilingStatusCard";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import type { CompanyFinancials } from "@/lib/enrichment/financials-types";
@@ -52,34 +56,21 @@ const num = (n: number) => n.toLocaleString("en-GB");
 const pc = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
 const toneClass = (t: Tone) => `is-${t}`;
 
+type TabId = "intelligence" | "lens" | "market" | "competitors" | "records";
+const TAB_IDS: TabId[] = ["intelligence", "lens", "market", "competitors", "records"];
+const TAB_PREFIX = "report";
+// One line under the tab bar saying what the open tab is for.
+const TAB_HINT: Record<TabId, (audience: string) => string> = {
+  intelligence: () => "The score, the reasons behind it, and what to do next.",
+  lens: (a) => `Everything we checked for ${a}, signal by signal.`,
+  market: () => "The industry and region around this company.",
+  competitors: () => "Similar companies nearby, and where this one sits among them.",
+  records: () => "The official record: filings, details, people and connections.",
+};
+
 // What the free account gets you, when the caller has nothing more specific.
 const DEFAULT_GATE_WHAT =
   "The signals behind the score, this company's fingerprint against its sector peers, the market and competitive read, and what to do next";
-
-function OfficerRow({ p, unlocked }: { p: Officer; unlocked: boolean }) {
-  const inner = (
-    <>
-      <CompanyAvatar name={p.name} size="sm" tone={p.kind === "company" ? 0 : 2} />
-      <div className="officer__meta">
-        <div className="officer__name">{p.name}</div>
-        <div className="officer__role">{p.role}</div>
-      </div>
-      <div className="officer__date mono">{fmtDate(p.appointed)}</div>
-      <StatusPill status={p.status === "resigned" ? "dissolved" : "active"} />
-      {p.officerId && unlocked ? <Icon name="chevronRight" size={15} className="officer__chev" /> : null}
-    </>
-  );
-  // Director profiles are part of the gated intelligence — only link them when
-  // unlocked, so indexable public reports don't point Googlebot at a login wall.
-  if (p.officerId && unlocked) {
-    return (
-      <Link className="officer is-link" href={`/app/director/${p.officerId}`} style={{ textDecoration: "none" }}>
-        {inner}
-      </Link>
-    );
-  }
-  return <div className="officer">{inner}</div>;
-}
 
 /** A small "k / v" run used by the market, competitive and lens cards. */
 function MiniRows({ rows }: { rows: { k: string; v: string }[] }) {
@@ -92,28 +83,6 @@ function MiniRows({ rows }: { rows: { k: string; v: string }[] }) {
         </div>
       ))}
     </div>
-  );
-}
-
-/** 10 quarters of sector formations — the past greyed, the recent trend in accent. */
-function Sparkline({ points, label }: { points: number[]; label: string }) {
-  const w = 260;
-  const h = 46;
-  const max = Math.max(...points, 1);
-  const min = Math.min(...points);
-  const span = Math.max(max - min, 1);
-  const xy = points.map((p, i) => [(i / (points.length - 1)) * w, h - ((p - min) / span) * (h - 6) - 3] as const);
-  const d = (from: number, to: number) =>
-    xy
-      .slice(from, to)
-      .map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`)
-      .join(" ");
-  const split = Math.max(points.length - 4, 1);
-  return (
-    <svg className="spark" viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label} preserveAspectRatio="none">
-      <path className="spark__past" d={d(0, split + 1)} fill="none" />
-      <path className="spark__now" d={d(split, points.length)} fill="none" />
-    </svg>
   );
 }
 
@@ -139,6 +108,7 @@ export function CompanyProfile({
   financials = null,
   contactEntitled = false,
   contactRemaining = null,
+  trend = null,
 }: {
   company: Company;
   officers: Officer[];
@@ -167,10 +137,34 @@ export function CompanyProfile({
   contactEntitled?: boolean;
   /** Contact lookups left this month; -1 = unlimited, null = not applicable. */
   contactRemaining?: number | null;
+  /** Quarterly sector incorporations (Market tab); null omits the chart. */
+  trend?: SectorTrend | null;
 }) {
   const c = company;
   const router = useRouter();
-  const [tab, setTab] = useState("intelligence");
+  const [tab, setTabState] = useState<TabId>("intelligence");
+  // The open tab lives in the URL hash so a link can open the Records tab
+  // directly. Read after mount only — the server HTML is the same for everyone.
+  useEffect(() => {
+    const h = window.location.hash.slice(1) as TabId;
+    if (TAB_IDS.includes(h)) setTabState(h);
+  }, []);
+  const setTab = (t: TabId) => {
+    setTabState(t);
+    try {
+      window.history.replaceState(null, "", t === "intelligence" ? window.location.pathname + window.location.search : `#${t}`);
+    } catch {
+      /* ignore */
+    }
+  };
+  const panelProps = (id: TabId) => ({
+    id: tabPanelId(TAB_PREFIX, id),
+    role: "tabpanel" as const,
+    "aria-labelledby": tabButtonId(TAB_PREFIX, id),
+    hidden: tab !== id,
+    tabIndex: 0,
+    className: "report-panel",
+  });
 
   // Lens: the Pro user's saved default, overridden by a per-session switch.
   const { profileKey, otherText, choose } = useLensProfile(savedLens);
@@ -215,9 +209,6 @@ export function CompanyProfile({
   const selfBucket = bucketIndex(score.score);
 
   const incDays = c.incorporated ? Math.floor((Date.now() - Date.parse(c.incorporated)) / DAY) : null;
-  const daysTo = (iso?: string) => (iso ? Math.round((Date.parse(iso) - Date.now()) / DAY) : null);
-  const accountsDays = daysTo(c.accounts?.nextDue);
-  const accountsLate = !!c.accounts?.overdue || (accountsDays != null && accountsDays < 0);
   const hasFiledAccounts = !!c.accounts?.lastMadeUpTo || filings.some((f) => f.type === "AA");
   // Display only — every score and signal above still reads the full list.
   const shownFilings = filingLimit == null ? filings : filings.slice(0, filingLimit);
@@ -255,10 +246,8 @@ export function CompanyProfile({
     toast(`Exported ${filings.length} filing${filings.length === 1 ? "" : "s"} to CSV`, { tone: "info" });
   }
 
-  const tags = c.classifications.slice(0, 3).map((cl) => cl.category);
-  const addressParts = c.address
-    ? [c.address.line1, c.address.line2, c.address.locality, c.address.postcode].filter(Boolean).join(", ")
-    : "—";
+  // Two SIC codes often share a category — show each category once.
+  const tags = [...new Set(c.classifications.map((cl) => cl.category))].slice(0, 3);
 
   // Plain-language summary, derived entirely from the free register data — gives
   // each public page unique, answer-first prose for indexing and AI answers.
@@ -298,8 +287,6 @@ export function CompanyProfile({
     "." +
     (summarySector ? ` The company operates in ${summarySector}.` : "");
 
-  const fmtDue = (d?: { nextDue?: string; overdue?: boolean }) =>
-    d?.nextDue ? `${d.overdue ? "Overdue, was due" : "Next due"} ${fmtDate(d.nextDue)}` : "—";
 
   // The fingerprint indexes five fixed dimensions so the shape of a company is
   // comparable across lenses; only the last cell moves with the lens.
@@ -342,232 +329,107 @@ export function CompanyProfile({
     },
   ];
 
-  // Sector formations over 10 quarters, shaped from the sector's own annual
-  // growth rate — the same figure the market card states, drawn instead of
-  // asserted. Marked as modelled in the card's source line.
-  const sparkPoints = useMemo(() => {
-    const base = Math.max(report.industry.newLastYear / 4, 1);
-    const q = report.industry.annualGrowth / 400;
-    return Array.from({ length: 10 }, (_, i) => base * Math.pow(1 + q, i - 9) * (1 + ((i % 3) - 1) * 0.03));
-  }, [report.industry.newLastYear, report.industry.annualGrowth]);
+  const sectorHref = c.primaryClassification?.sector ? `/industry/${slugify(c.primaryClassification.sector)}` : "/app/industries";
+  const alertHref = signedIn ? "/app/alerts" : `/sign-in?next=${encodeURIComponent(`/company/${c.number}`)}`;
 
-  const regionalAhead = report.regional.regionalGrowth > report.regional.nationalGrowth;
+  // A step whose href is "#records" etc. switches tab instead of navigating.
+  const tabFor = (href: string): TabId | null =>
+    href === "#records" ? "records" : href === "#competitors" ? "competitors" : href === "#market" ? "market" : href === "#lens" ? "lens" : null;
 
-  // Everything on the Intelligence tab except the score: the brief, the
-  // signals, the fingerprint, the market and competitive read, and the
-  // actions. Extracted so the gated and ungated views render exactly the
-  // same tree — a gated view that quietly drops sections is how the two
-  // drift apart.
+  // The Intelligence tab below the score: the brief, the key facts, the
+  // fingerprint and the next steps. Extracted so the gated and ungated views
+  // render exactly the same tree — a gated view that quietly drops sections is
+  // how the two drift apart.
   const evidenceBlock = (
     <>
-        <Card>
-          <CardBody>
-            <div className="brief__head">
-              <span className="app-eyebrow">Company brief</span>
-              <Badge tone="neutral">For {lens.label}</Badge>
-            </div>
-            <p className="brief__prose">{brief.prose}</p>
-            <div className="brief__points">
-              {brief.points.map((p) => (
-                <div className={`brief__point ${toneClass(p.tone)}`} key={p.n}>
-                  <span className="brief__n mono">{p.n}</span>
-                  <div>
-                    <div className="brief__title">{p.title}</div>
-                    <div className="brief__text">{p.text}</div>
-                  </div>
+      <Card>
+        <CardBody>
+          <div className="brief__head">
+            <span className="app-eyebrow">Company brief</span>
+            <Badge tone="neutral">For {lens.label}</Badge>
+          </div>
+          <p className="brief__prose">{brief.prose}</p>
+          <div className="brief__points">
+            {brief.points.map((p) => (
+              <div className={`brief__point ${toneClass(p.tone)}`} key={p.n}>
+                <span className="brief__n mono">{p.n}</span>
+                <div>
+                  <div className="brief__title">{p.title}</div>
+                  <div className="brief__text">{p.text}</div>
                 </div>
-              ))}
-            </div>
-            <div className="brief__foot">
-              <Button variant="secondary" onClick={() => setTab("lens")}>
-                View evidence
-              </Button>
-              <span className="brief__disclaimer mono">Interpretation, not advice</span>
-            </div>
-          </CardBody>
-        </Card>
+              </div>
+            ))}
+          </div>
+          <div className="brief__foot">
+            <Button variant="secondary" onClick={() => setTab("lens")}>
+              View evidence
+            </Button>
+            <span className="brief__disclaimer mono">Interpretation, not advice</span>
+          </div>
+        </CardBody>
+      </Card>
 
       <div className="changed">
         <div className="changed__head">
-          <span className="app-eyebrow">What&rsquo;s changed</span>
+          <span className="app-eyebrow">Key facts</span>
           <span className="changed__sub mono">Register &amp; sector</span>
         </div>
         <div className="changed__items">
           <div className="changed__item">
-            <span className="changed__k mono">Sector growth</span>
+            <span className="changed__k mono">Industry growth</span>
             <span className={`changed__v ${report.industry.annualGrowth >= 0 ? "is-good" : "is-risk"}`}>
               {pc(report.industry.annualGrowth)}
             </span>
           </div>
           <div className="changed__item">
-            <span className="changed__k mono">Confirmation statement</span>
+            <span className="changed__k mono">Annual filing</span>
             <span className={`changed__v ${c.confirmationStatement?.overdue ? "is-risk" : "is-good"}`}>
               {c.confirmationStatement?.overdue ? "Overdue" : "Current"}
             </span>
           </div>
           <div className="changed__item">
-            <span className="changed__k mono">{newlyIncorporated ? "Newly incorporated" : "Age"}</span>
+            <span className="changed__k mono">{newlyIncorporated ? "Newly incorporated" : "Company age"}</span>
             <span className="changed__v">{incDays != null ? shortAge(incDays) : "—"}</span>
           </div>
           <div className="changed__item">
-            <span className="changed__k mono">Regional density</span>
+            <span className="changed__k mono">Local competition</span>
             <span className="changed__v">{report.local.density}</span>
           </div>
         </div>
-        <button className="changed__cta" onClick={() => setTab("lens")}>
-          View all signals <Icon name="arrowRight" size={13} />
-        </button>
       </div>
 
       <Fingerprint cells={fingerprint} peers={report.industry.businesses} lensKey={lensKey} lensScore={score} />
 
-      <div className="intel__row2">
-        <Card>
-          <CardBody>
-            <div className="icard__head">
-              <span className="app-eyebrow">Market intelligence</span>
-              <Badge tone={regionalAhead ? "pos" : "warn"}>{regionalAhead ? "Tailwind" : "Headwind"}</Badge>
-            </div>
-            <MiniRows
-              rows={[
-                { k: "Companies in sector", v: num(report.industry.businesses) },
-                { k: "National growth", v: pc(report.regional.nationalGrowth) },
-                { k: `${report.local.region} growth`, v: pc(report.regional.regionalGrowth) },
-              ]}
-            />
-            <div className="icard__spark">
-              <Sparkline points={sparkPoints} label="Sector formations over 10 quarters" />
-              <div className="icard__sparkAxis mono">
-                <span>10 quarters ago</span>
-                <span>Sector formations</span>
-                <span>Now</span>
-              </div>
-            </div>
-            <p className="icard__note">{report.regional.insight}</p>
-            <div className="icard__foot">
-              <button className="icard__cta" onClick={() => setTab("market")}>
-                View market intelligence <Icon name="arrowRight" size={13} />
-              </button>
-              <span className="icard__src mono">ONS · modelled trend</span>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardBody>
-            <div className="icard__head">
-              <span className="app-eyebrow">Competitive landscape</span>
-              <Badge tone={report.local.density === "Very high" || report.local.density === "High" ? "warn" : "pos"}>
-                {report.local.density === "Very high" || report.local.density === "High" ? "Headwind" : "Manageable"}
-              </Badge>
-            </div>
-            <MiniRows
-              rows={[
-                { k: `Comparables (${report.local.region})`, v: num(report.local.inSameIndustry) },
-                { k: "Sector total (UK)", v: num(report.industry.businesses) },
-                { k: "5-yr survival", v: `${report.survival.fiveYear.toFixed(1)}%` },
-              ]}
-            />
-            <p className="icard__note">
-              {report.local.density === "Very high" || report.local.density === "High"
-                ? "Crowded and attritional. Differentiation matters more than market timing here."
-                : "Room to move — the region is not saturated for this trade."}
-            </p>
-            <div className="icard__foot">
-              <button className="icard__cta" onClick={() => setTab("competitors")}>
-                Compare competitors <Icon name="arrowRight" size={13} />
-              </button>
-              <span className="icard__src mono">CH register</span>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-
       <Card>
         <CardBody>
           <div className="icard__head">
-            <span className="app-eyebrow">{lensCard.label}</span>
-            <Badge tone={lensCard.flagTone === "good" ? "pos" : lensCard.flagTone === "risk" ? "warn" : "neutral"}>
-              {lensCard.flag}
-            </Badge>
-          </div>
-          <div className="icard__headline">{lensCard.headline}</div>
-          <MiniRows rows={lensCard.rows} />
-          <p className="icard__note">{lensCard.note}</p>
-          <div className="icard__foot">
-            <button className="icard__cta" onClick={() => setTab("lens")}>
-              {lensCard.cta.label} <Icon name="arrowRight" size={13} />
-            </button>
-            <span className="icard__src mono">{lensCard.source}</span>
-          </div>
-        </CardBody>
-      </Card>
-
-      {!hasFiledAccounts ? (
-        <Card>
-          <CardBody>
-            <div className="icard__head">
-              <span className="app-eyebrow">Financial intelligence</span>
-              <Badge tone={accountsLate ? "warn" : "neutral"}>{accountsLate ? "Accounts overdue" : "Awaiting first accounts"}</Badge>
-            </div>
-            {/* A first-accounts date in the past is a missed deadline, not a
-                countdown — and "expected rather than a gap" stops being true. */}
-            <p className="icard__note" style={{ marginTop: 0 }}>
-              {accountsLate && c.accounts?.nextDue
-                ? `First accounts were due ${fmtDate(c.accounts.nextDue)} and are not on the register.`
-                : c.accounts?.nextDue
-                  ? `First accounts are due ${fmtDate(c.accounts.nextDue)}. A new company has nothing to file for its first 21 months, so this is expected rather than a gap.`
-                  : "No accounts deadline is published yet. A new company has nothing to file for its first 21 months, so this is expected rather than a gap."}
-            </p>
-            {accountsDays != null ? (
-              <div className="empty-metric">
-                <span className="empty-metric__label mono">{accountsDays < 0 ? "Days overdue" : "Days to first filing"}</span>
-                <span className="empty-metric__value">{Math.abs(accountsDays).toLocaleString("en-GB")}</span>
-              </div>
-            ) : null}
-            <div className="icard__foot">
-              <Link className="icard__cta" href="/app/alerts">
-                Set filing alert <Icon name="arrowRight" size={13} />
-              </Link>
-              <button className="icard__cta" onClick={() => setTab("market")}>
-                Use sector benchmarks instead <Icon name="arrowRight" size={13} />
-              </button>
-            </div>
-          </CardBody>
-        </Card>
-      ) : null}
-
-      <Card>
-        <CardBody>
-          <div className="icard__head">
-            <span className="app-eyebrow">Recommended next steps</span>
-            <Badge tone="neutral">For {lens.label}</Badge>
+            <span className="app-eyebrow">What to do next</span>
+            <Badge tone="neutral">For {lens.audience}</Badge>
           </div>
           <div className="steps">
-            {actions.map((a) => (
-              <div className="steps__row" key={a.n}>
-                <span className="steps__n mono">{a.n}</span>
-                <span className="steps__label">{a.label}</span>
-                {a.href.startsWith("#") ? (
-                  <button
-                    className="steps__cta"
-                    onClick={() => setTab(a.href === "#records" ? "records" : a.href === "#competitors" ? "competitors" : "lens")}
-                  >
-                    {a.cta} <Icon name="arrowRight" size={13} />
-                  </button>
-                ) : (
-                  <Link className="steps__cta" href={a.href}>
-                    {a.cta} <Icon name="arrowRight" size={13} />
-                  </Link>
-                )}
-              </div>
-            ))}
+            {actions.map((a) => {
+              const t = tabFor(a.href);
+              return (
+                <div className="steps__row" key={a.n}>
+                  <span className="steps__n mono">{a.n}</span>
+                  <span className="steps__label">{a.label}</span>
+                  {t ? (
+                    <button type="button" className="steps__cta" onClick={() => setTab(t)}>
+                      {a.cta} <Icon name="arrowRight" size={13} />
+                    </button>
+                  ) : (
+                    <Link className="steps__cta" href={a.href}>
+                      {a.cta} <Icon name="arrowRight" size={13} />
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </CardBody>
       </Card>
     </>
   );
-
   // One gate, used for the Intelligence tab's evidence and for whole tabs.
   // Signed in: render as-is. Anonymous: blur it, make it inert, and put the
   // free-account CTA over it.
@@ -711,7 +573,9 @@ export function CompanyProfile({
       <div className="profile-tabs profile-tabs--lens">
         <Tabs
           value={tab}
-          onChange={setTab}
+          onChange={(id) => setTab(id as TabId)}
+          idPrefix={TAB_PREFIX}
+          ariaLabel="Report sections"
           tabs={[
             { id: "intelligence", label: "Intelligence", icon: "barChart" },
             { id: "lens", label: lens.tab },
@@ -726,8 +590,11 @@ export function CompanyProfile({
           <span>Confidence {score.confidence}</span>
         </div>
       </div>
+      <p className="tab-hint">{TAB_HINT[tab](lens.audience)}</p>
 
-      {tab === "intelligence" ? (
+      {/* Every panel is in the server HTML; inactive ones are `hidden`, not
+          unmounted, so crawlers and no-JS readers get all five. */}
+      <section {...panelProps("intelligence")}>
         <div className="intel">
           {/* The one thing that stays open to everyone, Googlebot included:
               the score. It is the hook, and on its own it is not the product —
@@ -736,11 +603,8 @@ export function CompanyProfile({
             <LensScoreCard score={score} delta={`${score.coverage}% of model measurable`} />
           </div>
 
-          {/* Turnover, net worth and the growth tier used to render BELOW the
-              entire report — past thirteen numbered sections, most of them
-              sector context identical for every company in this SIC and region.
-              It is the most decision-relevant card on the page for almost every
-              reader, so it now sits directly under the score. */}
+          {/* Turnover, net worth and the growth tier sit directly under the
+              score — the most decision-relevant card for almost every reader. */}
           {financials ? (
             <div className="intel__solo">
               <FinancialsCard financials={financials} company={c.name} />
@@ -754,8 +618,6 @@ export function CompanyProfile({
               report={report}
               enrichment={enrichment}
               opportunity={opportunity}
-              network={network}
-              filings={filings}
               contactEntitled={contactEntitled}
               contactRemaining={contactRemaining}
               prospect={{
@@ -791,486 +653,354 @@ export function CompanyProfile({
             </Card>
           ) : null}
         </div>
-      ) : null}
+      </section>
 
-      {tab === "lens" ? (
-        gate(
-        <div className="intel">
-          <p className="tab-question">
-            <Icon name="arrowRight" size={13} /> Answers: {lens.question}
-          </p>
-          <Card>
-            <CardHeader subtitle={lens.tabTitle} title={`${lens.label} lens`} action={<Badge tone="neutral">{score.coverage}% measurable</Badge>} />
-            <CardBody>
-              <div className="evidence">
-                {evidence.map((e) => (
-                  <div className={`evidence__row ${toneClass(e.tone)}`} key={e.title}>
-                    <div className="evidence__main">
-                      <div className="evidence__title">{e.title}</div>
-                      <div className="evidence__sub">{e.sub}</div>
-                    </div>
-                    <span className="evidence__state mono">{e.state}</span>
+      <section {...panelProps("lens")}>
+        {gate(
+          <div className="intel">
+            <p className="tab-question">
+              <Icon name="arrowRight" size={13} /> Answers: {lens.question}
+            </p>
+            <div className="intel__row2">
+              <Card>
+                <CardBody>
+                  <div className="icard__head">
+                    <span className="app-eyebrow">{lensCard.label}</span>
+                    <Badge tone={lensCard.flagTone === "good" ? "pos" : lensCard.flagTone === "risk" ? "warn" : "neutral"}>
+                      {lensCard.flag}
+                    </Badge>
                   </div>
-                ))}
-              </div>
-              <p className="icard__note">
-                Rows marked <span className="mono">Not checked</span> are excluded from the score rather than assumed —
-                the missing weight shows up as lower confidence, not as a worse company.
-              </p>
-              <div className="icard__foot">
-                {unlocked ? (
-                  <Link className="icard__cta" href="/app/enrich">
-                    Re-scan sources <Icon name="arrowRight" size={13} />
-                  </Link>
-                ) : (
-                  <Link className="icard__cta" href={signedIn ? "/app/upgrade" : "/pricing"}>
-                    Unlock source scanning <Icon name="arrowRight" size={13} />
-                  </Link>
-                )}
-                <span className="icard__src mono">Model · {lens.label}</span>
-              </div>
-            </CardBody>
-          </Card>
+                  <div className="icard__headline">{lensCard.headline}</div>
+                  <MiniRows rows={lensCard.rows} />
+                  <p className="icard__note">{lensCard.note}</p>
+                  <div className="icard__foot">
+                    <span />
+                    <span className="icard__src mono">{lensCard.source}</span>
+                  </div>
+                </CardBody>
+              </Card>
+              <FilingStatusCard company={c} hasFiledAccounts={hasFiledAccounts} alertHref={alertHref} />
+            </div>
 
-          <Card>
-            <CardHeader subtitle="Commercially relevant to" title={`What a ${lens.label.toLowerCase()} seller would look at`} />
-            <CardBody>
-              <div className="profile-tags">
-                {relevant.map((r) => (
-                  <Tag key={r}>{r}</Tag>
-                ))}
-              </div>
-              <p className="icard__note">
-                These are sector norms, not detected needs. CompaniesIQ never asserts what a company requires — only what
-                the register does and does not show.
-              </p>
-              <div className="icard__foot">
-                <Link className="icard__cta" href={unlocked ? "/app/prospects" : signedIn ? "/app/upgrade" : "/pricing"}>
-                  Add to prospect list <Icon name="arrowRight" size={13} />
-                </Link>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-        ,
-          "What is actually evidenced for the lens you picked, row by row, and which signals could not be checked"
-        )
-      ) : null}
-
-      {tab === "market" ? (
-        gate(
-        <div className="intel">
-          <p className="tab-question">
-            <Icon name="arrowRight" size={13} /> Answers: is this market big, growing and survivable — and is the region
-            ahead or behind?
-          </p>
-          <Card>
-            <CardHeader subtitle={`Market summary · ${report.industry.sector.toLowerCase()}`} title="Sector size &amp; momentum" />
-            <CardBody>
-              <div className="bigstats">
-                <div className="bigstat">
-                  <span className="bigstat__k mono">Companies in sector</span>
-                  <span className="bigstat__v">{num(report.industry.businesses)}</span>
-                </div>
-                <div className="bigstat">
-                  <span className="bigstat__k mono">New registrations</span>
-                  <span className="bigstat__v">{num(report.industry.newLastYear)}</span>
-                </div>
-                <div className="bigstat">
-                  <span className="bigstat__k mono">Growth rate</span>
-                  <span className="bigstat__v">{pc(report.industry.annualGrowth)}</span>
-                </div>
-                <div className="bigstat">
-                  <span className="bigstat__k mono">Survival (5 yr)</span>
-                  <span className="bigstat__v">{report.survival.fiveYear.toFixed(1)}%</span>
-                </div>
-                <div className="bigstat">
-                  <span className="bigstat__k mono">Regional density</span>
-                  <span className="bigstat__v">{report.local.density}</span>
-                </div>
-              </div>
-              <p className="icard__note">{report.regional.insight}</p>
-            </CardBody>
-          </Card>
-
-          <div className="intel__row2">
             <Card>
-              <CardHeader subtitle="Growth &amp; survival" title="How long companies last here" />
+              <CardHeader
+                subtitle={lens.tabTitle}
+                title={`What we checked · ${lens.label} weighting`}
+                action={<Badge tone="neutral">{score.coverage}% measurable</Badge>}
+              />
+              <CardBody>
+                <div className="evidence">
+                  {evidence.map((e) => (
+                    <div className={`evidence__row ${toneClass(e.tone)}`} key={e.title}>
+                      <div className="evidence__main">
+                        <div className="evidence__title">{e.title}</div>
+                        <div className="evidence__sub">{e.sub}</div>
+                      </div>
+                      <span className="evidence__state mono">{e.state}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="icard__note">
+                  Rows marked <span className="mono">Not checked</span> are excluded from the score rather than assumed —
+                  the missing weight shows up as lower confidence, not as a worse company.
+                </p>
+                <div className="icard__foot">
+                  {unlocked ? (
+                    <Link className="icard__cta" href="/app/enrich">
+                      Re-scan sources <Icon name="arrowRight" size={13} />
+                    </Link>
+                  ) : (
+                    <Link className="icard__cta" href={signedIn ? "/app/upgrade" : "/pricing"}>
+                      Unlock source scanning <Icon name="arrowRight" size={13} />
+                    </Link>
+                  )}
+                  <span className="icard__src mono">Model · {lens.label}</span>
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader subtitle="Commonly relevant to" title={`What ${lens.audience} usually offer a company like this`} />
+              <CardBody>
+                <div className="profile-tags">
+                  {relevant.map((r) => (
+                    <Tag key={r}>{r}</Tag>
+                  ))}
+                </div>
+                <p className="icard__note">
+                  These are sector norms, not detected needs. CompaniesIQ never asserts what a company requires — only what
+                  the register does and does not show.
+                </p>
+                <div className="icard__foot">
+                  <Link className="icard__cta" href={unlocked ? "/app/prospects" : signedIn ? "/app/upgrade" : "/pricing"}>
+                    Add to prospect list <Icon name="arrowRight" size={13} />
+                  </Link>
+                </div>
+              </CardBody>
+            </Card>
+          </div>,
+          "What is actually evidenced for the lens you picked, row by row, and which signals could not be checked"
+        )}
+      </section>
+
+      <section {...panelProps("market")}>
+        {gate(
+          <div className="intel">
+            <p className="tab-question">
+              <Icon name="arrowRight" size={13} /> Answers: is this market big, growing and survivable — and is the region
+              ahead or behind?
+            </p>
+            <Card>
+              <CardHeader subtitle={`Market summary · ${report.industry.sector.toLowerCase()}`} title="Sector size &amp; momentum" />
+              <CardBody>
+                <div className="bigstats">
+                  <div className="bigstat">
+                    <span className="bigstat__k mono">Companies in sector</span>
+                    <span className="bigstat__v">{num(report.industry.businesses)}</span>
+                  </div>
+                  <div className="bigstat">
+                    <span className="bigstat__k mono">National growth</span>
+                    <span className="bigstat__v">{pc(report.regional.nationalGrowth)}</span>
+                  </div>
+                  <div className="bigstat">
+                    <span className="bigstat__k mono">{report.local.region}</span>
+                    <span className="bigstat__v">{pc(report.regional.regionalGrowth)}</span>
+                  </div>
+                  <div className="bigstat">
+                    <span className="bigstat__k mono">New registrations (12m)</span>
+                    <span className="bigstat__v">{num(report.industry.newLastYear)}</span>
+                  </div>
+                  <div className="bigstat">
+                    <span className="bigstat__k mono">5-year survival</span>
+                    <span className="bigstat__v">{report.survival.fiveYear.toFixed(1)}%</span>
+                  </div>
+                </div>
+                <p className="icard__note">{report.regional.insight}</p>
+                {trend && trend.points.length ? (
+                  <div className="mkt-trend">
+                    <div className="mkt-trend__head mono">New companies per quarter</div>
+                    <QuarterBars
+                      points={trend.points}
+                      label={`New ${report.industry.sector.toLowerCase()} companies per quarter, last ${trend.points.length} quarters`}
+                    />
+                    {/* Companies House filters on explicit SIC codes only, so
+                        say what is counted rather than implying a sector total. */}
+                    <p className="icard__src mono">
+                      Companies House · incorporations across {trend.codeCount} tracked SIC code{trend.codeCount === 1 ? "" : "s"} in
+                      this sector
+                    </p>
+                  </div>
+                ) : null}
+              </CardBody>
+            </Card>
+
+            <div className="intel__row2">
+              <Card>
+                <CardHeader subtitle="Growth &amp; survival" title="How long companies last here" />
+                <CardBody>
+                  <div className="survival">
+                    {(
+                      [
+                        ["1-year survival", report.survival.oneYear],
+                        ["3-year survival", report.survival.threeYear],
+                        ["5-year survival", report.survival.fiveYear],
+                      ] as [string, number][]
+                    ).map(([k, v]) => (
+                      <div className="survival__row" key={k}>
+                        <span className="survival__k">{k}</span>
+                        <span className="survival__bar" aria-hidden="true">
+                          <span style={{ width: `${Math.max(0, Math.min(100, v))}%` }} />
+                        </span>
+                        <span className="survival__v mono">{v.toFixed(1)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="icard__note">
+                    Of every 100 companies started in this sector, roughly {Math.round(report.survival.fiveYear)} are still
+                    trading five years later.
+                    {incDays != null && incDays > 5 * 365.25 ? " This company is past that point." : ""}
+                  </p>
+                  <div className="icard__foot">
+                    <Link className="icard__cta" href="/sources">
+                      View methodology <Icon name="arrowRight" size={13} />
+                    </Link>
+                    <span className="icard__src mono">{report.survival.source} · sector baseline, not this company</span>
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardHeader subtitle={`Local economy · ${report.economic.region}`} title="The market around it" />
+                <CardBody>
+                  <MiniRows
+                    rows={[
+                      { k: "Population", v: num(report.economic.population) },
+                      { k: "Employment rate", v: `${report.economic.employmentRate.toFixed(1)}%` },
+                      { k: "Economic activity", v: `${report.economic.economicActivityRate.toFixed(1)}%` },
+                      { k: "Median weekly pay", v: `£${report.economic.medianWeeklyPay.toFixed(2)}` },
+                    ]}
+                  />
+                  <div className="icard__foot">
+                    <Link className="icard__cta" href="/app/markets">
+                      Compare regions <Icon name="arrowRight" size={13} />
+                    </Link>
+                    <span className="icard__src mono">ONS · Nomis</span>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader subtitle="Trends &amp; outlook" title="Where the sector is heading" />
               <CardBody>
                 <MiniRows
                   rows={[
-                    { k: "1-year survival", v: `${report.survival.oneYear.toFixed(1)}%` },
-                    { k: "3-year survival", v: `${report.survival.threeYear.toFixed(1)}%` },
-                    { k: "5-year survival", v: `${report.survival.fiveYear.toFixed(1)}%` },
+                    { k: "Growth trajectory", v: report.trends.trajectory },
+                    { k: "Regional concentration", v: report.trends.concentration },
+                    { k: "Emerging locations", v: report.trends.emerging },
+                    { k: "Sector momentum", v: report.trends.momentum },
                   ]}
                 />
-                <p className="icard__note">
-                  Of every 100 companies started in this sector, roughly {Math.round(report.survival.fiveYear)} are still
-                  trading five years later. That is the base rate any single company is beating or losing to.
-                </p>
+                {report.outlook.items.length ? (
+                  <ul className="recs" style={{ marginTop: 16 }}>
+                    {report.outlook.items.map((item, i) => (
+                      <li key={i}>
+                        <span className="recs__num mono">{i + 1}</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
                 <div className="icard__foot">
                   <Link className="icard__cta" href="/sources">
                     View methodology <Icon name="arrowRight" size={13} />
                   </Link>
-                  <span className="icard__src mono">{report.survival.source}</span>
+                  <span className="icard__src mono">{report.trends.source}</span>
                 </div>
               </CardBody>
             </Card>
-
-            <Card>
-              <CardHeader subtitle={`Local economy · ${report.economic.region}`} title="The market around it" />
-              <CardBody>
-                <MiniRows
-                  rows={[
-                    { k: "Population", v: num(report.economic.population) },
-                    { k: "Employment rate", v: `${report.economic.employmentRate.toFixed(1)}%` },
-                    { k: "Economic activity", v: `${report.economic.economicActivityRate.toFixed(1)}%` },
-                    { k: "Median weekly pay", v: `£${report.economic.medianWeeklyPay.toFixed(2)}` },
-                  ]}
-                />
-                <div className="icard__foot">
-                  <Link className="icard__cta" href="/app/markets">
-                    Compare regions <Icon name="arrowRight" size={13} />
-                  </Link>
-                  <span className="icard__src mono">ONS · Nomis</span>
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-
-          {/* Trends + outlook. These lived on the Intelligence tab as three
-              separate numbered sections ("Growth & survival", "Industry trends",
-              "Market outlook") one scroll below three OTHER sections printing
-              the same sector figures. They are market context, so they belong on
-              the Market tab — and as one card, because a reader asking "where is
-              this sector heading?" is asking one question, not three. */}
-          <Card>
-            <CardHeader subtitle="Trends &amp; outlook" title="Where the sector is heading" />
-            <CardBody>
-              <MiniRows
-                rows={[
-                  { k: "National sector growth", v: pc(report.regional.nationalGrowth) },
-                  { k: `Regional growth · ${report.overview.location}`, v: pc(report.regional.regionalGrowth) },
-                  { k: "Growth trajectory", v: report.trends.trajectory },
-                  { k: "Regional concentration", v: report.trends.concentration },
-                  { k: "Emerging locations", v: report.trends.emerging },
-                  { k: "Sector momentum", v: report.trends.momentum },
-                ]}
-              />
-              {report.outlook.items.length ? (
-                <ul className="recs" style={{ marginTop: 16 }}>
-                  {report.outlook.items.map((item, i) => (
-                    <li key={i}>
-                      <span className="recs__num mono">{i + 1}</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              <div className="icard__foot">
-                <Link className="icard__cta" href="/sources">
-                  View methodology <Icon name="arrowRight" size={13} />
-                </Link>
-                <span className="icard__src mono">{report.trends.source}</span>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-        ,
+          </div>,
           "How big this market is, how fast it is growing, how many companies survive five years, the local economy around it, and where the sector is heading"
-        )
-      ) : null}
+        )}
+      </section>
 
-      {tab === "competitors" ? (
-        gate(
-        <div className="intel">
-          <p className="tab-question">
-            <Icon name="arrowRight" size={13} /> Answers: how crowded is this market, and where does this company sit
-            against its peers?
-          </p>
-          <Card>
-            <CardHeader
-              subtitle={`Closest comparables · ${num(report.local.inSameIndustry)} in ${report.local.region} · ${num(report.local.newEntrants)} new in 12m`}
-              title="Peer companies"
-              action={<Badge tone="neutral">{peers.length} scored</Badge>}
-            />
-            <CardBody flush>
-              <div className="table-scroll">
-                <table className="data-table data-table--full">
-                  <thead>
-                    <tr>
-                      <th>Company</th>
-                      <th>Incorporated</th>
-                      <th>Location</th>
-                      <th>{lens.short} signal</th>
-                      <th>Score</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {peers.map((p) => (
-                      <tr key={p.number}>
-                        <td>
-                          <Link href={`/company/${p.number}`} className="peer__name">
-                            {p.name}
-                          </Link>
-                          <div className="peer__no mono">
-                            {p.number}
-                            {p.sicCode ? ` · SIC ${p.sicCode}` : ""}
+      <section {...panelProps("competitors")}>
+        {gate(
+          <div className="intel">
+            <p className="tab-question">
+              <Icon name="arrowRight" size={13} /> Answers: how crowded is this market, and where does this company sit
+              against its peers?
+            </p>
+            {peers.length >= 4 ? (
+              <Card>
+                <CardHeader
+                  subtitle={`Where this company sits · ${lens.short} score for ${lens.audience}`}
+                  title="Score distribution"
+                  action={<Badge tone="neutral">{peers.length} closest comparables</Badge>}
+                />
+                <CardBody>
+                  <div className="hist-scroll">
+                    <div className="hist" role="img" aria-label={`${c.name} scores ${score.score}, in the ${PEER_BUCKETS[selfBucket]} band of ${peers.length} comparables`}>
+                      {PEER_BUCKETS.map((b, i) => {
+                        const n = distribution[i];
+                        const max = Math.max(...distribution, 1);
+                        return (
+                          <div className={`hist__col${i === selfBucket ? " is-self" : ""}`} key={b}>
+                            <span className="hist__n mono">{i === selfBucket ? "This one" : n}</span>
+                            <span className="hist__bar" style={{ height: `${Math.max((n / max) * 100, 3)}%` }} />
+                            <span className="hist__label mono">{b}</span>
                           </div>
-                        </td>
-                        <td className="mono">{p.incorporated ? fmtDate(p.incorporated) : "—"}</td>
-                        <td>{p.region ?? "—"}</td>
-                        <td>{p.signal}</td>
-                        <td className="mono">{p.score}</td>
-                      </tr>
-                    ))}
-                    {peers.length === 0 ? (
-                      <tr className="empty-row">
-                        <td colSpan={5}>No comparable companies found for this SIC code.</td>
-                      </tr>
-                    ) : null}
-                  </tbody>
-                </table>
-              </div>
-            </CardBody>
-          </Card>
-
-          {peers.length >= 4 ? (
-            <Card>
-              <CardHeader subtitle="Where this company sits" title={`${lens.short} score distribution`} />
-              <CardBody>
-                <div className="hist-scroll">
-                  <div className="hist">
-                  {PEER_BUCKETS.map((b, i) => {
-                    const n = distribution[i];
-                    const max = Math.max(...distribution, 1);
-                    return (
-                      <div className={`hist__col${i === selfBucket ? " is-self" : ""}`} key={b}>
-                        <span className="hist__bar" style={{ height: `${Math.max((n / max) * 100, 3)}%` }} />
-                        <span className="hist__label mono">{i === selfBucket ? c.name.split(" ")[0] : b}</span>
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-                <p className="icard__note">
-                  Distribution of the {peers.length} closest comparables we could score. Peers are scored on register
-                  standing and trading history only — the full model needs each company&rsquo;s own filings, so treat
-                  this as a position, not a ranking.
-                </p>
-              </CardBody>
-            </Card>
-          ) : null}
-        </div>
-        ,
-          "The closest comparable companies on the register and where this one sits in the distribution"
-        )
-      ) : null}
-
-      {tab === "records" ? (
-        gate(
-        <div className="intel">
-          <p className="tab-question">
-            <Icon name="arrowRight" size={13} /> Answers: what is formally on the public register — and what has not been
-            filed yet?
-          </p>
-
-          <div className="intel__row2">
-            <Card>
-              <CardHeader subtitle="Register record" title="Company details" />
-              <CardBody>
-                <dl className="detail-list">
-                  <div>
-                    <dt>Registered office</dt>
-                    <dd>{addressParts}</dd>
-                  </div>
-                  <div>
-                    <dt>Company type</dt>
-                    <dd>{c.type || "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Incorporated</dt>
-                    <dd className="mono">{fmtDate(c.incorporated)}</dd>
-                  </div>
-                  <div>
-                    <dt>Nature of business</dt>
-                    <dd>{c.sicCodes.length ? c.classifications.map((cl) => `${cl.code} — ${cl.category}`).join("; ") : "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Status</dt>
-                    <dd>
-                      <StatusPill status={c.status} />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Region / nation</dt>
-                    <dd>
-                      {c.geo?.region} · {c.geo?.nation}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Accounts</dt>
-                    <dd className={c.accounts?.overdue ? "detail-overdue" : undefined}>{fmtDue(c.accounts)}</dd>
-                  </div>
-                  <div>
-                    <dt>Confirmation statement</dt>
-                    <dd className={c.confirmationStatement?.overdue ? "detail-overdue" : undefined}>
-                      {fmtDue(c.confirmationStatement)}
-                    </dd>
-                  </div>
-                </dl>
-              </CardBody>
-            </Card>
+                  <p className="icard__note">
+                    Peers are scored on register standing and trading history only — the full model needs each
+                    company&rsquo;s own filings, so treat this as a position, not a ranking.
+                  </p>
+                </CardBody>
+              </Card>
+            ) : null}
 
             <Card>
               <CardHeader
-                subtitle="People &amp; control"
-                title="Who runs and owns it"
-                action={<Badge tone="neutral">{officers.length + pscs.length}</Badge>}
+                subtitle={`Closest comparables · ${num(report.local.inSameIndustry)} in ${report.local.region} · ${num(report.local.newEntrants)} new in 12m`}
+                title="Peer companies"
+                action={
+                  <Link className="icard__cta" href={sectorHref}>
+                    Build a list from these <Icon name="arrowRight" size={13} />
+                  </Link>
+                }
               />
-              <CardBody>
-                <div className="officer-list">
-                  {officers.length ? (
-                    officers.map((p, i) => <OfficerRow key={i} p={p} unlocked={unlocked} />)
-                  ) : (
-                    <div className="reg-empty">
-                      <div className="reg-empty__title">No directors indexed</div>
-                      <div className="reg-empty__sub">Appointments can lag the register by a few days after incorporation.</div>
-                    </div>
-                  )}
-                </div>
-                <div className="reg-split" />
-                <div className="officer-list">
-                  {pscs.length ? (
-                    pscs.map((p, i) => (
-                      <div className="officer" key={i}>
-                        <CompanyAvatar name={p.name} size="sm" tone={p.kind === "individual" ? 2 : 0} />
-                        <div className="officer__meta">
-                          <div className="officer__name">{p.name}</div>
-                          <div className="profile-tags" style={{ marginTop: 4 }}>
-                            {p.naturesOfControl.length ? (
-                              p.naturesOfControl.map((n) => (
-                                <Badge key={n} tone="neutral">
-                                  {n}
-                                </Badge>
-                              ))
-                            ) : (
-                              <span className="officer__role">No control detail</span>
-                            )}
-                          </div>
-                        </div>
-                        <StatusPill status={p.active ? "active" : "dissolved"} />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="reg-empty">
-                      <div className="reg-empty__title">No PSC statement filed</div>
-                      <div className="reg-empty__sub">Normal within 14 weeks of incorporation — a disclosure gap after that.</div>
-                    </div>
-                  )}
+              <CardBody flush>
+                <div className="table-scroll">
+                  <table className="data-table data-table--full">
+                    <thead>
+                      <tr>
+                        <th>Company</th>
+                        <th>Incorporated</th>
+                        <th>Location</th>
+                        <th>{lens.short} signal</th>
+                        <th>Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {peers.map((p) => (
+                        <tr key={p.number}>
+                          <td>
+                            <Link href={`/company/${p.number}`} className="peer__name">
+                              {p.name}
+                            </Link>
+                            <div className="peer__no mono">
+                              {p.number}
+                              {p.sicCode ? ` · SIC ${p.sicCode}` : ""}
+                            </div>
+                          </td>
+                          <td className="mono">{p.incorporated ? fmtDate(p.incorporated) : "—"}</td>
+                          <td>{p.region ?? "—"}</td>
+                          <td>{p.signal}</td>
+                          <td className="mono">{p.score}</td>
+                        </tr>
+                      ))}
+                      {peers.length === 0 ? (
+                        <tr className="empty-row">
+                          <td colSpan={5}>No comparable companies found for this SIC code.</td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
                 </div>
               </CardBody>
             </Card>
-          </div>
+          </div>,
+          "The closest comparable companies on the register and where this one sits in the distribution"
+        )}
+      </section>
 
-          <Card>
-            <CardHeader
-              subtitle="Companies House"
-              title="Filing history"
-              action={
-                filings.length ? (
-                  <IconButton icon="download" variant="solid" label="Export filings" onClick={exportFilings} />
-                ) : (
-                  <Badge tone="neutral">No events</Badge>
-                )
-              }
+      <section {...panelProps("records")}>
+        {gate(
+          <div className="intel">
+            <p className="tab-question">
+              <Icon name="arrowRight" size={13} /> Answers: what is formally on the public register — and what has not been
+              filed yet?
+            </p>
+            <RecordsPanel
+              company={c}
+              officers={officers}
+              filings={filings}
+              shownFilings={shownFilings}
+              charges={charges}
+              pscs={pscs}
+              network={network}
+              unlocked={unlocked}
+              signedIn={signedIn}
+              hasFiledAccounts={hasFiledAccounts}
+              onExportFilings={exportFilings}
             />
-            <CardBody flush>
-              <div className="table-scroll">
-                <table className="data-table data-table--full">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Type</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shownFilings.map((f, i) => (
-                      <tr key={i}>
-                        <td className="mono">{fmtDate(f.date)}</td>
-                        <td>
-                          <Badge tone="neutral">{f.type}</Badge>
-                        </td>
-                        <td>{f.label}</td>
-                      </tr>
-                    ))}
-                    {filings.length === 0 ? (
-                      <tr className="empty-row">
-                        <td colSpan={3}>No filing history available.</td>
-                      </tr>
-                    ) : null}
-                    {filingsTruncated ? (
-                      <tr className="empty-row">
-                        <td colSpan={3}>
-                          Showing the {shownFilings.length} most recent of {filings.length} filings.{" "}
-                          <Link href="/app/upgrade">Upgrade for the complete history</Link>.
-                        </td>
-                      </tr>
-                    ) : null}
-                  </tbody>
-                </table>
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader
-              subtitle="Secured lending"
-              title="Charges &amp; mortgages"
-              action={<Badge tone={charges.length ? "warn" : "neutral"}>{charges.length ? charges.length : "None"}</Badge>}
-            />
-            <CardBody>
-              {charges.length ? (
-                charges.map((ch, i) => (
-                  <div className="charge" key={i} style={{ marginBottom: 18 }}>
-                    <div className="charge__head">
-                      <Icon name="shield" size={18} color="var(--warn)" />
-                      <span className="charge__title">{ch.classification}</span>
-                      <Badge tone={ch.status.includes("satisf") ? "neutral" : "warn"}>{ch.status}</Badge>
-                    </div>
-                    <dl className="detail-list">
-                      <div>
-                        <dt>Created</dt>
-                        <dd className="mono">{fmtDate(ch.created)}</dd>
-                      </div>
-                      <div>
-                        <dt>Registered</dt>
-                        <dd className="mono">{fmtDate(ch.delivered)}</dd>
-                      </div>
-                      <div>
-                        <dt>Persons entitled</dt>
-                        <dd>{ch.personsEntitled?.length ? ch.personsEntitled.join(", ") : "—"}</dd>
-                      </div>
-                    </dl>
-                  </div>
-                ))
-              ) : (
-                <div className="reg-empty">
-                  <div className="reg-empty__title">No charges registered</div>
-                  <div className="reg-empty__sub">
-                    Nothing is secured against this company&rsquo;s assets on the Companies House register.
-                  </div>
-                </div>
-              )}
-            </CardBody>
-          </Card>
-        </div>
-        ,
-          "The formal register record: filing history, directors, persons with significant control, and any charges"
-        )
-      ) : null}
-
+          </div>,
+          "The formal register record: a filing timeline, company details, directors, persons with significant control, charges and connected companies"
+        )}
+      </section>
       <p className="profile-disclaimer">
         CompaniesIQ presents evidence drawn from Companies House and ONS. Figures marked as modelled are derived from
         population and sector data. Scores are indicative, re-weight with the lens you choose, and are not financial,
