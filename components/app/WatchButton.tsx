@@ -32,7 +32,7 @@ export function WatchButton({ companyNumber, initialWatched = false }: { company
   }
 
   return (
-    <Button variant={watched ? "primary" : "secondary"} iconLeft="bookmark" onClick={toggle} disabled={busy}>
+    <Button variant={watched ? "primary" : "secondary"} iconLeft="eye" onClick={toggle} disabled={busy}>
       {watched ? "Watching" : "Watch"}
     </Button>
   );

@@ -225,6 +225,7 @@ export function Fingerprint({
   lensScore,
 }: {
   cells: FingerprintCell[];
+  /** Similar companies the index is read against (same SIC, same region). */
   peers: number;
   lensKey: LensKey;
   lensScore: LensScore;
@@ -236,7 +237,7 @@ export function Fingerprint({
     ...cells,
     {
       key: "fit",
-      label: `${LENSES[lensKey].short} fit`,
+      label: "Fit for you",
       value: lensScore.score,
       trend: "flat",
       state: lensScore.verdict,
@@ -250,8 +251,8 @@ export function Fingerprint({
     <Card>
       <CardBody>
         <div className="fp__head">
-          <span className="app-eyebrow">Company fingerprint</span>
-          <span className="fp__sub mono">Indexed 0–100 against {peers.toLocaleString("en-GB")} sector peers · select a box</span>
+          <span className="app-eyebrow">How it compares · against {peers.toLocaleString("en-GB")} similar companies</span>
+          <span className="fp__sub mono">Each box is an index, 0–100 · select one</span>
         </div>
         <div className="fp">
           {all.map((c) => (
