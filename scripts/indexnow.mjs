@@ -25,9 +25,12 @@ function env(name) {
 }
 
 const args = process.argv.slice(2);
-let urls = args.filter((a) => !a.startsWith("--")).map((a) => (a.startsWith("http") ? a : ORIGIN + a));
-
 const sinceIdx = args.indexOf("--blog-since");
+// Positional args are paths or URLs — not flags, and not a flag's value.
+let urls = args
+  .filter((a, i) => !a.startsWith("--") && !(sinceIdx >= 0 && i === sinceIdx + 1))
+  .map((a) => (a.startsWith("http") ? a : ORIGIN + (a.startsWith("/") ? a : "/" + a)));
+
 if (sinceIdx >= 0) {
   const since = args[sinceIdx + 1];
   const url = env("NEXT_PUBLIC_SUPABASE_URL");
