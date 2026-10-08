@@ -13,3 +13,4 @@ export { Select, type SelectOption } from "./Select";
 export { Checkbox } from "./Checkbox";
 export { Switch } from "./Switch";
 export { Tabs, tabButtonId, tabPanelId, type TabDef } from "./Tabs";
+export { InfoTip } from "./InfoTip";
