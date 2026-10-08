@@ -46,7 +46,7 @@ import {
   type LensInput,
   type Tone,
 } from "@/lib/lens";
-import { buildBrief, buildEvidence, buildActions, buildLensCard, relevantTo } from "@/lib/lens-view";
+import { buildBrief, buildEvidence, buildActions, buildLensCard, relevantTo, weakestRow } from "@/lib/lens-view";
 import { LensBar, useLensProfile } from "@/components/app/LensBar";
 import { LensScoreCard, Fingerprint, type FingerprintCell } from "@/components/app/LensScore";
 import { IntelGate } from "@/components/app/IntelGate";
@@ -182,6 +182,7 @@ export function CompanyProfile({
   const actions = useMemo(() => buildActions(lensInput, score, { unlocked }), [lensInput, score, unlocked]);
   const lensCard = useMemo(() => buildLensCard(lensInput, score), [lensInput, score]);
   const relevant = useMemo(() => relevantTo(lensInput, lensKey), [lensInput, lensKey]);
+  const weakest = useMemo(() => weakestRow(score), [score]);
 
   // Kept for the Pro intelligence report, which still reads the original model.
   const opportunity = useMemo(
@@ -617,8 +618,12 @@ export function CompanyProfile({
           {/* The one thing that stays open to everyone, Googlebot included:
               the score. It is the hook, and on its own it is not the product —
               everything else on this tab sits behind the free-account gate. */}
-          <div className="intel__solo">
-            <LensScoreCard score={score} delta={`${score.coverage}% of model measurable`} />
+          <div>
+            <LensScoreCard
+              score={score}
+              weakest={weakest}
+              sources={enrichment ? "Companies House · ONS · Nomis · Google Places" : "Companies House · ONS · Nomis"}
+            />
           </div>
 
           {/* Turnover, net worth and the growth tier sit directly under the

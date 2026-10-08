@@ -7,7 +7,7 @@
 // hallucinate a fact the register doesn't hold. The shape matches what an LLM
 // brief would return, so swapping in a cached Haiku brief later is a drop-in.
 // ============================================================
-import type { LensInput, LensKey, LensScore, Tone } from "@/lib/lens";
+import type { LensInput, LensKey, LensScore, LedgerRow, Tone } from "@/lib/lens";
 import { LENSES, shortAge, soonestDeadline, deadlinePhrase } from "@/lib/lens";
 import { fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
@@ -135,11 +135,8 @@ function buildPoints(input: LensInput, score: LensScore): BriefPoint[] {
     tone: growth >= 1 ? "good" : growth >= 0 ? "watch" : "risk",
   });
 
-  // The second point is the lens's own headline weakness — but never the
-  // competition row, because point 03 below is always about competition and two
-  // paraphrases of one fact read as padding.
-  const measured = score.ledger.filter((r) => r.measured && !/competit/i.test(r.label));
-  const weakest = [...measured].sort((a, b) => (a.invert ? 100 - a.pct : a.pct) - (b.invert ? 100 - b.pct : b.pct))[0];
+  // The second point is the lens's own headline weakness.
+  const weakest = weakestRow(score);
   if (weakest) {
     out.push({
       n: "02",
@@ -159,6 +156,18 @@ function buildPoints(input: LensInput, score: LensScore): BriefPoint[] {
   return out;
 }
 
+/**
+ * The measured row dragging the score down most — the brief's point 02 and the
+ * score card's "Weakest point" read this one function so they can never
+ * disagree. Never the competition row: point 03 is always about competition,
+ * and two paraphrases of one fact read as padding. Unmeasured rows are not
+ * weaknesses; they are excluded from the score.
+ */
+export function weakestRow(score: LensScore): LedgerRow | null {
+  const measured = score.ledger.filter((r) => r.measured && !/competit/i.test(r.label));
+  return [...measured].sort((a, b) => (a.invert ? 100 - a.pct : a.pct) - (b.invert ? 100 - b.pct : b.pct))[0] ?? null;
+}
+
 // Only the lens's signature dimension earns a headline of its own — renaming
 // whatever happens to score lowest produces non-sequiturs like
 // "Service trigger: 1 director, 1 PSC, 0 charges".
@@ -170,7 +179,7 @@ const GAP_TITLES: Partial<Record<LensKey, Record<string, string>>> = {
   accountancy: { "Filing need": "Service trigger", "Deadline proximity": "Deadline" },
 };
 
-function gapTitle(lens: LensKey, label: string): string {
+export function gapTitle(lens: LensKey, label: string): string {
   return GAP_TITLES[lens]?.[label] ?? label;
 }
 
