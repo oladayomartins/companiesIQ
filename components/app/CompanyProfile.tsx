@@ -217,7 +217,14 @@ export function CompanyProfile({
     for (const p of peers) buckets[bucketIndex(p.score)] += 1;
     return buckets;
   }, [peers]);
-  const selfBucket = bucketIndex(score.score);
+  // Peers only carry register status and incorporation date, so they get the
+  // quick score. Plot this company on that same scale — placing its full lens
+  // score among quick peer scores compares two different models.
+  const selfQuick = useMemo(
+    () => scorePeerLite({ status: c.status, incorporated: c.incorporated }, lensKey),
+    [c.status, c.incorporated, lensKey]
+  );
+  const selfBucket = bucketIndex(selfQuick.score);
 
   const incDays = c.incorporated ? Math.floor((Date.now() - Date.parse(c.incorporated)) / DAY) : null;
   const hasFiledAccounts = !!c.accounts?.lastMadeUpTo || filings.some((f) => f.type === "AA");
@@ -797,7 +804,7 @@ export function CompanyProfile({
             </Card>
 
             <Card>
-              <CardHeader subtitle="Commonly relevant to" title={`What ${lens.audience} usually offer a company like this`} />
+              <CardHeader subtitle="Commonly relevant to" title="Commonly offered to a company like this" />
               <CardBody>
                 <div className="profile-tags">
                   {relevant.map((r) => (
@@ -843,10 +850,18 @@ export function CompanyProfile({
                     <span className="bigstat__k mono">{report.local.region}</span>
                     <span className="bigstat__v">{pc(report.regional.regionalGrowth)}</span>
                   </div>
-                  <div className="bigstat">
-                    <span className="bigstat__k mono">New registrations (12m)</span>
-                    <span className="bigstat__v">{num(report.industry.newLastYear)}</span>
-                  </div>
+                  {/* Live Companies House count from the chart below — the last four
+                      completed quarters — rather than the modelled sector figure,
+                      which disagreed with the bars beside it. Omitted with the chart. */}
+                  {trend && trend.points.length >= 4 ? (
+                    <div className="bigstat">
+                      <span className="bigstat__k mono">New registrations (last 4 quarters)</span>
+                      <span className="bigstat__v">{num(trend.points.slice(-4).reduce((t, p) => t + p.value, 0))}</span>
+                      <span className="bigstat__note">
+                        across {trend.codeCount} tracked SIC code{trend.codeCount === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                  ) : null}
                   <div className="bigstat">
                     <span className="bigstat__k mono">5-year survival</span>
                     <span className="bigstat__v">{report.survival.fiveYear.toFixed(1)}%</span>
@@ -971,20 +986,20 @@ export function CompanyProfile({
             {peers.length >= 4 ? (
               <Card>
                 <CardHeader
-                  subtitle={`Where this company sits · ${lens.short} score for ${lens.audience}`}
+                  subtitle={`Where this company sits · quick peer score for ${lens.audience}`}
                   title="Score distribution"
                   action={<Badge tone="neutral">{peers.length} closest comparables</Badge>}
                 />
                 <CardBody>
                   {/* Scrolls sideways on a phone, so it must be reachable by keyboard. */}
                   <div className="hist-scroll" tabIndex={0} role="region" aria-label="Score distribution chart">
-                    <div className="hist" role="img" aria-label={`${c.name} scores ${score.score}, in the ${PEER_BUCKETS[selfBucket]} band of ${peers.length} comparables`}>
+                    <div className="hist" role="img" aria-label={`On the quick peer score ${c.name} scores ${selfQuick.score}, in the ${PEER_BUCKETS[selfBucket]} band of ${peers.length} comparables`}>
                       {PEER_BUCKETS.map((b, i) => {
                         const n = distribution[i];
                         const max = Math.max(...distribution, 1);
                         return (
                           <div className={`hist__col${i === selfBucket ? " is-self" : ""}`} key={b}>
-                            <span className="hist__n mono">{i === selfBucket ? "This one" : n}</span>
+                            <span className="hist__n mono">{i === selfBucket ? (n ? `${n} + this one` : "This one") : n}</span>
                             <span className="hist__bar" style={{ height: `${Math.max((n / max) * 100, 3)}%` }} />
                             <span className="hist__label mono">{b}</span>
                           </div>
@@ -993,8 +1008,10 @@ export function CompanyProfile({
                     </div>
                   </div>
                   <p className="icard__note">
-                    Peers are scored on register standing and trading history only — the full model needs each
-                    company&rsquo;s own filings, so treat this as a position, not a ranking.
+                    A quick score from register status and company age only, because that is all the peer list
+                    carries. To compare like with like, this company is placed on the same quick score (
+                    {selfQuick.score}) — not the full {score.score}/100 at the top of the page. Treat it as a
+                    position, not a ranking.
                   </p>
                 </CardBody>
               </Card>
@@ -1019,7 +1036,7 @@ export function CompanyProfile({
                         <th>Incorporated</th>
                         <th>Location</th>
                         <th>{lens.short} signal</th>
-                        <th>Score</th>
+                        <th>Quick score</th>
                       </tr>
                     </thead>
                     <tbody>
