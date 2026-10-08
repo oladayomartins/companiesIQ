@@ -20,12 +20,17 @@ import { sectorBreakdown } from "@/lib/analytics";
 import { countCompanies } from "@/lib/companies-house";
 import { PublicShell } from "@/components/public/PublicShell";
 import { SearchExperience, type SavedSearch } from "@/components/search/SearchExperience";
+import { parsePreset, presetLabel } from "@/lib/market-link";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }): Promise<Metadata> {
-  const { q } = await searchParams;
-  const query = (q ?? "").trim();
+type Params = Promise<Record<string, string | string[] | undefined>>;
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+export async function generateMetadata({ searchParams }: { searchParams: Params }): Promise<Metadata> {
+  const sp = await searchParams;
+  const preset = parsePreset(sp);
+  const query = preset ? presetLabel(preset) : (first(sp.q) ?? "").trim();
   return {
     title: query ? `Results for “${query}”` : "Search 5.5m UK companies",
     description:
@@ -37,9 +42,12 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
 const isoDaysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
 
-export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q } = await searchParams;
-  const query = (q ?? "").trim();
+export default async function SearchPage({ searchParams }: { searchParams: Params }) {
+  const sp = await searchParams;
+  // A market link (/search?sector=…&place=…) arrives pre-configured; it wins
+  // over free text because it carries filters words can't (SIC, exact town).
+  const preset = parsePreset(sp);
+  const query = preset ? presetLabel(preset) : (first(sp.q) ?? "").trim();
 
   const user = await getCurrentUser();
   const signedIn = !!user;
@@ -63,6 +71,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       <div className="screen">
         <SearchExperience
           initialQuery={query}
+          initialPreset={preset}
           tier={{ signedIn, pro, canSaveSearches: comped || caps.savedSearches }}
           savedLens={savedLens}
           initialSaved={saved}

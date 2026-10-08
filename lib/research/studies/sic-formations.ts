@@ -198,7 +198,7 @@ function render(d: Dataset): PostDraft {
   const fallers = movers.filter((m) => (m.changePct ?? 0) < 0 && !m.anomaly).slice(-6).reverse();
   const peak = [...monthly].sort((a, b) => b.value - a.value)[0];
   const trough = [...monthly].sort((a, b) => a.value - b.value)[0];
-  const segments = segmentsFor(top, 8);
+  const segments = segmentsFor(top, 8, `research:${d.slug}`);
   const csvUrl = `${SITE_URL}/api/research/${d.slug}/data.csv`;
 
   // Describe the composition of the leading codes from the data rather than
@@ -257,7 +257,7 @@ function render(d: Dataset): PostDraft {
       `**${s.label}** (${s.code})`,
       fmtInt(s.volume),
       s.buyers,
-      `[Browse](${s.href})`,
+      `[Build the list](${s.listHref}) · [About this code](${s.href})`,
     ])
   );
 

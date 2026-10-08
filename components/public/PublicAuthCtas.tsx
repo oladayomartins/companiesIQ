@@ -48,7 +48,16 @@ export function PublicHeaderCta() {
  *  `ctaLabel` lets each page match the button to the visitor's micro-moment
  *  ("Find companies in Leeds", "Track this sector"); it defaults to the
  *  generic "Create a free account". */
-export function PublicCtaBody({ sub, ctaLabel = "Create a free account" }: { sub: string; ctaLabel?: string }) {
+export function PublicCtaBody({
+  sub,
+  ctaLabel = "Create a free account",
+  ctaHref,
+}: {
+  sub: string;
+  ctaLabel?: string;
+  /** A pre-built search (lib/market-link) — the CTA opens the list itself, not a bare sign-up. */
+  ctaHref?: string;
+}) {
   const signedIn = useSignedIn();
   // Render the signed-out copy until we know (avoids a register flash for
   // logged-in users only briefly; SEO crawlers see the signed-out version).
@@ -57,8 +66,8 @@ export function PublicCtaBody({ sub, ctaLabel = "Create a free account" }: { sub
       <>
         <p className="public-cta__sub">You&apos;re signed in. Jump into the app to search, score and save companies.</p>
         <div className="public-cta__row">
-          <Button href="/app" variant="primary" iconRight="arrowRight">
-            Open in CompaniesIQ
+          <Button href={ctaHref ?? "/app"} variant="primary" iconRight="arrowRight">
+            {ctaHref ? ctaLabel : "Open in CompaniesIQ"}
           </Button>
         </div>
       </>
@@ -68,7 +77,7 @@ export function PublicCtaBody({ sub, ctaLabel = "Create a free account" }: { sub
     <>
       <p className="public-cta__sub">{sub}</p>
       <div className="public-cta__row">
-        <Button href="/sign-in" variant="primary" iconRight="arrowRight">
+        <Button href={ctaHref ?? "/sign-in"} variant="primary" iconRight="arrowRight">
           {ctaLabel}
         </Button>
         <Button href="/pricing" variant="secondary">See plans</Button>

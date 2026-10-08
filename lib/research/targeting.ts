@@ -13,6 +13,7 @@
 import { classifySic, CURATED_SIC_CODES } from "@/lib/sic";
 import { slugify } from "@/lib/slug";
 import type { Cell } from "./types";
+import { marketSearchHref } from "@/lib/market-link";
 
 /** Who typically sells into a sector, and the opening that new formations create. */
 const SECTOR_ANGLES: Record<string, { buyers: string; angle: string }> = {
@@ -89,10 +90,12 @@ export interface Segment {
   angle: string;
   /** A page on this site that lists the real companies behind the number. */
   href: string;
+  /** /search, pre-configured to this segment's active companies formed in the last year. */
+  listHref: string;
 }
 
 /** Turn measured rows into segments a reader can actually work. */
-export function segmentsFor(cells: Cell[], limit = 8): Segment[] {
+export function segmentsFor(cells: Cell[], limit = 8, from?: string): Segment[] {
   return cells.slice(0, limit).map((c) => {
     const cls = classifySic(c.key);
     const a = SECTOR_ANGLES[cls.sector] ?? DEFAULT_ANGLE;
@@ -108,6 +111,7 @@ export function segmentsFor(cells: Cell[], limit = 8): Segment[] {
       buyers: a.buyers,
       angle: a.angle,
       href,
+      listHref: marketSearchHref({ sic: c.key, incorporated: "12m", from }),
     };
   });
 }

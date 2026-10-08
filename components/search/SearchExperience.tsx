@@ -26,11 +26,12 @@ import type { SearchResult } from "@/lib/types";
 import { growthEvent } from "@/lib/growth/beacon";
 import { classifySearch } from "@/lib/growth/intent";
 import { MarketHeader } from "@/components/search/MarketHeader";
+import { marketSearchHref, presetApiParams, type MarketPreset } from "@/lib/market-link";
 
 export interface SavedSearch {
   id: string;
   label: string | null;
-  query: { q?: string; sector?: string; region?: string; place?: string; status?: string[]; incorporated?: string };
+  query: { q?: string; sector?: string; region?: string; place?: string; status?: string[]; incorporated?: string; sic?: string };
   created_at: string;
 }
 
@@ -112,8 +113,18 @@ const advCount = (a: Adv) =>
     Boolean
   ).length;
 
+/** What a preset means, in the same shape readQuery() returns for typed text. */
+const presetReading = (p: MarketPreset) => {
+  const chips: QueryChip[] = [];
+  if (p.sector) chips.push({ value: p.sector, kind: "sector" });
+  if (p.place) chips.push({ value: p.place, kind: "place" });
+  else if (p.region) chips.push({ value: p.region, kind: "region" });
+  return { chips, sector: p.sector, region: p.region, place: p.place, status: ["active"], name: "" };
+};
+
 export function SearchExperience({
   initialQuery,
+  initialPreset = null,
   tier,
   savedLens,
   initialSaved,
@@ -121,6 +132,8 @@ export function SearchExperience({
   newThisMonth,
 }: {
   initialQuery: string;
+  /** A pre-configured market from a "Build this market →" link (lib/market-link). */
+  initialPreset?: MarketPreset | null;
   tier: Tier;
   savedLens: string | null;
   initialSaved: SavedSearch[];
@@ -130,6 +143,9 @@ export function SearchExperience({
   const router = useRouter();
   const [q, setQ] = useState(initialQuery);
   const [ran, setRan] = useState(initialQuery); // the query the results belong to
+  // Structured filters from a market link. They run instead of the parsed text
+  // until the reader types a search of their own.
+  const [preset, setPreset] = useState<MarketPreset | null>(initialPreset);
   const [mode, setMode] = useState<string>("companies");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sort, setSort] = useState("score");
@@ -155,17 +171,22 @@ export function SearchExperience({
 
   // What the words mean — shown live, and used to run the search, so the
   // reading on screen is always the reading that executed.
-  const reading = useMemo(() => readQuery(q), [q]);
-  const ranReading = useMemo(() => readQuery(ran), [ran]);
+  const presetShown = !!preset && q === ran;
+  const reading = useMemo(() => (presetShown && preset ? presetReading(preset) : readQuery(q)), [q, presetShown, preset]);
+  const ranReading = useMemo(() => (preset ? presetReading(preset) : readQuery(ran)), [ran, preset]);
   // A market / new-company / leads search with a sector or place is the start of
   // a prospect list, so the results get framed as one (MarketHeader).
-  const ranIntent = useMemo(() => classifySearch(ran, ranReading), [ran, ranReading]);
-  const isMarket = ranIntent !== "lookup" && !!(ranReading.sector || ranReading.place || ranReading.region);
+  const ranIntent = useMemo(
+    () => (preset ? (preset.incorporated ? "trigger" : "market") : classifySearch(ran, ranReading)),
+    [ran, ranReading, preset]
+  );
+  const isMarket = !!preset || (ranIntent !== "lookup" && !!(ranReading.sector || ranReading.place || ranReading.region));
 
   const runSearch = useCallback(
-    async (query: string, advanced: Adv = EMPTY_ADV, kind: "search" | "refine" = "search") => {
-      const r = readQuery(query);
-      const sp = new URLSearchParams();
+    async (query: string, advanced: Adv = EMPTY_ADV, kind: "search" | "refine" = "search", p: MarketPreset | null = null) => {
+      const r = p ? presetReading(p) : readQuery(query);
+      const sp = p ? presetApiParams(p) : new URLSearchParams();
+      if (!p) {
       // In a market search, time words ("new", "latest", "formed this month")
       // describe recency, not the company name — leaving them in turned "new
       // construction companies in Birmingham" into "names containing 'new'".
@@ -185,6 +206,7 @@ export function SearchExperience({
       const prospecting = scoped && intent !== "lookup";
       if (prospecting && !r.status.length) sp.append("status", "active");
       if (prospecting && intent === "trigger") sp.set("incorporated", "30d");
+      }
       if (advanced.accountsOverdue) sp.set("accountsOverdue", "1");
       if (advanced.confirmationDue) sp.set("confirmationDue", "1");
       if (advanced.hasAccounts) sp.set("hasAccounts", "1");
@@ -199,7 +221,9 @@ export function SearchExperience({
         let res = await fetch(`/api/search?${sp.toString()}`);
         if (!res.ok) throw new Error(String(res.status));
         let data = (await res.json()) as { total: number; results: SearchResult[]; exact?: boolean };
-        if (!data.total && sp.get("incorporated") === "30d") {
+        // An explicit window from a market link is a promise about the list —
+        // don't quietly widen it.
+        if (!p && !data.total && sp.get("incorporated") === "30d") {
           sp.set("incorporated", "12m"); // nothing this month — show the last year instead
           res = await fetch(`/api/search?${sp.toString()}`);
           if (res.ok) data = (await res.json()) as typeof data;
@@ -211,7 +235,9 @@ export function SearchExperience({
         growthEvent(kind === "search" ? "search" : "search_filter", {
           meta: {
             q: query.trim(),
-            intent: classifySearch(query, r),
+            intent: p ? (p.incorporated ? "trigger" : "market") : classifySearch(query, r),
+            from: p?.from ?? null,
+            sic: p?.sic ?? null,
             sector: r.sector ?? null,
             region: r.region ?? null,
             place: r.place ?? null,
@@ -237,6 +263,11 @@ export function SearchExperience({
   );
 
   useEffect(() => {
+    if (initialPreset) {
+      if (initialPreset.incorporated) setSort("new");
+      void runSearch(initialQuery, EMPTY_ADV, "search", initialPreset);
+      return;
+    }
     if (initialQuery.trim() && classifySearch(initialQuery, readQuery(initialQuery)) === "trigger") setSort("new");
     if (initialQuery.trim()) void runSearch(initialQuery);
     // Only on mount — later runs go through submit().
@@ -248,7 +279,7 @@ export function SearchExperience({
   function applyAdv(nextAdv: Adv) {
     setAdv(nextAdv);
     setSelected(new Set());
-    if (ran) void runSearch(ran, nextAdv, "refine");
+    if (ran) void runSearch(ran, nextAdv, "refine", preset);
   }
 
   function submit(next?: string) {
@@ -257,6 +288,7 @@ export function SearchExperience({
     setRan(query);
     setSelected(new Set());
     setFilters(EMPTY_FILTERS);
+    setPreset(null); // the reader is driving now
     // Keep the URL shareable and the page crawlable at its canonical address.
     router.replace(query ? `/search?q=${encodeURIComponent(query)}` : "/search", { scroll: false });
     setAdv(EMPTY_ADV);
@@ -356,7 +388,8 @@ export function SearchExperience({
   const visibleCount = tier.pro ? sorted.length : tier.signedIn ? FREE_VISIBLE : ANON_VISIBLE;
   const visible = sorted.slice(0, visibleCount);
   const hidden = sorted.slice(visibleCount);
-  const next = encodeURIComponent(`/search${ran ? `?q=${encodeURIComponent(ran)}` : ""}`);
+  // Sign-in must return to the SAME list, preset filters included.
+  const next = encodeURIComponent(preset ? marketSearchHref(preset) : `/search${ran ? `?q=${encodeURIComponent(ran)}` : ""}`);
 
   // Hitting the row cap is the search equivalent of an export limit: they asked
   // for a list and we showed them part of it. Strong upgrade intent — once per query.
@@ -409,6 +442,7 @@ export function SearchExperience({
             region: ranReading.region,
             place: ranReading.place,
             status: ranReading.status,
+            ...(preset ? { sic: preset.sic, incorporated: preset.incorporated } : {}),
           },
         }),
       });
@@ -458,7 +492,7 @@ export function SearchExperience({
     </form>
   );
 
-  const readAs = reading.chips.length ? (
+  const readAs = reading.chips.length || presetShown ? (
     <div className="sx-readas">
       <span className="sx-readas__k mono">Read as</span>
       {reading.chips.map((c: QueryChip) => (
@@ -467,6 +501,18 @@ export function SearchExperience({
           <span className="sx-chip__kind mono">{CHIP_LABEL[c.kind]}</span>
         </span>
       ))}
+      {presetShown && preset?.sic ? (
+        <span className="sx-chip is-sector">
+          {preset.sic}
+          <span className="sx-chip__kind mono">SIC</span>
+        </span>
+      ) : null}
+      {presetShown && preset?.incorporated ? (
+        <span className="sx-chip is-status">
+          {{ "30d": "Last 30 days", "12m": "Last 12 months", "5y": "Last 5 years" }[preset.incorporated]}
+          <span className="sx-chip__kind mono">formed</span>
+        </span>
+      ) : null}
     </div>
   ) : null;
 
@@ -570,7 +616,18 @@ export function SearchExperience({
                   <div className="sx-saved">
                     {saved.slice(0, 6).map((s) => (
                       <div className="sx-saved__row" key={s.id}>
-                        <button className="sx-saved__open" onClick={() => submit(s.query.q ?? s.label ?? "")}>
+                        <button className="sx-saved__open" onClick={() =>
+                            // A search saved from a market link carries filters words can't.
+                            s.query.sic || s.query.incorporated
+                              ? (window.location.href = marketSearchHref({
+                                  sector: s.query.sector,
+                                  place: s.query.place,
+                                  region: s.query.region,
+                                  sic: s.query.sic,
+                                  incorporated: s.query.incorporated as MarketPreset["incorporated"],
+                                }))
+                              : submit(s.query.q ?? s.label ?? "")
+                          }>
                           {s.label || s.query.q || "Saved search"}
                         </button>
                         <button className="sx-saved__x" aria-label="Remove saved search" onClick={() => removeSaved(s.id)}>

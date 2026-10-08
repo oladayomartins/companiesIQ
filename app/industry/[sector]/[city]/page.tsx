@@ -27,6 +27,7 @@ import {
   RECENT_WINDOW_DAYS,
 } from "@/lib/sector-city";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
+import { marketSearchHref } from "@/lib/market-link";
 import { FreeAlertForm } from "@/components/FreeAlertForm";
 import { ALERT_REGIONS, ALERT_SECTORS } from "@/lib/alert-options";
 import { getMarketSummary, getNewestInMarket, type MarketSummary } from "@/lib/market-summary";
@@ -378,11 +379,11 @@ export default async function SectorCityPage({
                 plan — or get the new ones emailed to you every week, free.
               </p>
               <div className="mkt__actions" style={{ marginTop: 0, marginBottom: 14 }}>
-                <Link href={`/search?q=${encodeURIComponent(`${stat.sector} companies in ${city.name}`)}`} className="signal-chip">
+                <Link href={marketSearchHref({ sector: stat.sector, place: city.name, from: `industry:${sectorSlug}/${slugify(city.name)}` })} className="signal-chip">
                   Search all {stat.sector.toLowerCase()} companies in {city.name} →
                 </Link>
-                <Link href={`/search?q=${encodeURIComponent(`new ${stat.sector} companies in ${city.name}`)}`} className="signal-chip">
-                  Newest first →
+                <Link href={marketSearchHref({ sector: stat.sector, place: city.name, incorporated: "12m", from: `industry:${sectorSlug}/${slugify(city.name)}` })} className="signal-chip">
+                  Formed in the last 12 months →
                 </Link>
               </div>
               <FreeAlertForm
@@ -451,6 +452,7 @@ export default async function SectorCityPage({
           title={`Track new ${stat.sector.toLowerCase()} companies in ${city.name}`}
           sub="Create a free account to read a full intelligence report, or upgrade for unlimited reports, alerts and exports across every UK company."
           ctaLabel={`Find ${stat.sector.toLowerCase()} companies in ${city.name}`}
+          ctaHref={marketSearchHref({ sector: stat.sector, place: city.name, from: `industry:${sectorSlug}/${slugify(city.name)}` })}
         />
       </div>
     </PublicShell>

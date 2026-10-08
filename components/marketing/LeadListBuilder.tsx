@@ -5,6 +5,7 @@ import { Button } from "@/components/ds";
 import { ALERT_SECTORS } from "@/lib/alert-options";
 import { CITIES } from "@/lib/cities";
 import { track } from "@/lib/track";
+import { marketSearchHref } from "@/lib/market-link";
 
 // The business-leads page's "do it now" step: pick a sector and a city and land
 // straight on the prospect-list search (/search frames it with live counts and
@@ -18,11 +19,16 @@ export function LeadListBuilder({ defaultSector = "Construction", defaultCity = 
 
   function go(e: React.FormEvent) {
     e.preventDefault();
-    const q = `${fresh ? "new " : ""}${sector ? `${sector} ` : ""}companies${city ? ` in ${city}` : ""}`;
     // The search page records the search itself (intent-classified); GA just
     // needs to know the builder was the way in.
     track("lead_builder", { sector: sector || "any", city: city || "uk", fresh });
-    router.push(`/search?q=${encodeURIComponent(q)}`);
+    // Structured filters, not a sentence: "Newcastle upon Tyne" parsed as text
+    // becomes a town plus a name fragment and returns the wrong list.
+    if (!sector && !city) {
+      router.push(`/search?q=${encodeURIComponent(fresh ? "new companies" : "companies")}`);
+      return;
+    }
+    router.push(marketSearchHref({ sector: sector || undefined, place: city || undefined, incorporated: fresh ? "12m" : undefined, from: "lead-builder" }));
   }
 
   return (
