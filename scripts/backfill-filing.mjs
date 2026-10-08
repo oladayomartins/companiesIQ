@@ -84,10 +84,36 @@ async function selectBatch() {
   return res.json();
 }
 
+// On the live site's key (no COMPANIES_HOUSE_BATCH_API_KEY), never dip into the
+// reserve its company pages need: every response reports the key's remaining
+// 5-minute budget, so pause until the window resets once it's down to the
+// reserve. Same rule as lib/ch-quota.ts (inlined: this script is plain JS).
+const SHARED_KEY = !env("COMPANIES_HOUSE_BATCH_API_KEY");
+const SITE_RESERVE = Number(env("CH_LOW_RESERVE")) || 250;
+let budget = null; // { remain, resetAt } for the current window
+async function respectSiteReserve() {
+  if (!SHARED_KEY || !budget) return;
+  const now = Date.now();
+  if (budget.resetAt <= now || budget.remain - 1 >= SITE_RESERVE) return;
+  const wait = budget.resetAt - now + 1000;
+  console.log(`  ⏸ pausing ${Math.round(wait / 1000)}s — the shared Companies House key is down to the live site's reserve`);
+  await new Promise((r) => setTimeout(r, wait));
+  budget = null;
+}
+function noteBudget(res) {
+  if (!SHARED_KEY) return;
+  const reset = Number(res.headers.get("x-ratelimit-reset"));
+  if (!Number.isFinite(reset)) return;
+  const remain = res.status === 429 ? 0 : Number(res.headers.get("x-ratelimit-remain"));
+  if (Number.isFinite(remain)) budget = { remain, resetAt: reset * 1000 };
+}
+
 async function fetchFiling(number) {
+  await respectSiteReserve();
   const res = await fetch(`https://api.company-information.service.gov.uk/company/${encodeURIComponent(number)}`, {
     headers: { Authorization: chAuth },
   });
+  noteBudget(res);
   if (res.status === 429) return { retry: true };
   if (res.status === 404) return { gone: true };
   if (!res.ok) throw new Error(`CH ${res.status}`);

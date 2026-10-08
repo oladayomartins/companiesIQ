@@ -16,6 +16,7 @@
 // 600-req/5-min limit (concurrency 4).
 import { readFileSync } from "node:fs";
 import { parseIxbrlConcepts } from "../lib/enrichment/ixbrl-parse.ts";
+import { QuotaGuard } from "../lib/ch-quota.ts";
 
 function env(name: string): string | null {
   if (process.env[name]) return process.env[name] as string;
@@ -68,8 +69,33 @@ async function selectBatch(): Promise<{ number: string }[]> {
   return res.json();
 }
 
+// On the live site's key (no COMPANIES_HOUSE_BATCH_API_KEY), never dip into the
+// reserve its company pages need: every response reports the key's remaining
+// 5-minute budget, and we pause until the window resets once it's down to the
+// reserve. The batch key, when set, has its own budget and skips this.
+const SHARED_KEY = !env("COMPANIES_HOUSE_BATCH_API_KEY");
+const guard = new QuotaGuard(Number(env("CH_LOW_RESERVE")) || undefined);
+const sleepMs = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function chFetch(url: string, accept: string): Promise<Response> {
+  if (SHARED_KEY) {
+    const wait = guard.waitMsForLow();
+    if (wait > 0) {
+      if (guard.shouldWarn()) console.log(`  ⏸ pausing ${Math.round(wait / 1000)}s — the shared Companies House key is down to the live site's reserve`);
+      await sleepMs(wait);
+    }
+  }
+  const res = await fetch(url, { headers: { Authorization: chAuth, Accept: accept } });
+  if (SHARED_KEY) {
+    const num = (n: string) => (res.headers.get(n) == null ? null : Number(res.headers.get(n)));
+    if (res.status === 429) guard.exhausted(num("x-ratelimit-reset"));
+    else guard.observe(num("x-ratelimit-remain"), num("x-ratelimit-reset"));
+  }
+  return res;
+}
+
 async function chJson(url: string): Promise<any | null> {
-  const res = await fetch(url, { headers: { Authorization: chAuth, Accept: "application/json" } });
+  const res = await chFetch(url, "application/json");
   if (res.status === 429) return { __retry: true };
   if (!res.ok) return null;
   return res.json();
@@ -117,7 +143,7 @@ async function computeFinancials(number: string): Promise<FinRow | "retry"> {
   const hasXhtml = !meta?.resources || Object.keys(meta.resources).some((k: string) => k.includes("xhtml") || k.includes("xml"));
   if (!hasXhtml) return row;
 
-  const res = await fetch(contentUrl, { headers: { Authorization: chAuth, Accept: "application/xhtml+xml" } });
+  const res = await chFetch(contentUrl, "application/xhtml+xml");
   if (res.status === 429) return "retry";
   if (!res.ok) return row;
   if ((res.headers.get("content-type") || "").includes("pdf")) return row;

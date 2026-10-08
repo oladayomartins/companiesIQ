@@ -135,3 +135,14 @@ test("a released slot goes to the waiter, never to a newcomer", async () => {
   (await pw)();
   (await pn)();
 });
+
+test("waitMsForLow: zero when allowed, time-to-reset (+1s) when blocked", () => {
+  const c = clock();
+  const g = new QuotaGuard(250, 6, c.now);
+  assert.equal(g.waitMsForLow(), 0);
+  g.observe(240, secs(c.now() + 90_000));
+  const w = g.waitMsForLow();
+  assert.ok(w >= 90_000 && w <= 91_000, `expected ~91s, got ${w}`);
+  c.advance(95_000);
+  assert.equal(g.waitMsForLow(), 0);
+});

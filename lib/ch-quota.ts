@@ -82,6 +82,16 @@ export class QuotaGuard {
     return r.remain - cost >= this.reserve;
   }
 
+  /**
+   * How long low-priority work costing `cost` must wait before it may start:
+   * 0 if it may go now, otherwise the time until the window resets (+1s). For
+   * batch jobs that should pause rather than give up.
+   */
+  waitMsForLow(cost = 1): number {
+    if (this.allowsLow(cost)) return 0;
+    return Math.max(0, this.reading!.resetAt - this.now()) + 1000;
+  }
+
   /** Remaining budget as last seen (null = unknown). For logs only. */
   remaining(): number | null {
     const r = this.reading;

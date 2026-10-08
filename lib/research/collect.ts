@@ -13,6 +13,7 @@
 // ============================================================
 import "server-only";
 import type { QueryRecord } from "./types";
+import { quota } from "@/lib/ch-quota";
 
 const BASE = "https://api.company-information.service.gov.uk";
 const ENDPOINT = "/advanced-search/companies";
@@ -114,6 +115,8 @@ export class Collector {
   readonly ledger: QueryRecord[] = [];
   private calls = 0;
   private readonly auth: string;
+  /** True when running on the live site's key (no batch key set). */
+  private readonly sharedKey: boolean;
 
   // Companies House rate-limits per key (600 requests / 5 minutes). A study
   // spends hundreds of calls, so on the site's key it starves live searches —
@@ -122,6 +125,30 @@ export class Collector {
   constructor(apiKey = process.env.COMPANIES_HOUSE_BATCH_API_KEY || process.env.COMPANIES_HOUSE_API_KEY) {
     if (!apiKey) throw new Error("COMPANIES_HOUSE_BATCH_API_KEY / COMPANIES_HOUSE_API_KEY is not set — a study cannot run without register access.");
     this.auth = "Basic " + Buffer.from(`${apiKey}:`).toString("base64");
+    this.sharedKey = apiKey === process.env.COMPANIES_HOUSE_API_KEY;
+  }
+
+  /**
+   * On the live site's key, never dip into the reserve its company pages need:
+   * when the key's own remaining budget (from response headers) is down to the
+   * reserve, pause until the window resets. Bounded by MAX_WAIT_MS like
+   * takeSlot, so a serverless run still fails cleanly instead of stalling.
+   * With a dedicated batch key this is a no-op.
+   */
+  private async respectSiteReserve(): Promise<void> {
+    if (!this.sharedKey) return;
+    const deadline = Date.now() + MAX_WAIT_MS;
+    for (;;) {
+      const wait = quota.waitMsForLow();
+      if (wait === 0) return;
+      if (Date.now() + wait > deadline) {
+        throw new Error("Companies House budget is down to the live site's reserve — retry once the five-minute window has drained (or set COMPANIES_HOUSE_BATCH_API_KEY).");
+      }
+      if (quota.shouldWarn()) {
+        console.warn(`[research] pausing ${Math.round(wait / 1000)}s: the shared Companies House key is down to the live site's reserve`);
+      }
+      await sleep(wait);
+    }
   }
 
   get callCount(): number {
@@ -132,6 +159,7 @@ export class Collector {
     const url = `${BASE}${ENDPOINT}?${toQuery(params).toString()}`;
     for (let attempt = 0; ; attempt++) {
       await takeSlot();
+      await this.respectSiteReserve();
       this.calls++;
       let res: Response;
       try {
@@ -143,6 +171,16 @@ export class Collector {
         if (attempt >= MAX_RETRIES) throw e;
         await sleep(1000 * 2 ** attempt);
         continue;
+      }
+      // Every response reports the key's remaining budget; feed it to the guard
+      // so the next call can pause before eating the site's reserve.
+      if (this.sharedKey) {
+        const h = (n: string) => {
+          const v = Number(res.headers.get(n));
+          return Number.isFinite(v) && res.headers.get(n) != null ? v : null;
+        };
+        if (res.status === 429) quota.exhausted(h("x-ratelimit-reset"));
+        else quota.observe(h("x-ratelimit-remain"), h("x-ratelimit-reset"));
       }
       // Advanced search 404s (rather than returning an empty set) when a
       // filter combination matches nothing. That is a real zero, not a fault.
