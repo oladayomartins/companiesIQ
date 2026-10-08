@@ -36,7 +36,15 @@ export function MarketReports({
             {editions.map((e) => (
               <div className="mkt-report" key={e.slug}>
                 <h3 className="mkt-report__name">New {e.market.noun}</h3>
-                {compact && place && e.placeCount != null ? (
+                {compact && e.regionTowns && e.placeCount != null ? (
+                  <p className="mkt-report__body">
+                    {e.regionTowns.length === 1
+                      ? `${e.placeCount.toLocaleString("en-GB")} registered in ${e.regionTowns[0].name} in ${e.periodLabel ?? "the latest quarter"}.`
+                      : `${e.placeCount.toLocaleString("en-GB")} registered across the ${e.regionTowns.length} towns we measure in ${place} in ${
+                          e.periodLabel ?? "the latest quarter"
+                        }: ${e.regionTowns.map((t) => `${t.name} ${t.count.toLocaleString("en-GB")}`).join(" · ")}.`}
+                  </p>
+                ) : compact && place && e.placeCount != null ? (
                   <p className="mkt-report__body">
                     {e.placeCount > 0
                       ? `${e.placeCount.toLocaleString("en-GB")} registered in ${place} in ${e.periodLabel ?? "the latest quarter"}.`
@@ -49,9 +57,20 @@ export function MarketReports({
                   <Link className="signal-chip" href={`/blog/${e.slug}`}>
                     Read the market report →
                   </Link>
-                  <Link className="signal-chip" href={e.buildHref}>
-                    {place ? `Build the ${place} list →` : "Build this market →"}
-                  </Link>
+                  {e.regionTowns ? (
+                    e.regionTowns
+                      .filter((t) => t.count > 0)
+                      .slice(0, 3)
+                      .map((t) => (
+                        <Link key={t.name} className="signal-chip" href={t.buildHref}>
+                          {`Build the ${t.name} list →`}
+                        </Link>
+                      ))
+                  ) : (
+                    <Link className="signal-chip" href={e.buildHref}>
+                      {place ? `Build the ${place} list →` : "Build this market →"}
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}

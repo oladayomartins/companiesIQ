@@ -17,11 +17,19 @@ export interface MarketEdition {
   /** With a place: that place's count in the edition, and the period it covers. */
   placeCount?: number | null;
   periodLabel?: string;
+  /** With a region: each measured town in it and its count (biggest first); placeCount is their total. */
+  regionTowns?: { name: string; count: number; buildHref: string }[];
 }
 
 const PREFIX = "commercial-opportunity-";
 
-export async function latestMarketEditions(marketIds: string[], from: string, place?: string): Promise<MarketEdition[]> {
+export async function latestMarketEditions(
+  marketIds: string[],
+  from: string,
+  place?: string,
+  /** A region instead of a town: figures are summed over the region's measured towns. */
+  region?: { name: string; towns: string[] }
+): Promise<MarketEdition[]> {
   const admin = getSupabaseAdmin();
   if (!admin || !marketIds.length) return [];
   const { data } = await admin
@@ -35,7 +43,7 @@ export async function latestMarketEditions(marketIds: string[], from: string, pl
   // A place's own figure comes from the stored dataset (the edition measured 39
   // towns), so a city page can say how many formed THERE, not repeat the UK total.
   const payloads = new Map<string, { period?: { label?: string }; series?: { id: string; cells: { key: string; value: number }[] }[] }>();
-  if (place) {
+  if (place || region) {
     const slugs = marketIds.map((id) => rows.find((r) => r.slug.startsWith(`${PREFIX}${id}-`))?.slug).filter(Boolean) as string[];
     if (slugs.length) {
       const { data: ds } = await admin.from("research_datasets").select("slug,payload").in("slug", slugs);
@@ -51,9 +59,27 @@ export async function latestMarketEditions(marketIds: string[], from: string, pl
     const row = market && rows.find((r) => r.slug.startsWith(`${PREFIX}${id}-`));
     if (!market || !row) continue;
     const payload = payloads.get(row.slug);
-    const cell = payload?.series?.find((s) => s.id === "top")?.cells.find((c) => c.key === place);
+    const cells = payload?.series?.find((s) => s.id === "top")?.cells ?? [];
+    const cell = cells.find((c) => c.key === place);
+    // Towns missing from the edition's rows had zero registrations (zero rows are dropped).
+    // Build links go per town: Companies House filters on location itself, so a town
+    // list is complete, whereas a region filter only narrows one page of national
+    // results and comes back nearly empty.
+    const codes = market.codes.map((c) => c.code).join(",");
+    const regionTowns = region
+      ? region.towns
+          .map((t) => ({
+            name: t,
+            count: cells.find((c) => c.key === t)?.value ?? 0,
+            buildHref: marketSearchHref({ sic: codes, name: `New ${market.noun}`, place: t, incorporated: "12m", from }),
+          }))
+          .sort((a, b) => b.count - a.count)
+      : undefined;
     out.push({
       ...(place && payload ? { placeCount: cell ? cell.value : 0, periodLabel: payload.period?.label } : {}),
+      ...(regionTowns && payload
+        ? { regionTowns, placeCount: regionTowns.reduce((a, t) => a + t.count, 0), periodLabel: payload.period?.label }
+        : {}),
       market,
       slug: row.slug,
       title: row.title,
