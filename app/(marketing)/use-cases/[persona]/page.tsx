@@ -12,6 +12,7 @@ import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { getMarketSummary } from "@/lib/market-summary";
 import { LeadListBuilder } from "@/components/marketing/LeadListBuilder";
 import { FreeAlertForm } from "@/components/FreeAlertForm";
+import { latestMarketEditions } from "@/lib/research/editions";
 
 export const revalidate = 3600;
 
@@ -45,11 +46,15 @@ export default async function UseCasePage({ params }: { params: Promise<{ person
   if (!uc) notFound();
 
   const path = `/use-cases/${uc.slug}`;
-  const [kpis, focus] = await Promise.all([
+  const [kpis, focus, editions] = await Promise.all([
     getRegisterKpis(30).catch(() => null),
     // Live counts for the sectors this audience sells into (cached 6h each).
     Promise.all((uc.sectorFocus ?? []).map(async (f) => ({ ...f, m: await getMarketSummary({ sector: f.sector }) }))),
+    // Latest published Commercial Opportunity edition for each market this
+    // audience sells into; markets without a published edition are skipped.
+    latestMarketEditions((uc.markets ?? []).map((m) => m.id), `use-case:${uc.slug}`).catch(() => []),
   ]);
+  const angleFor = (id: string) => uc.markets?.find((m) => m.id === id)?.angle || "";
   // Every use case now has a lead-list builder on the page, so the primary CTA
   // starts a list there instead of sending people to sign in first.
   const primaryHref = "#build";
@@ -144,6 +149,34 @@ export default async function UseCasePage({ params }: { params: Promise<{ person
           </div>
           <p className="lead-builder__note mono">
             Counts are Companies House totals for the SIC codes CompaniesIQ tracks in each industry.
+          </p>
+        </section>
+      ) : null}
+
+      {editions.length ? (
+        <section className="section">
+          <div className="section__head">
+            <span className="eyebrow">Market intelligence</span>
+            <h2 className="section__title">The research behind the list.</h2>
+          </div>
+          <div className="lead-sectors">
+            {editions.map((e) => (
+              <div className="lead-sector" key={e.slug}>
+                <h3 className="lead-sector__name">New {e.market.noun}</h3>
+                <p className="feat__body" style={{ margin: 0 }}>
+                  {angleFor(e.market.id) || e.excerpt}
+                </p>
+                <Link className="lead-sector__cta" href={`/blog/${e.slug}`}>
+                  Read the market report →
+                </Link>
+                <Link className="lead-sector__cta" href={e.buildHref}>
+                  Build this market →
+                </Link>
+              </div>
+            ))}
+          </div>
+          <p className="lead-builder__note mono">
+            Commercial Opportunity reports · exact Companies House counts, refreshed every quarter
           </p>
         </section>
       ) : null}
