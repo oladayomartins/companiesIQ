@@ -17,7 +17,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { isPartner } from "@/lib/admin";
 import { hasProAccess, canUseHistoricalData, contactAllowance, FREE_FILING_WINDOW } from "@/lib/access";
 import { isWatched } from "@/lib/watchlist";
-import { getSavedLens } from "@/lib/profile";
+import { getSavedLens, getReportTourSeen } from "@/lib/profile";
 import { getDirectorNetwork } from "@/lib/network";
 import { Button } from "@/components/ds";
 import { ErrorState } from "@/components/app/ErrorState";
@@ -179,7 +179,13 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
     : null;
   // A Pro user's pinned lens ("what I sell") seeds the report; the client still
   // overrides it with a per-session switch.
-  const savedLens = user ? await getSavedLens(user.id).catch(() => null) : null;
+  const [savedLens, tourSeen] = user
+    ? await Promise.all([
+        getSavedLens(user.id).catch(() => null),
+        // First-visit tour seen-state (supabase/profiles-report-tour.sql).
+        getReportTourSeen(user.id).catch(() => null),
+      ])
+    : [null, null];
 
   const orgSchema = {
     "@context": "https://schema.org",
@@ -283,6 +289,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           contactEntitled={!!contacts && contacts.limit !== 0}
           contactRemaining={contacts?.remaining ?? null}
           trend={trend}
+          tourSeen={tourSeen}
         />
         {/* The free-alerts band sits BELOW the report now, not above the company
             name. It predates the registration gate, and with the gate in place

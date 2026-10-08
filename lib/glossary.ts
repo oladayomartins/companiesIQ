@@ -127,3 +127,41 @@ export const ROW_TIPS: Record<string, string> = {
 };
 
 export const DEFAULT_ROW_TIP = "Read directly from the Companies House record.";
+
+// ---- First-visit tour --------------------------------------------------------------
+
+export type TourTarget = "lens" | "score" | "fingerprint" | "next";
+
+/** The four steps, in order. `body` may take the lens audience. */
+export const TOUR: { target: TourTarget; title: string; body: (audience: string) => string }[] = [
+  {
+    target: "lens",
+    title: "Start with what you sell",
+    body: (a) =>
+      `Right now this company is scored for ${a}. If you sell something else, change it here — everything on the page re-scores.`,
+  },
+  {
+    target: "score",
+    title: "Read the verdict, then the reasons",
+    body: () =>
+      "The score and band say how strong a fit this is. The rows beside it show why — select one to see the evidence. Anything we couldn't check is left out, not counted as zero.",
+  },
+  {
+    target: "fingerprint",
+    title: "Compare six dimensions",
+    body: () =>
+      "Each is an index from 0 to 100 against sector peers. Watch the direction: on Competition, higher means more crowded.",
+  },
+  {
+    target: "next",
+    title: "Then act on it",
+    body: () =>
+      "Concrete next steps for what you sell. For more detail, use the tabs above: the market, nearby competitors and the full record.",
+  },
+];
+
+export const WELCOME_HINTS = [
+  "Hover or tap any ⓘ for what a metric means",
+  "Select any score row to see why",
+  "Change what you sell to re-score the page",
+];

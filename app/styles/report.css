@@ -416,3 +416,12 @@
 .rs-prov__links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--border-hair); }
 .rs-prov__links a { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; }
 .rs-prov__links a:hover { text-decoration: underline; }
+.rep-head__help { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--surface-card); color: var(--text-strong); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.rep-head__help:hover { border-color: var(--text-faint); }
+.rep-head__help:focus-visible { outline: var(--ring-w) solid var(--border-focus); outline-offset: 2px; }
+.rep-head__helpdot { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--text-muted); display: inline-flex; align-items: center; justify-content: center; font-size: var(--text-micro); font-weight: var(--fw-bold); color: var(--text-muted); }
+@media (max-width: 640px) {
+  /* Icon-only on phones; the name stays for screen readers. */
+  .rep-head__help { padding: 0 9px; font-size: 0; gap: 0; }
+  .rep-head__help .rep-head__helpdot { font-size: var(--text-micro); }
+}

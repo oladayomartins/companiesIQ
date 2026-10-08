@@ -11,13 +11,20 @@ export async function POST(req: NextRequest) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ error: "Not configured." }, { status: 503 });
 
-  const body = (await req.json().catch(() => ({}))) as { full_name?: string; company?: string; onboarded?: boolean };
+  const body = (await req.json().catch(() => ({}))) as {
+    full_name?: string;
+    company?: string;
+    onboarded?: boolean;
+    report_tour_seen?: boolean;
+  };
   // Only touch the fields that were supplied, so a Settings save (name only)
   // never clears company, and onboarding can set both + mark the flag.
   const row: Record<string, unknown> = { id: user.id, email: user.email };
   if (typeof body.full_name === "string") row.full_name = body.full_name.trim().slice(0, 120);
   if (typeof body.company === "string") row.company = body.company.trim().slice(0, 120);
   if (body.onboarded === true) row.onboarded_at = new Date().toISOString();
+  // Company-report tour (supabase/profiles-report-tour.sql).
+  if (body.report_tour_seen === true) row.report_tour_at = new Date().toISOString();
   try {
     await admin.from("profiles").upsert(row, { onConflict: "id" });
     return NextResponse.json({ ok: true, full_name: row.full_name ?? null });
