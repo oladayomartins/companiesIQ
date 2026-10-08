@@ -17,6 +17,9 @@ import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForPlace } from "@/lib/guides";
 import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
 import { SITE_URL } from "@/lib/site";
+import { MARKETS } from "@/lib/research/markets";
+import { latestMarketEditions } from "@/lib/research/editions";
+import { MarketReports } from "@/components/public/MarketReports";
 
 export const revalidate = 3600;
 
@@ -158,6 +161,20 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
             </CardBody>
           </Card>
         </div>
+
+        <MarketReports
+          editions={await latestMarketEditions(
+            MARKETS.map((m) => m.id),
+            `city:${slugify(city.name)}`,
+            city.name
+          )
+            // Biggest local markets first.
+            .then((e) => e.sort((a, b) => (b.placeCount ?? 0) - (a.placeCount ?? 0)))
+            .catch(() => [])}
+          place={city.name}
+          title={`New-company markets in ${city.name}`}
+          compact
+        />
 
         <RelatedGuides guides={guidesForPlace()} />
 

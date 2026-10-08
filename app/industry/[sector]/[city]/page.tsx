@@ -459,6 +459,7 @@ export default async function SectorCityPage({
           ).catch(() => [])}
           sector={stat.sector}
           place={city.name}
+          compact
         />
 
         <PublicCta
