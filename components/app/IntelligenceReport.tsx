@@ -3,12 +3,8 @@ import { Card, CardHeader, CardBody, Badge, Icon } from "@/components/ds";
 import type { IntelligenceReport as Report } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import type { OpportunityIntel } from "@/lib/opportunity";
-import type { DirectorNetwork } from "@/lib/network";
-import type { Filing } from "@/lib/types";
-import { toTimeline } from "@/lib/changes";
 import { AddToProspect, type ProspectTarget } from "@/components/app/AddToProspect";
 import { ContactIntelligence } from "@/components/app/ContactIntelligence";
-import { fmtDate } from "@/lib/format";
 
 function Source({ children }: { children: React.ReactNode }) {
   return (
@@ -42,8 +38,6 @@ export function IntelligenceReport({
   report,
   opportunity = null,
   prospect = null,
-  network = null,
-  filings = [],
   contactEntitled = false,
   contactRemaining = null,
 }: {
@@ -58,11 +52,8 @@ export function IntelligenceReport({
   opportunity?: OpportunityIntel | null;
   // When set (unlocked, in-app), shows the "Add to prospect list" action.
   prospect?: ProspectTarget | null;
-  network?: DirectorNetwork | null;
-  filings?: Filing[];
 }) {
   const r = report;
-  const changes = toTimeline(filings);
   return (
     <div className="report">
       <p className="report__intro">
@@ -162,100 +153,6 @@ export function IntelligenceReport({
               </div>
             </div>
 
-          </CardBody>
-        </Card>
-      ) : null}
-
-      {/* 2 · Recent changes — the "what changed" timeline */}
-      {changes.length ? (
-        <Card>
-          <CardHeader children={<SectionHead n={2} title="Recent changes" />} action={<Badge tone="accent">Timeline</Badge>} />
-          <CardBody>
-            <p className="rsec__note">
-              What&apos;s changed at {r.overview.name} lately — directly from its Companies House filing history.
-            </p>
-            <ol className="timeline">
-              {changes.map((ev, i) => (
-                <li className={`tl-row tl-row--${ev.tone}`} key={i}>
-                  <span className="tl-row__icon" aria-hidden="true">
-                    <Icon name={ev.icon} size={15} />
-                  </span>
-                  <span className="tl-row__body">
-                    <span className="tl-row__label">{ev.label}</span>
-                    {ev.detail ? <span className="tl-row__detail">{ev.detail}</span> : null}
-                  </span>
-                  <span className="tl-row__date mono">{fmtDate(ev.date)}</span>
-                </li>
-              ))}
-            </ol>
-            <Source>Companies House · filing history</Source>
-          </CardBody>
-        </Card>
-      ) : null}
-
-      {/* 3 · Business overview */}
-      <Card>
-        <CardHeader children={<SectionHead n={3} title="Business overview" />} />
-        <CardBody>
-          <dl className="detail-list">
-            <div>
-              <dt>Company</dt>
-              <dd>{r.overview.name}</dd>
-            </div>
-            <div>
-              <dt>Company number</dt>
-              <dd className="mono">{r.overview.number}</dd>
-            </div>
-            <div>
-              <dt>Incorporated</dt>
-              <dd className="mono">{fmtDate(r.overview.incorporated)}</dd>
-            </div>
-            <div>
-              <dt>Industry classification</dt>
-              <dd>
-                {r.overview.classification} · {r.overview.sector}
-              </dd>
-            </div>
-            <div>
-              <dt>Location</dt>
-              <dd>{r.overview.location}</dd>
-            </div>
-            <div>
-              <dt>Company type</dt>
-              <dd>{r.overview.type || "—"}</dd>
-            </div>
-          </dl>
-        </CardBody>
-      </Card>
-
-      {/* 12 · Connected companies (shared directors) */}
-      {network && network.connections.length ? (
-        <Card>
-          <CardHeader
-            children={<SectionHead n={4} title="Connected companies" />}
-            action={<Badge tone="accent">Director network</Badge>}
-          />
-          <CardBody>
-            <p className="rsec__note">
-              Other active companies that share a director with {r.overview.name} — checked across{" "}
-              {network.directorsChecked} director{network.directorsChecked === 1 ? "" : "s"}. A factual map of connected
-              entities from the officer-appointments register.
-            </p>
-            <div className="sim-list">
-              {network.connections.map((conn) => (
-                <Link key={conn.number} href={`/company/${conn.number}`} className="sim-row">
-                  <div className="sim-row__main">
-                    <div className="sim-row__name">{conn.name}</div>
-                    <div className="sim-row__meta mono">
-                      {conn.number}
-                      {conn.sector ? ` · ${conn.sector}` : ""} · via {conn.viaDirectors.join(", ")}
-                    </div>
-                  </div>
-                  <Icon name="chevronRight" size={15} className="sim-row__chev" />
-                </Link>
-              ))}
-            </div>
-            <Source>Companies House · officer appointments</Source>
           </CardBody>
         </Card>
       ) : null}

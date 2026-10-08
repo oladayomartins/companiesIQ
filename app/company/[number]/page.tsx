@@ -26,6 +26,7 @@ import { TrackCompanyCta } from "@/components/app/TrackCompanyCta";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForCompany } from "@/lib/guides";
 import { getCompanyFinancials } from "@/lib/enrichment/financials";
+import { getSectorFormationTrend } from "@/lib/sector-trend";
 import { PublicReportChrome } from "@/components/report/PublicChrome";
 import { PublicShell } from "@/components/public/PublicShell";
 import { JsonLd } from "@/components/JsonLd";
@@ -139,7 +140,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
   const metered = !signedIn && h.get("x-ciq-meter") === "allow";
   const meterLeft = Number(h.get("x-ciq-meter-left") ?? 0) || 0;
 
-  const [economicLive, similar, enrichment, network, financials] = await Promise.all([
+  const [economicLive, similar, enrichment, network, financials, trend] = await Promise.all([
     getRegionLive(c.geo?.region),
     // 24 peers (not 6) so the Competitors tab has a table AND a score
     // distribution worth drawing — the underlying query already fetches 60.
@@ -161,6 +162,12 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
     // shown on the public report too. Phase 2 moves this to the register cache
     // (see docs/financials-ixbrl.md) to drop the per-request document fetch.
     getCompanyFinancials(c.number, { name: c.name }).catch(() => null),
+    // Quarterly sector incorporations for the Market tab. Cached per sector for
+    // an hour inside sector-trend.ts (shared with /industry pages), and null on
+    // any failure, which simply omits the chart.
+    c.primaryClassification?.sector
+      ? getSectorFormationTrend(c.primaryClassification.sector).catch(() => null)
+      : Promise.resolve(null),
   ]);
   const report = buildIntelligenceReport(c, economicLive);
   const watched = unlocked ? await isWatched(c.number).catch(() => false) : false;
@@ -275,6 +282,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
           financials={financials}
           contactEntitled={!!contacts && contacts.limit !== 0}
           contactRemaining={contacts?.remaining ?? null}
+          trend={trend}
         />
         {/* The free-alerts band sits BELOW the report now, not above the company
             name. It predates the registration gate, and with the gate in place

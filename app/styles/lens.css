@@ -311,3 +311,72 @@
 .meter-note svg { color: var(--accent); flex: none; }
 .meter-note strong { color: var(--text-strong); font-weight: 650; }
 .meter-note a { color: var(--accent); }
+
+/* ---- Report tabs (redesign) ------------------------------------------------
+   The active underline is an inset box-shadow rather than the DS ::after at
+   bottom:-1px — inside a horizontally scrolling tablist that overhang creates
+   a vertical scrollbar. */
+.profile-tabs--lens .ciq-tabs { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; max-width: 100%; }
+.profile-tabs--lens .ciq-tabs::-webkit-scrollbar { display: none; }
+.profile-tabs--lens .ciq-tab { white-space: nowrap; flex: none; }
+.profile-tabs--lens .ciq-tab::after { display: none; }
+.profile-tabs--lens .ciq-tab--active { box-shadow: inset 0 -2px 0 var(--accent); }
+.profile-tabs--lens .ciq-tab:focus-visible { outline: var(--ring-w) solid var(--border-focus); outline-offset: -2px; }
+.tab-hint { margin: -14px 0 18px; font-size: var(--text-sm); line-height: var(--lh-normal); color: var(--text-muted); }
+.report-panel:focus-visible { outline: var(--ring-w) solid var(--border-focus); outline-offset: 4px; border-radius: var(--radius-md); }
+.report-panel[hidden] { display: none; }
+
+/* Timeline filters + plain-English line */
+.tl-filters { display: inline-flex; flex-wrap: wrap; gap: 3px; padding: 3px; border-radius: var(--radius-md); background: var(--surface-sunken); }
+.tl-filters__btn { height: 28px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-sm); background: transparent; font: inherit; font-size: var(--text-xs); color: var(--text-muted); cursor: pointer; }
+.tl-filters__btn.is-on { background: var(--surface-card); color: var(--text-strong); box-shadow: var(--shadow-xs); }
+.tl-filters__btn:focus-visible { outline: var(--ring-w) solid var(--border-focus); }
+.tl-filters__n { font-size: var(--text-micro); color: var(--text-faint); }
+.tl-summary { margin: var(--space-3) 0 var(--space-1); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--warn-bg); color: var(--text-body); font-size: var(--text-sm); line-height: var(--lh-relaxed); }
+.tl-summary strong { font-weight: var(--fw-semibold); color: var(--text-strong); }
+.tl-row[hidden] { display: none; }
+
+/* Company details with copy buttons */
+.copylist { margin: 0; }
+.copylist__row { display: grid; grid-template-columns: minmax(96px, 150px) minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--border-hair); }
+.copylist__k { margin: 0; font-size: var(--text-micro); letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
+.copylist__v { margin: 0; font-size: var(--text-sm); color: var(--text-body); overflow-wrap: anywhere; }
+.copybtn { border: 0; background: transparent; padding: 2px 4px; font-size: var(--text-micro); color: var(--text-faint); cursor: pointer; border-radius: var(--radius-xs); }
+.copybtn:hover { color: var(--accent-text); }
+.copybtn.is-done { color: var(--pos); }
+.copybtn:focus-visible { outline: var(--ring-w) solid var(--border-focus); }
+
+/* Filing status */
+.fstatus__big { display: flex; align-items: baseline; gap: var(--space-2); margin-top: var(--space-3); }
+.fstatus__n { font-family: var(--font-grotesk); font-weight: var(--fw-bold); font-size: var(--text-2xl); letter-spacing: var(--tr-tight); color: var(--text-strong); font-variant-numeric: tabular-nums; }
+.fstatus__n.is-risk { color: var(--neg); }
+.fstatus__unit { font-size: var(--text-sm); color: var(--text-muted); }
+.fstatus__line { position: relative; height: 46px; margin: var(--space-4) 6px 0; }
+.fstatus__track, .fstatus__fill, .fstatus__over { position: absolute; top: 19px; height: 4px; border-radius: 2px; }
+.fstatus__track { left: 0; right: 0; background: var(--surface-sunken); }
+.fstatus__fill { left: 0; background: var(--border-strong); }
+.fstatus__over { background: color-mix(in srgb, var(--neg) 45%, transparent); }
+.fstatus__dot { position: absolute; top: 15px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--surface-card); border: 2px solid var(--text-faint); box-sizing: border-box; }
+.fstatus__dot.is-due { border-color: var(--warn); }
+.fstatus__line.is-late .fstatus__dot.is-due { border-color: var(--neg); }
+.fstatus__dot.is-now { background: var(--neg); border-color: var(--neg); }
+.fstatus__lab { position: absolute; top: 32px; font-size: var(--text-micro); color: var(--text-faint); text-transform: uppercase; }
+.fstatus__lab.is-mid { top: 0; transform: translateX(-50%); color: var(--text-muted); white-space: nowrap; }
+.fstatus__lab.is-end { text-align: right; }
+.fstatus__sowhat { margin: var(--space-4) 0 0; padding: var(--space-3); border-radius: var(--radius-md); background: var(--surface-sunken); font-size: var(--text-sm); line-height: var(--lh-relaxed); color: var(--text-muted); }
+.fstatus__sowhat strong { color: var(--text-strong); font-weight: var(--fw-semibold); }
+
+/* Survival bars */
+.survival { display: flex; flex-direction: column; }
+.survival__row { display: grid; grid-template-columns: minmax(96px, 120px) minmax(0, 1fr) 56px; gap: var(--space-3); align-items: center; padding: 7px 0; }
+.survival__k { font-size: var(--text-sm); color: var(--text-muted); }
+.survival__bar { height: 6px; border-radius: 3px; background: var(--surface-sunken); overflow: hidden; }
+.survival__bar > span { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.survival__v { font-size: var(--text-xs); text-align: right; color: var(--text-strong); }
+
+/* Market trend + distribution counts */
+.mkt-trend { margin-top: var(--space-5); }
+.mkt-trend__head { margin-bottom: var(--space-3); font-size: var(--text-micro); letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
+.mkt-trend .icard__src { margin-top: var(--space-2); display: block; }
+.hist__n { font-size: var(--text-micro); color: var(--text-faint); }
+.hist__col.is-self .hist__n { color: var(--accent-text); font-weight: var(--fw-semibold); }
