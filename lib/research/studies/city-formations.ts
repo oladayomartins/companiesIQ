@@ -20,6 +20,7 @@ import { monthsIn, settledQuarters } from "../periods";
 import { columnChart, divergingChart, fmtDelta, fmtInt, fmtPct, markdownTable, rankedBarChart, yearOnYearChart } from "../charts";
 import { markAnomalies } from "../validate";
 import type { Cell, Dataset, Period, PostDraft, Study } from "../types";
+import { marketSearchHref } from "@/lib/market-link";
 
 const TOP_N = 20;
 const MOVER_FLOOR = 300;
@@ -313,7 +314,7 @@ ${markdownTable(["Month", "UK incorporations"], monthly.map((m) => [m.label, fmt
 
 ## How to act on this data
 
-Each location below links to the live list of companies registered there — updated from the register, not frozen at this report's publication date.
+Each location below opens a live, pre-filtered list of the active companies registered there in the last 12 months — updated from the register, not frozen at this report's publication date.
 
 ${markdownTable(
     ["Location", `New companies (${p.label})`, "Year on year", "See the companies"],
@@ -321,7 +322,7 @@ ${markdownTable(
       cell.label,
       fmtInt(cell.value),
       cell.changePct === null || cell.changePct === undefined ? "—" : fmtDelta(cell.changePct),
-      `[Browse ${cell.label}](${cell.href})`,
+      `[Build the ${cell.label} list](${marketSearchHref({ place: cell.label, incorporated: "12m", from: `research:${d.slug}` })})`,
     ])
   )}
 

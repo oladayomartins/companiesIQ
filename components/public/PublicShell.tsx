@@ -31,11 +31,11 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
 // A reusable bottom-of-page conversion band for the SEO landing pages. The band
 // itself stays dark — it is the one sanctioned dark element on a light page,
 // shared with the marketing archetype so both end identically.
-export function PublicCta({ title, sub, ctaLabel }: { title: string; sub: string; ctaLabel?: string }) {
+export function PublicCta({ title, sub, ctaLabel, ctaHref }: { title: string; sub: string; ctaLabel?: string; ctaHref?: string }) {
   return (
     <div className="public-cta">
       <h2 className="public-cta__title">{title}</h2>
-      <PublicCtaBody sub={sub} ctaLabel={ctaLabel} />
+      <PublicCtaBody sub={sub} ctaLabel={ctaLabel} ctaHref={ctaHref} />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { countCompanies, isoDaysAgo } from "@/lib/companies-house";
 import { fmtNumber, fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
+import { marketSearchHref } from "@/lib/market-link";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForSic } from "@/lib/guides";
 import { JsonLd } from "@/components/JsonLd";
@@ -188,6 +189,7 @@ export default async function SicCodePage({ params }: { params: Promise<{ code: 
           title={`Find companies with SIC code ${code}`}
           sub="Create a free account to filter UK companies by SIC code, location and incorporation date — and export the list."
           ctaLabel={`Find SIC ${code} companies`}
+          ctaHref={marketSearchHref({ sic: code, from: `sic:${code}` })}
         />
       </div>
     </PublicShell>
