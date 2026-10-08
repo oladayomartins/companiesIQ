@@ -29,7 +29,9 @@ function headShortCircuit(req: NextRequest): Response | null {
   const path = req.nextUrl.pathname;
   const type = COMPANY_PAGE.test(path) ? "text/html; charset=utf-8" : COMPANY_OG_IMAGE.test(path) ? "image/png" : null;
   if (!type) return null;
-  return new Response(null, {
+  // An empty string body, not null: Vercel drops content-type from a bodyless
+  // middleware response (seen in production). HEAD never sends a body anyway.
+  return new Response("", {
     status: 200,
     headers: {
       "content-type": type,
