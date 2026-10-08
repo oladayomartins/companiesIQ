@@ -329,11 +329,11 @@ Dissolution is not the same as business failure. Most companies are dissolved by
 ## Key findings
 
 - **${fmtPct(oldestActive, 1)} of companies formed in ${first.label} are active today**, ${cohorts.length - 1} full years on.
-- **Early dissolution is rising.** By the end of the year after incorporation, ${fmtPct(dissolvedShare(y1First, 1), 1)} of the ${y1First.label} cohort had been dissolved; for the ${y1Last.label} cohort it was ${fmtPct(
-    dissolvedShare(y1Last, 1),
+- **Early dissolution is rising:** ${fmtPct(dissolvedShare(y1Last, 1), 1)} of companies formed in ${y1Last.label} were dissolved by the end of the following year, against ${fmtPct(
+    dissolvedShare(y1First, 1),
     1
-  )}. By the end of year two the figure rose from ${fmtPct(dissolvedShare(y2First, 2), 1)} (${y2First.label}) to ${fmtPct(dissolvedShare(y2Last, 2), 1)} (${y2Last.label}).
-- **Across the measured cohorts, ${fmtPct(y1Min, 1)} to ${fmtPct(y1Max, 1)} of new companies were dissolved by the end of the following year**${pauseCohort ? ` (excluding ${pauseCohort.label}; see below)` : ""}.
+  )} of those formed in ${y1First.label}.
+- **The two-year rate rose too**, from ${fmtPct(dissolvedShare(y2First, 2), 1)} for the ${y2First.label} cohort to ${fmtPct(dissolvedShare(y2Last, 2), 1)} for ${y2Last.label}.
 ${y5Latest ? `- **By the end of their fifth full year, ${fmtPct(y5Latest.v, 1)} of the ${y5Latest.c.label} cohort had been dissolved.**` : ""}
 - **Line of business matters.** Of companies formed in ${sicYear}, ${fmtPct(bestSic.share, 1)} of those registered under ${bestSic.label.toLowerCase()} (${bestSic.key}) had not been dissolved five years later, against ${fmtPct(
     worstSic.share,

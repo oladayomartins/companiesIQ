@@ -322,7 +322,7 @@ This report measures the whole period exactly, code by code, from the Companies 
 
 ## Key findings
 
-- **${fmtInt(total)} incorporations in ${p.label}**, ${dir} ${fmtDelta(Math.abs(totalDelta)).replace("+", "")} year on year (${fmtInt(prev)} in ${comp?.label}).
+- **${fmtInt(total)} companies were incorporated in ${p.label}**, ${dir} ${fmtDelta(Math.abs(totalDelta)).replace("+", "")} year on year (${fmtInt(prev)} in ${comp?.label}).
 - **${leader.label} (${leader.key}) was the most-registered activity**, with ${fmtInt(leader.value)} new companies — ahead of ${runnerUp.label} (${runnerUp.key}) on ${fmtInt(runnerUp.value)}.
 - **The top three codes together account for ${fmtPct(
     (top[0].value + top[1].value + top[2].value) / total,
