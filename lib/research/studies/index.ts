@@ -3,8 +3,9 @@
 import type { Study } from "../types";
 import { sicFormationsStudy } from "./sic-formations";
 import { cityFormationsStudy } from "./city-formations";
+import { companySurvivalStudy } from "./company-survival";
 
-export const STUDIES: Study[] = [sicFormationsStudy, cityFormationsStudy];
+export const STUDIES: Study[] = [sicFormationsStudy, cityFormationsStudy, companySurvivalStudy];
 
 export function studyById(id: string): Study | null {
   return STUDIES.find((s) => s.id === id) ?? null;

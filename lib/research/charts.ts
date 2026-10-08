@@ -46,6 +46,10 @@ interface FigureOpts {
   desc: string;
   /** Source line under the chart. */
   source: string;
+  /** Fixed top of the value axis — 100 for a percentage chart, so bars read against the whole. */
+  maxValue?: number;
+  /** Value-label formatter; defaults to a whole number. */
+  format?: (n: number) => string;
 }
 
 function figure(svg: string, o: FigureOpts): string {
@@ -76,7 +80,8 @@ export function rankedBarChart(cells: Cell[], o: FigureOpts & { valueLabel?: str
   const labelW = 232;
   const barX = labelW + 12;
   const barMax = W - barX - 74;
-  const max = Math.max(...cells.map((c) => c.value), 1);
+  const max = o.maxValue ?? Math.max(...cells.map((c) => c.value), 1);
+  const fmt = o.format ?? fmtInt;
 
   const bars = cells
     .map((c, i) => {
@@ -86,7 +91,7 @@ export function rankedBarChart(cells: Cell[], o: FigureOpts & { valueLabel?: str
         c.label.length > 34 ? c.label.slice(0, 33) + "…" : c.label
       )}</text><rect x="${barX}" y="${y + 4}" width="${w.toFixed(1)}" height="16" rx="3" fill="${ACCENT}" opacity="${(
         1 - i * 0.028
-      ).toFixed(3)}"></rect><text x="${(barX + w + 8).toFixed(1)}" y="${y + 16}" font-size="12.5" fill="currentColor" opacity="0.75" font-variant-numeric="tabular-nums">${fmtInt(
+      ).toFixed(3)}"></rect><text x="${(barX + w + 8).toFixed(1)}" y="${y + 16}" font-size="12.5" fill="currentColor" opacity="0.75" font-variant-numeric="tabular-nums">${fmt(
         c.value
       )}</text></g>`;
     })
@@ -190,7 +195,8 @@ export function columnChart(points: { label: string; value: number }[], o: Figur
   const plotW = W - padL - 16;
   const plotH = height - padB - padT;
   const max = Math.max(...points.map((p) => p.value), 1);
-  const niceMax = Math.ceil(max / 5000) * 5000 || max;
+  const niceMax = o.maxValue ?? (Math.ceil(max / 5000) * 5000 || max);
+  const fmt = o.format ?? fmtInt;
   const bw = Math.min(64, (plotW / points.length) * 0.62);
   const step = plotW / points.length;
 
@@ -199,7 +205,7 @@ export function columnChart(points: { label: string; value: number }[], o: Figur
       const y = padT + plotH - f * plotH;
       return `<line x1="${padL}" y1="${y}" x2="${W - 16}" y2="${y}" stroke="currentColor" stroke-opacity="0.12"></line><text x="${
         padL - 8
-      }" y="${y + 4}" text-anchor="end" font-size="11.5" fill="currentColor" opacity="0.6" font-variant-numeric="tabular-nums">${fmtInt(
+      }" y="${y + 4}" text-anchor="end" font-size="11.5" fill="currentColor" opacity="0.6" font-variant-numeric="tabular-nums">${fmt(
         niceMax * f
       )}</text>`;
     })
@@ -214,7 +220,7 @@ export function columnChart(points: { label: string; value: number }[], o: Figur
         1
       )}" rx="3" fill="${ACCENT}"></rect><text x="${(x + bw / 2).toFixed(1)}" y="${(y - 6).toFixed(
         1
-      )}" text-anchor="middle" font-size="11.5" fill="currentColor" opacity="0.75" font-variant-numeric="tabular-nums">${fmtInt(
+      )}" text-anchor="middle" font-size="11.5" fill="currentColor" opacity="0.75" font-variant-numeric="tabular-nums">${fmt(
         p.value
       )}</text><text x="${(x + bw / 2).toFixed(1)}" y="${height - 12}" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.8">${esc(
         p.label

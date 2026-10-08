@@ -37,6 +37,7 @@ const secret = env("INGEST_SECRET") || env("CRON_SECRET") || "";
 const qs = new URLSearchParams();
 if (args.includes("--dry")) qs.set("dry", "1");
 if (args.includes("--force")) qs.set("force", "1");
+if (args.includes("--draft")) qs.set("draft", "1");
 const study = arg("--study");
 if (study) qs.set("study", study);
 
