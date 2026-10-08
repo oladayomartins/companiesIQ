@@ -425,3 +425,17 @@
   .rep-head__help { padding: 0 9px; font-size: 0; gap: 0; }
   .rep-head__help .rep-head__helpdot { font-size: var(--text-micro); }
 }
+/* Narrow phones: the wordmark plus "Sign in" + "Get full access" (or the
+   signed-in buttons) can't share one 375px row, and a wrapped header costs
+   ~35px of sticky height on every scroll. Keep the mark, hide the word
+   visually (it stays the link's accessible name), tighten the gaps. */
+@media (max-width: 440px) {
+  .rep-head { flex-wrap: nowrap; gap: 8px; padding: 10px 14px; }
+  .rep-head__word {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .rep-head__cta { gap: 8px; }
+  .rep-head__help { padding: 0 8px; }
+  .rep-head__cta .ciq-btn--md { padding: 0 10px; }
+}

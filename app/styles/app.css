@@ -148,7 +148,11 @@
 .officer-list { display: flex; flex-direction: column; gap: 0; }
 .officer { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-bottom: 1px solid var(--border-hair); }
 .officer:last-child { border-bottom: 0; }
-.officer__meta { flex: 1; }
+.officer__meta { flex: 1; min-width: 0; }
+/* Nature-of-control badges ("Can appoint / remove directors") are long; let
+   them wrap inside the row so the status pill is never pushed off a phone. */
+.officer__meta .ciq-badge { white-space: normal; height: auto; min-height: 22px; padding-top: 3px; padding-bottom: 3px; text-align: left; }
+.officer > .ciq-badge { flex: none; }
 .officer__name { font-weight: 600; font-size: var(--text-ui); color: var(--text-strong); }
 .officer__role { font-size: var(--text-xs); color: var(--text-muted); }
 .officer__date { font-size: var(--text-xs); color: var(--text-muted); }
