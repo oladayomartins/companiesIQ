@@ -23,6 +23,7 @@ import type { SectorTrend } from "@/lib/sector-trend";
 import { QuarterBars } from "@/components/public/QuarterBars";
 import { RecordsPanel } from "@/components/report/RecordsPanel";
 import { FilingStatusCard } from "@/components/report/FilingStatusCard";
+import { SummaryBar } from "@/components/report/SummaryBar";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import type { CompanyFinancials } from "@/lib/enrichment/financials-types";
@@ -340,8 +341,16 @@ export function CompanyProfile({
   // fingerprint and the next steps. Extracted so the gated and ungated views
   // render exactly the same tree — a gated view that quietly drops sections is
   // how the two drift apart.
+  // Signed in, or spending a metered free read: show it. The gate is for the
+  // visitor who has used their allowance.
+  const openToReader = signedIn || metered;
+
   const evidenceBlock = (
     <>
+      {/* An open reader gets the brief in the sticky "In short" bar. A gated
+          reader gets one sentence there, and the full brief stays here behind
+          the gate — still in the HTML, still crawlable. */}
+      {openToReader ? null : (
       <Card>
         <CardBody>
           <div className="brief__head">
@@ -368,6 +377,7 @@ export function CompanyProfile({
           </div>
         </CardBody>
       </Card>
+      )}
 
       <div className="changed">
         <div className="changed__head">
@@ -433,10 +443,6 @@ export function CompanyProfile({
   // One gate, used for the Intelligence tab's evidence and for whole tabs.
   // Signed in: render as-is. Anonymous: blur it, make it inert, and put the
   // free-account CTA over it.
-  // Signed in, or spending a metered free read: show it. The gate is for the
-  // visitor who has used their allowance.
-  const openToReader = signedIn || metered;
-
   const gate = (node: React.ReactNode, what?: string) =>
     openToReader ? (
       node
@@ -570,6 +576,17 @@ export function CompanyProfile({
         </div>
       ) : null}
 
+      <SummaryBar
+        brief={brief}
+        audience={lens.audience}
+        locked={!openToReader}
+        unlockHref={`/sign-in?next=${encodeURIComponent(`/company/${c.number}`)}`}
+        onViewEvidence={() => {
+          setTab("lens");
+          const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          document.getElementById(tabPanelId(TAB_PREFIX, "lens"))?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+        }}
+      >
       <div className="profile-tabs profile-tabs--lens">
         <Tabs
           value={tab}
@@ -590,6 +607,7 @@ export function CompanyProfile({
           <span>Confidence {score.confidence}</span>
         </div>
       </div>
+      </SummaryBar>
       <p className="tab-hint">{TAB_HINT[tab](lens.audience)}</p>
 
       {/* Every panel is in the server HTML; inactive ones are `hidden`, not
