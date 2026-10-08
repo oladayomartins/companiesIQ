@@ -38,7 +38,7 @@ export default async function IndustriesPage() {
               <tr>
                 <th>Sector</th>
                 <th className="num">Active companies</th>
-                <th className="num">New (12m)</th>
+                <th className="num">New (12m, est.)</th>
                 <th className="num">Annual growth</th>
                 <th className="num">5-yr survival</th>
                 <th></th>
@@ -53,7 +53,7 @@ export default async function IndustriesPage() {
                     </Link>
                   </td>
                   <td className="num mono">{fmtNumber(s.businesses)}</td>
-                  <td className="num mono">{fmtNumber(s.newLastYear)}</td>
+                  <td className="num mono">~{fmtNumber(s.newLastYear)}</td>
                   <td className="num">
                     <span className={"mv " + (s.annualGrowth >= 0 ? "mv--up" : "mv--down")}>
                       <Icon name={s.annualGrowth >= 0 ? "trendUp" : "trendDown"} size={13} />
@@ -73,7 +73,7 @@ export default async function IndustriesPage() {
         </CardBody>
       </Card>
       <div className="report__disclaimer">
-        Source · Companies House (active counts) + ONS Business Demography (survival) + ONS Business Population Estimates (growth).
+        Source · Companies House (active counts) + ONS Business Demography (survival) + ONS Business Population Estimates (growth and estimated new registrations).
       </div>
     </div>
   );
