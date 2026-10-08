@@ -25,6 +25,7 @@ import { QuarterBars } from "@/components/public/QuarterBars";
 import { RecordsPanel } from "@/components/report/RecordsPanel";
 import { FilingStatusCard } from "@/components/report/FilingStatusCard";
 import { SummaryBar } from "@/components/report/SummaryBar";
+import { ReportTour } from "@/components/report/ReportTour";
 import type { IntelligenceReport as Report, SimilarCompany } from "@/lib/analytics";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
 import type { CompanyFinancials } from "@/lib/enrichment/financials-types";
@@ -114,6 +115,7 @@ export function CompanyProfile({
   contactEntitled = false,
   contactRemaining = null,
   trend = null,
+  tourSeen = null,
 }: {
   company: Company;
   officers: Officer[];
@@ -144,6 +146,8 @@ export function CompanyProfile({
   contactRemaining?: number | null;
   /** Quarterly sector incorporations (Market tab); null omits the chart. */
   trend?: SectorTrend | null;
+  /** profiles.report_tour_at for a signed-in reader; null = unknown. */
+  tourSeen?: boolean | null;
 }) {
   const c = company;
   const router = useRouter();
@@ -430,9 +434,11 @@ export function CompanyProfile({
         </div>
       </div>
 
-      <Fingerprint cells={fingerprint} peers={report.industry.businesses} lensKey={lensKey} lensScore={score} />
+      <div data-tour="fingerprint">
+        <Fingerprint cells={fingerprint} peers={report.industry.businesses} lensKey={lensKey} lensScore={score} />
+      </div>
 
-      <Card>
+      <Card data-tour="next">
         <CardBody>
           <div className="icard__head">
             <span className="app-eyebrow">What to do next</span>
@@ -574,6 +580,9 @@ export function CompanyProfile({
         </div>
       ) : null}
 
+      <ReportTour signedIn={signedIn} seenOnServer={tourSeen} audience={lens.audience} onBeforeStart={() => setTab("intelligence")} />
+
+      <div data-tour="lens">
       <LensBar
         profileKey={profileKey}
         otherText={otherText}
@@ -582,6 +591,7 @@ export function CompanyProfile({
         canSave={unlocked}
         signedIn={signedIn}
       />
+      </div>
 
       {c.primaryClassification?.sector || (c.geo?.region && c.geo.region !== "Unknown") ? (
         <div className="profile-related">
@@ -639,7 +649,7 @@ export function CompanyProfile({
           {/* The one thing that stays open to everyone, Googlebot included:
               the score. It is the hook, and on its own it is not the product —
               everything else on this tab sits behind the free-account gate. */}
-          <div>
+          <div data-tour="score">
             <LensScoreCard
               score={score}
               weakest={weakest}

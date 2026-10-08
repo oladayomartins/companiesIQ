@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ds";
+import { TourReplayButton } from "@/components/report/TourReplayButton";
 
 // Chrome for the PUBLIC company report (/company/[number]).
 //
@@ -30,6 +31,7 @@ export function PublicReportChrome({
           </span>
         </Link>
         <div className="rep-head__cta">
+          <TourReplayButton />
           {unlocked ? (
             <Button href="/app" variant="secondary" iconRight="arrowRight">
               Open dashboard

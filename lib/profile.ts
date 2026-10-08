@@ -95,3 +95,17 @@ export async function getSavedLens(userId: string): Promise<string | null> {
     return null;
   }
 }
+
+/** Has this user finished or skipped the company-report tour? null = unknown
+ *  (column not provisioned yet — supabase/profiles-report-tour.sql). */
+export async function getReportTourSeen(userId: string): Promise<boolean | null> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return null;
+  try {
+    const { data, error } = await admin.from("profiles").select("report_tour_at").eq("id", userId).maybeSingle();
+    if (error) return null;
+    return !!data?.report_tour_at;
+  } catch {
+    return null;
+  }
+}
