@@ -73,6 +73,14 @@ function regionTerms(region: string): string[] {
   return REGION_TO_LOCATION[region] ? [REGION_TO_LOCATION[region]] : REGION_TERMS[region] ?? [region];
 }
 
+/**
+ * London and the nations are searched by name, so Companies House's total is
+ * exact — but a row can match on a street name ("Prince of Wales Road" in
+ * Glasgow). Drop rows whose postcode resolves to a DIFFERENT region; keep rows
+ * we couldn't resolve rather than hide a real match.
+ */
+const inNamedRegion = (region: string) => (x: EnrichedResult) => !x.region || x.region === region;
+
 /** Rows per term when sweeping a region — enough to fill several pages once merged. */
 const REGION_TERM_SIZE = 100;
 
@@ -120,7 +128,8 @@ export async function explore(params: ExploreParams): Promise<{ total: number; r
       if (!needsRegionFilter) {
         // One London/nation region, or an explicit town: Companies House counts it exactly.
         const r = await ch.advancedSearchAcross({ ...params, sicCodes, location: params.location ?? regionText, size: params.size ?? 40 });
-        return { total: r.total, results: r.results, live: true, exact: true };
+        const results = regionText && !params.location ? r.results.filter(inNamedRegion(regions[0])) : r.results;
+        return { total: r.total, results, live: true, exact: true };
       }
       const inRegion = await sweepRegions(regions, (location) =>
         ch.advancedSearchAcross({ ...params, sicCodes, location, startIndex: 0, size: REGION_TERM_SIZE })
@@ -146,7 +155,7 @@ export async function explore(params: ExploreParams): Promise<{ total: number; r
   // addresses, so Companies House filters and counts it exactly — no sweep.
   if (regions.length === 1 && !params.sector && !params.location && REGION_TO_LOCATION[regions[0]]) {
     const r = await ch.advancedSearch({ ...params, location: REGION_TO_LOCATION[regions[0]], size: params.size ?? 40 });
-    return { total: r.total, results: r.results, live: true, exact: true };
+    return { total: r.total, results: r.results.filter(inNamedRegion(regions[0])), live: true, exact: true };
   }
 
   const base: ch.AdvancedSearchParams = { ...params, startIndex: 0, size: REGION_TERM_SIZE };
