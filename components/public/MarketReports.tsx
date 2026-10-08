@@ -8,21 +8,43 @@ import type { MarketEdition } from "@/lib/research/editions";
  * render time, so the links follow each new quarter and never point at a draft.
  * Renders nothing when the industry has no market report yet.
  */
-export function MarketReports({ editions, sector, place }: { editions: MarketEdition[]; sector: string; place?: string }) {
+export function MarketReports({
+  editions,
+  sector,
+  place,
+  title,
+  compact = false,
+}: {
+  editions: MarketEdition[];
+  sector?: string;
+  place?: string;
+  /** Overrides the default heading. */
+  title?: string;
+  /** One line per market with the place's own figure instead of the national summary. */
+  compact?: boolean;
+}) {
   if (!editions.length) return null;
   return (
     <div style={{ marginTop: 18 }}>
       <Card>
         <CardHeader
           subtitle="Commercial opportunity research"
-          title={place ? `Market reports: ${sector} in ${place}` : `Market reports in ${sector}`}
+          title={title ?? (place ? `Market reports: ${sector} in ${place}` : `Market reports in ${sector}`)}
         />
         <CardBody>
           <div className="mkt-reports">
             {editions.map((e) => (
               <div className="mkt-report" key={e.slug}>
                 <h3 className="mkt-report__name">New {e.market.noun}</h3>
-                {e.excerpt ? <p className="mkt-report__body">{e.excerpt}</p> : null}
+                {compact && place && e.placeCount != null ? (
+                  <p className="mkt-report__body">
+                    {e.placeCount > 0
+                      ? `${e.placeCount.toLocaleString("en-GB")} registered in ${place} in ${e.periodLabel ?? "the latest quarter"}.`
+                      : `None registered in ${place} in ${e.periodLabel ?? "the latest quarter"}.`}
+                  </p>
+                ) : e.excerpt && !compact ? (
+                  <p className="mkt-report__body">{e.excerpt}</p>
+                ) : null}
                 <div className="signal-chips">
                   <Link className="signal-chip" href={`/blog/${e.slug}`}>
                     Read the market report →
