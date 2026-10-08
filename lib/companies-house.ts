@@ -15,13 +15,14 @@ import type { Company, Officer, Filing, Charge, SearchResult, OfficerAppointment
 import { classifyMany, classifySic } from "./sic";
 import { resolveGeo } from "./geography";
 import { titleCaseName } from "./format";
+import { quota, type Priority } from "./ch-quota";
 
 const BASE = "https://api.company-information.service.gov.uk";
 
 /** Why a Companies House call failed. Callers branch on this rather than on
  *  the message: "we are misconfigured" and "the register is busy" look the
  *  same to a fetch but must not read the same to a visitor. */
-export type CompaniesHouseErrorKind = "unconfigured" | "not_found" | "rate_limited" | "upstream";
+export type CompaniesHouseErrorKind = "unconfigured" | "not_found" | "rate_limited" | "upstream" | "deferred";
 
 export class CompaniesHouseError extends Error {
   status: number;
@@ -38,7 +39,61 @@ export function hasApiKey(): boolean {
   return !!process.env.COMPANIES_HOUSE_API_KEY;
 }
 
-async function chFetch<T>(path: string, init?: RequestInit): Promise<T> {
+/**
+ * One Companies House GET. `priority: "low"` marks aggregate work (sector
+ * counts, trends, market summaries) that must never starve company lookups:
+ * it is refused — without spending a request — once the key's 5-minute budget
+ * drops to the reserve, and limited in concurrency. See lib/ch-quota.ts.
+ */
+async function chFetch<T>(path: string, init?: RequestInit, requested: Priority = "high"): Promise<T> {
+  // During `next build` (every deploy) ~290 pages are pre-rendered from the
+  // register. That burst shares the live site's quota, so ALL build-time calls
+  // are low priority: a deploy can never eat the reserve that company pages
+  // need. Every pre-rendered page already renders a fallback when a call fails,
+  // and ISR refreshes it at runtime.
+  const priority: Priority = process.env.NEXT_PHASE === "phase-production-build" ? "low" : requested;
+  if (priority === "low") {
+    if (!quota.allowsLow()) throw deferred();
+    const release = await quota.acquireLow();
+    try {
+      // The budget may have fallen while this call waited for a slot.
+      if (!quota.allowsLow()) throw deferred();
+      return await chFetchNow<T>(path, init);
+    } finally {
+      release();
+    }
+  }
+  return chFetchNow<T>(path, init);
+}
+
+/** Can low-priority work needing about `cost` requests start now? */
+export function canAffordLow(cost: number): boolean {
+  if (quota.allowsLow(cost)) return true;
+  if (quota.shouldWarn()) {
+    console.warn(`[companies-house] deferring a ${cost}-request job: ${quota.remaining()} left in this window, reserve kept for company lookups`);
+  }
+  return false;
+}
+
+/** Requests countCompaniesAcross will make for these params (one per SIC chunk). */
+export function requestsFor(params: AdvancedSearchParams): number {
+  return (params.sicCodes ?? []).length ? chunkSicCodes({ ...params, size: 1 }).length : 1;
+}
+
+function deferred(): CompaniesHouseError {
+  if (quota.shouldWarn()) {
+    console.warn(`[companies-house] deferring low-priority requests: ${quota.remaining()} left in this window, reserve kept for company lookups`);
+  }
+  return new CompaniesHouseError("Deferred to protect the Companies House quota.", 429, "deferred");
+}
+
+const headerNum = (res: Response, name: string): number | null => {
+  const v = res.headers.get(name);
+  const n = v == null ? NaN : Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+async function chFetchNow<T>(path: string, init?: RequestInit): Promise<T> {
   const key = process.env.COMPANIES_HOUSE_API_KEY;
   if (!key) {
     // The fix is ours, not the visitor's — the env var name and where to get a
@@ -60,8 +115,15 @@ async function chFetch<T>(path: string, init?: RequestInit): Promise<T> {
     // within rate limits (600 requests / 5 min).
     next: { revalidate: 300 },
   });
+  // Every live response carries the key's remaining budget — the one signal
+  // all server instances share. (Cached responses carry an expired window,
+  // which the guard ignores.)
+  if (res.status === 429) {
+    quota.exhausted(headerNum(res, "x-ratelimit-reset"));
+    throw new CompaniesHouseError("Rate limited by Companies House — try again shortly.", 429, "rate_limited");
+  }
+  quota.observe(headerNum(res, "x-ratelimit-remain"), headerNum(res, "x-ratelimit-reset"));
   if (res.status === 404) throw new CompaniesHouseError("Not found", 404, "not_found");
-  if (res.status === 429) throw new CompaniesHouseError("Rate limited by Companies House — try again shortly.", 429, "rate_limited");
   if (!res.ok) throw new CompaniesHouseError(`Companies House returned ${res.status}`, res.status, "upstream");
   return (await res.json()) as T;
 }
@@ -133,6 +195,8 @@ export interface AdvancedSearchParams {
   dissolvedTo?: string;
   size?: number;
   startIndex?: number;
+  /** Not a query param — "low" for aggregate counts (see chFetch). */
+  priority?: Priority;
 }
 
 /** One page of search results plus the register's total for the query. */
@@ -162,7 +226,7 @@ export async function advancedSearch(params: AdvancedSearchParams): Promise<{ to
   // zero instead of a "Not found" page.
   let data: CHAdvancedResponse;
   try {
-    data = await chFetch<CHAdvancedResponse>(`/advanced-search/companies?${qs.toString()}`);
+    data = await chFetch<CHAdvancedResponse>(`/advanced-search/companies?${qs.toString()}`, undefined, params.priority);
   } catch (e) {
     if (e instanceof CompaniesHouseError && e.status === 404) return { total: 0, results: [] };
     throw e;

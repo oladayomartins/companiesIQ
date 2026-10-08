@@ -44,7 +44,10 @@ const isoDaysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).to
 async function compute(sector: string | null, location: string | null): Promise<MarketSummary | null> {
   const sicCodes = sector ? allSicCodesForSector(sector) : [];
   if (sector && !sicCodes.length) return null; // unknown sector — don't guess
-  const base: ch.AdvancedSearchParams = { sicCodes, location: location ?? undefined, status: ["active"], size: 1 };
+  // Low priority: these counts decorate pages; company lookups come first.
+  const base: ch.AdvancedSearchParams = { sicCodes, location: location ?? undefined, status: ["active"], size: 1, priority: "low" };
+  // Three counts; check the whole cost before spending any of it.
+  if (!ch.canAffordLow(3 * ch.requestsFor(base))) throw new Error("deferred: Companies House budget near reserve");
   const [all, fresh, year] = await Promise.all([
     ch.countCompaniesAcross(base),
     ch.countCompaniesAcross({ ...base, incorporatedFrom: isoDaysAgo(30) }),
@@ -87,6 +90,7 @@ async function newest(sector: string | null, location: string | null): Promise<c
     status: ["active"],
     incorporatedFrom: isoDaysAgo(365),
     size: 100,
+    priority: "low",
   });
   const sample = [...r.results].sort((a, b) => (b.incorporated ?? "").localeCompare(a.incorporated ?? ""));
   return { total: r.total, results: sample };

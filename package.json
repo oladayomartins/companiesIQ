@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "worker": "node worker/ingest-worker.mjs",
-    "check:ui": "node scripts/ui-checks.mjs"
+    "check:ui": "node scripts/ui-checks.mjs",
+    "test:quota": "node --test scripts/test-ch-quota.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

@@ -16,7 +16,7 @@
 // ============================================================
 import "server-only";
 import { unstable_cache } from "next/cache";
-import { countCompaniesAcross } from "./companies-house";
+import { countCompaniesAcross, canAffordLow, requestsFor } from "./companies-house";
 import { allSicCodesForSector } from "./sic";
 
 export interface QuarterPoint {
@@ -69,9 +69,14 @@ async function compute(sector: string, quarters: number): Promise<SectorTrend | 
   const sicCodes = allSicCodesForSector(sector);
   if (sicCodes.length === 0) return null;
   const windows = quarterWindows(quarters);
+  // Check the whole job's cost before spending any of it.
+  const cost = windows.length * requestsFor({ sicCodes, incorporatedFrom: windows[0].from, incorporatedTo: windows[0].to });
+  if (!canAffordLow(cost)) throw new Error("deferred: Companies House budget near reserve");
   // Throws on a Companies House failure, so unstable_cache never stores it.
   const counts = await Promise.all(
-    windows.map((w) => countCompaniesAcross({ sicCodes, incorporatedFrom: w.from, incorporatedTo: w.to }))
+    // Low priority: refused (and not cached) while the key's budget is near the
+    // reserve, so a cold cache can never starve company-page lookups.
+    windows.map((w) => countCompaniesAcross({ sicCodes, incorporatedFrom: w.from, incorporatedTo: w.to, priority: "low" }))
   );
   // A run of zeroes means the query didn't work, not that nobody incorporated
   // for three years — don't draw a flat line and call it data.
@@ -85,13 +90,21 @@ async function compute(sector: string, quarters: number): Promise<SectorTrend | 
 
 const cached = unstable_cache(compute, ["sector-trend-full-sic-v1"], { revalidate: 6 * 3600 });
 
+// Concurrent renders of the same sector on one instance share one computation
+// (unstable_cache doesn't de-duplicate simultaneous misses).
+const inflight = new Map<string, Promise<SectorTrend | null>>();
+
 export async function getSectorFormationTrend(sector: string, quarters = 12): Promise<SectorTrend | null> {
-  try {
-    return await cached(sector, quarters);
-  } catch {
-    // Rate-limited or unreachable: omit the chart, keep the page, retry next render.
-    return null;
-  }
+  const key = `${sector}|${quarters}`;
+  const running = inflight.get(key);
+  if (running) return running;
+  const p = cached(sector, quarters)
+    // Deferred, rate-limited or unreachable: omit the chart (pages fall back to
+    // the labelled estimate), keep the page, retry on a later render.
+    .catch(() => null)
+    .finally(() => inflight.delete(key));
+  inflight.set(key, p);
+  return p;
 }
 
 /**

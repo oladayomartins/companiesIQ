@@ -21,6 +21,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Fast, no network: the Companies House quota guard keeps aggregate
+      # counts from starving company-page lookups (2026-10-08 incident).
+      - name: Unit tests (Companies House quota guard)
+        run: npm run test:quota
+
       # Retried once: next/font downloads Google Fonts at build time, and a bad
       # response from Google fails the build with no code change involved
       # ("Cannot read properties of null" in next/font's google loader). A real
