@@ -16,6 +16,7 @@ import { classifyMany, classifySic } from "./sic";
 import { resolveGeo } from "./geography";
 import { titleCaseName } from "./format";
 import { quota, type Priority } from "./ch-quota";
+import { telemetry, callerFromStack, captureStack, endpointShape, type Outcome } from "./ch-telemetry";
 
 const BASE = "https://api.company-information.service.gov.uk";
 
@@ -52,18 +53,39 @@ async function chFetch<T>(path: string, init?: RequestInit, requested: Priority 
   // need. Every pre-rendered page already renders a fallback when a call fails,
   // and ISR refreshes it at runtime.
   const priority: Priority = process.env.NEXT_PHASE === "phase-production-build" ? "low" : requested;
+  // Telemetry: which route spent this call, and how it ended (lib/ch-telemetry).
+  const caller = callerFromStack(captureStack());
+  const note = (outcome: Outcome) =>
+    telemetry.record({ caller, endpoint: endpointShape(path), priority, outcome, remain: quota.remaining() });
+  const run = async (): Promise<T> => {
+    try {
+      const [out, cached] = await chFetchNow<T>(path, init);
+      note(cached ? "cached" : "ok");
+      return out;
+    } catch (e) {
+      const kind = e instanceof CompaniesHouseError ? e.kind : null;
+      note(kind === "not_found" ? "not_found" : kind === "rate_limited" ? "rate_limited" : "error");
+      throw e;
+    }
+  };
   if (priority === "low") {
-    if (!quota.allowsLow()) throw deferred();
+    if (!quota.allowsLow()) {
+      note("deferred");
+      throw deferred();
+    }
     const release = await quota.acquireLow();
     try {
       // The budget may have fallen while this call waited for a slot.
-      if (!quota.allowsLow()) throw deferred();
-      return await chFetchNow<T>(path, init);
+      if (!quota.allowsLow()) {
+        note("deferred");
+        throw deferred();
+      }
+      return await run();
     } finally {
       release();
     }
   }
-  return chFetchNow<T>(path, init);
+  return run();
 }
 
 /** Can low-priority work needing about `cost` requests start now? */
@@ -93,7 +115,8 @@ const headerNum = (res: Response, name: string): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-async function chFetchNow<T>(path: string, init?: RequestInit): Promise<T> {
+/** The parsed body, and whether it came from Next's fetch cache (no quota spent). */
+async function chFetchNow<T>(path: string, init?: RequestInit): Promise<[T, boolean]> {
   const key = process.env.COMPANIES_HOUSE_API_KEY;
   if (!key) {
     // The fix is ours, not the visitor's — the env var name and where to get a
@@ -122,10 +145,14 @@ async function chFetchNow<T>(path: string, init?: RequestInit): Promise<T> {
     quota.exhausted(headerNum(res, "x-ratelimit-reset"));
     throw new CompaniesHouseError("Rate limited by Companies House — try again shortly.", 429, "rate_limited");
   }
-  quota.observe(headerNum(res, "x-ratelimit-remain"), headerNum(res, "x-ratelimit-reset"));
+  const reset = headerNum(res, "x-ratelimit-reset");
+  quota.observe(headerNum(res, "x-ratelimit-remain"), reset);
+  // A response replayed from Next's fetch cache carries the window it was
+  // first fetched in, which has since reset — so it cost no quota now.
+  const cached = reset != null && reset * 1000 <= Date.now();
   if (res.status === 404) throw new CompaniesHouseError("Not found", 404, "not_found");
   if (!res.ok) throw new CompaniesHouseError(`Companies House returned ${res.status}`, res.status, "upstream");
-  return (await res.json()) as T;
+  return [(await res.json()) as T, cached];
 }
 
 // ---------------------------------------------------------------
