@@ -15,7 +15,7 @@ import { slugify } from "@/lib/slug";
 import { isPrioritySector, priorityCitiesFor } from "@/lib/sector-city";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
 import { QuarterBars } from "@/components/public/QuarterBars";
-import { getSectorFormationTrend } from "@/lib/sector-trend";
+import { getSectorFormationTrend, newRegistrations, coverageText } from "@/lib/sector-trend";
 import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForSector } from "@/lib/guides";
 import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
@@ -35,11 +35,11 @@ export async function generateMetadata({ params }: { params: Promise<{ sector: s
   const { sector } = await params;
   const stat = statForSlug(sector);
   if (!stat) return { title: "Industry" };
-  const desc = `${stat.sector} in the UK: ${fmtNumber(stat.businesses)} active companies, ${fmtNumber(
-    stat.newLastYear,
-  )} new in the last year (est., ${fmtDelta(stat.annualGrowth)}), with ${stat.survival.fiveYear.toFixed(
-    1,
-  )}% five-year survival. Live company data from Companies House, ONS & Nomis.`;
+  // Same cached trend the page renders from — no extra Companies House calls.
+  const nr = newRegistrations(await getSectorFormationTrend(stat.sector), stat.newLastYear);
+  const desc = `${stat.sector} in the UK: ${fmtNumber(stat.businesses)} active companies, ${
+    nr.live ? `${nr.display} incorporated in the last four quarters` : `an estimated ${fmtNumber(stat.newLastYear)} new in the last year`
+  }, with ${stat.survival.fiveYear.toFixed(1)}% five-year survival. Live company data from Companies House, ONS & Nomis.`;
   return {
     title: `${stat.sector} — UK industry data`,
     description: desc,
@@ -100,10 +100,19 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
 
         <div className="profile-kpis">
           <Stat label="Active companies" value={fmtNumber(stat.businesses)} sub="UK total" />
-          {/* Modelled sector figure, labelled as an estimate. The chart below is
-              live but covers only the tracked SIC codes, so it is a trend,
-              not a replacement for this total. */}
-          <Stat label="New (12m, est.)" value={`~${fmtNumber(stat.newLastYear)}`} delta={fmtDelta(stat.annualGrowth)} sub="ONS estimate" />
+          {/* Live sector total (every SIC code in the sector) from the chart
+              below; the labelled ONS estimate only if Companies House didn't answer. */}
+          {(() => {
+            const nr = newRegistrations(trend, stat.newLastYear);
+            return (
+              <Stat
+                label={nr.label}
+                value={nr.display}
+                delta={nr.live ? (nr.change != null ? `${fmtDelta(nr.change)} vs prior 4` : undefined) : fmtDelta(stat.annualGrowth)}
+                sub={nr.note}
+              />
+            );
+          })()}
           <Stat label="1-yr survival" value={`${stat.survival.oneYear.toFixed(1)}%`} />
           <Stat label="5-yr survival" value={`${stat.survival.fiveYear.toFixed(1)}%`} />
         </div>
@@ -114,16 +123,15 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
               <CardHeader
                 subtitle="Companies House · last 12 quarters"
                 title="New incorporations"
-                action={<Badge tone="neutral">{trend.codeCount} SIC codes</Badge>}
+                action={<Badge tone="neutral">All {trend.codeCount} SIC codes</Badge>}
               />
               <CardBody>
                 <QuarterBars
                   points={trend.points}
-                  label={`Quarterly incorporations across the ${trend.codeCount} SIC codes tracked in ${stat.sector}`}
+                  label={`Quarterly incorporations across all ${trend.codeCount} SIC codes in ${stat.sector}`}
                 />
                 <div className="source">
-                  <span className="source__dot">●</span> Counted across the {trend.codeCount} SIC codes we track in this
-                  sector, not the whole SIC division — a trend, not a sector total.
+                  <span className="source__dot">●</span> Every incorporation on the register with a SIC code in this sector — {coverageText(trend)}.
                 </div>
               </CardBody>
             </Card>

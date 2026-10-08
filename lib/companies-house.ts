@@ -192,6 +192,93 @@ export async function countCompanies(params: AdvancedSearchParams): Promise<numb
   return r.total;
 }
 
+// Companies House's edge rejects long advanced-search URLs with a 403.
+// Measured 2026-10-08: 2,119 chars passed, 2,215 failed. Stay under 2,000.
+const MAX_SEARCH_URL = 2000;
+
+/**
+ * countCompanies for any number of SIC codes. A code list is OR — a company
+ * matching several codes counts once — so when the list fits one URL the total
+ * is exact. Longer lists are packed into as few URL-sized requests as possible
+ * and summed; a company listing codes from two different chunks is then
+ * counted twice (measured at ~2% for Manufacturing, the only sector that needs
+ * splitting). Codes stay in order, so related divisions share a chunk.
+ */
+/** Split a SIC list into as few URL-sized groups as the other params allow (order kept). */
+function chunkSicCodes(params: AdvancedSearchParams): string[][] {
+  const codes = params.sicCodes ?? [];
+  const other = { ...params, sicCodes: [] as string[] };
+  const fixed =
+    BASE.length +
+    "/advanced-search/companies?".length +
+    // Every non-SIC param the request will carry, measured the way advancedSearch encodes it.
+    [
+      other.q && `company_name_includes=${encodeURIComponent(other.q)}`,
+      ...(other.status ?? []).map((v) => `company_status=${v}`),
+      ...(other.companyType ?? []).map((v) => `company_type=${v}`),
+      other.location && `location=${encodeURIComponent(other.location)}`,
+      other.incorporatedFrom && `incorporated_from=${other.incorporatedFrom}`,
+      other.incorporatedTo && `incorporated_to=${other.incorporatedTo}`,
+      other.dissolvedFrom && `dissolved_from=${other.dissolvedFrom}`,
+      other.dissolvedTo && `dissolved_to=${other.dissolvedTo}`,
+      `size=${other.size ?? 40}`,
+      other.startIndex && `start_index=${other.startIndex}`,
+    ]
+      .filter(Boolean)
+      .join("&").length +
+    16;
+  const room = MAX_SEARCH_URL - fixed;
+  const chunks: string[][] = [];
+  let cur: string[] = [];
+  let len = 0;
+  for (const c of codes) {
+    const add = `&sic_codes=${c}`.length;
+    if (cur.length && len + add > room) {
+      chunks.push(cur);
+      cur = [];
+      len = 0;
+    }
+    cur.push(c);
+    len += add;
+  }
+  if (cur.length) chunks.push(cur);
+  return chunks;
+}
+
+export async function countCompaniesAcross(params: AdvancedSearchParams): Promise<{ total: number; requests: number }> {
+  if (!(params.sicCodes ?? []).length) return { total: await countCompanies(params), requests: 1 };
+  const chunks = chunkSicCodes({ ...params, size: 1 });
+  const totals = await Promise.all(chunks.map((sicCodes) => countCompanies({ ...params, sicCodes })));
+  return { total: totals.reduce((t, n) => t + n, 0), requests: chunks.length };
+}
+
+/**
+ * advancedSearch for any number of SIC codes. One request when the list fits
+ * (exact). Otherwise the chunks are treated as one list laid end to end: each
+ * chunk is counted, `startIndex` is mapped into the right chunk, and a page
+ * that crosses a boundary is filled from the next. The total matches
+ * countCompaniesAcross (same ~2% double-count caveat).
+ */
+export async function advancedSearchAcross(params: AdvancedSearchParams): Promise<{ total: number; results: SearchResult[]; split: boolean }> {
+  const chunks = (params.sicCodes ?? []).length ? chunkSicCodes(params) : [params.sicCodes ?? []];
+  if (chunks.length <= 1) return { ...(await advancedSearch(params)), split: false };
+  const totals = await Promise.all(chunks.map((sicCodes) => countCompanies({ ...params, sicCodes, startIndex: undefined })));
+  const total = totals.reduce((t, n) => t + n, 0);
+  const size = params.size ?? 40;
+  let start = params.startIndex ?? 0;
+  const results: SearchResult[] = [];
+  for (let k = 0; k < chunks.length && results.length < size; k++) {
+    if (start >= totals[k]) {
+      start -= totals[k];
+      continue;
+    }
+    const page = await advancedSearch({ ...params, sicCodes: chunks[k], startIndex: start, size: size - results.length });
+    results.push(...page.results);
+    start = 0;
+  }
+  return { total, results, split: true };
+}
+
 export function isoDaysAgo(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);

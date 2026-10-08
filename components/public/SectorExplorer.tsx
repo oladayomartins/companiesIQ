@@ -16,8 +16,9 @@ import { slugify } from "@/lib/slug";
 export interface SectorRow {
   sector: string;
   businesses: number;
-  /** Modelled 12-month registrations (ONS) — an estimate, labelled as one. */
-  newLastYear: number;
+  /** New registrations: the live last-4-quarters total when `newLive`, else the labelled ONS 12-month estimate. */
+  newValue: number;
+  newLive: boolean;
   annualGrowth: number;
 }
 
@@ -106,7 +107,15 @@ export function SectorExplorer({ sectors }: { sectors: SectorRow[] }) {
                   <strong className="mono">{fmtNumber(s.businesses)}</strong> active
                 </span>
                 <span>
-                  <strong className="mono">~{fmtNumber(s.newLastYear)}</strong> new · 12m est.
+                  {s.newLive ? (
+                    <>
+                      <strong className="mono">{fmtNumber(s.newValue)}</strong> new · 4 quarters
+                    </>
+                  ) : (
+                    <>
+                      <strong className="mono">~{fmtNumber(s.newValue)}</strong> new · 12m est.
+                    </>
+                  )}
                 </span>
               </span>
               <span className={`dx-pill${s.annualGrowth >= 5 ? " is-pos" : ""}`}>
@@ -123,7 +132,7 @@ export function SectorExplorer({ sectors }: { sectors: SectorRow[] }) {
               <tr>
                 <th scope="col">Sector</th>
                 <th scope="col">Active</th>
-                <th scope="col">New · 12m (est.)</th>
+                <th scope="col">New · last 4 quarters</th>
                 <th scope="col">Growth</th>
                 <th scope="col">
                   <span className="sr-only">Open</span>
@@ -137,7 +146,7 @@ export function SectorExplorer({ sectors }: { sectors: SectorRow[] }) {
                     <Link href={`/industry/${slugify(s.sector)}`}>{s.sector}</Link>
                   </th>
                   <td className="mono">{fmtNumber(s.businesses)}</td>
-                  <td className="mono">~{fmtNumber(s.newLastYear)}</td>
+                  <td className="mono">{s.newLive ? fmtNumber(s.newValue) : `~${fmtNumber(s.newValue)} est.`}</td>
                   <td className={`mono${s.annualGrowth >= 5 ? " is-pos" : ""}`}>{fmtDelta(s.annualGrowth)}</td>
                   <td className="dx-table__go">
                     <Link href={`/industry/${slugify(s.sector)}`} aria-label={`Open ${s.sector}`}>

@@ -112,7 +112,7 @@ export function MarketHeader({
           </p>
           <p className="mkt__note">
             {summary.location ? `Registered office in ${summary.location}` : "Across the UK"}
-            {summary.sicCodes ? ` · across ${summary.sicCodes} tracked ${sector} SIC codes` : ""} · live from Companies House
+            {summary.sicCodes ? ` · all ${summary.sicCodes} ${sector} SIC codes` : ""} · live from Companies House
           </p>
         </>
       ) : loaded ? null : (
