@@ -128,8 +128,8 @@ export default async function SectorCityPage({
   if (!stat || !city) notFound();
 
   const region = REGION_STATS[city.region];
-  // Real register numbers (sector queried as its tracked SIC codes, so the
-  // totals are Companies House's own — not a 100-row sample). Falls back to
+  // Real register numbers (sector queried as every SIC code in it, so the
+  // totals are Companies House's own sector totals — not a 100-row sample). Falls back to
   // the sampled pull if Companies House doesn't answer.
   const [market, newestPage] = await Promise.all([
     getMarketSummary({ sector: stat.sector, place: city.name }),
@@ -310,7 +310,7 @@ export default async function SectorCityPage({
         </div>
         {exact ? (
           <p className="mkt__note" style={{ marginTop: 8 }}>
-            Counts are live Companies House totals for {market!.sicCodes} tracked {stat.sector} SIC codes, by registered-office
+            Counts are live Companies House totals across all {market!.sicCodes} {stat.sector} SIC codes, by registered-office
             address in {city.name} — where companies are registered, not necessarily where they trade.
           </p>
         ) : null}

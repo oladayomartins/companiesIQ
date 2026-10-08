@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardBody, Badge, Icon } from "@/components/ds";
 import { SECTOR_STATS } from "@/lib/ons";
+import { getSectorFormationTrends, newRegistrations } from "@/lib/sector-trend";
 import { fmtNumber, fmtDelta } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -22,6 +23,9 @@ export default async function IndustriesPage() {
     );
   }
   const sectors = Object.values(SECTOR_STATS).sort((a, b) => b.businesses - a.businesses);
+  // Live sector totals from the shared 6h trend cache (same data as /industry).
+  const trends = await getSectorFormationTrends(sectors.map((s) => s.sector));
+  const nr = new Map(sectors.map((s) => [s.sector, newRegistrations(trends.get(s.sector) ?? null, s.newLastYear)]));
   return (
     <div className="screen">
       <div className="screen-head">
@@ -38,7 +42,7 @@ export default async function IndustriesPage() {
               <tr>
                 <th>Sector</th>
                 <th className="num">Active companies</th>
-                <th className="num">New (12m, est.)</th>
+                <th className="num">New · last 4 quarters</th>
                 <th className="num">Annual growth</th>
                 <th className="num">5-yr survival</th>
                 <th></th>
@@ -53,7 +57,7 @@ export default async function IndustriesPage() {
                     </Link>
                   </td>
                   <td className="num mono">{fmtNumber(s.businesses)}</td>
-                  <td className="num mono">~{fmtNumber(s.newLastYear)}</td>
+                  <td className="num mono">{nr.get(s.sector)!.live ? nr.get(s.sector)!.display : `${nr.get(s.sector)!.display} est.`}</td>
                   <td className="num">
                     <span className={"mv " + (s.annualGrowth >= 0 ? "mv--up" : "mv--down")}>
                       <Icon name={s.annualGrowth >= 0 ? "trendUp" : "trendDown"} size={13} />
@@ -73,7 +77,7 @@ export default async function IndustriesPage() {
         </CardBody>
       </Card>
       <div className="report__disclaimer">
-        Source · Companies House (active counts) + ONS Business Demography (survival) + ONS Business Population Estimates (growth and estimated new registrations).
+        Source · Companies House (active counts) + ONS Business Demography (survival) + ONS Business Population Estimates (growth). New registrations: live Companies House incorporations over the last four completed quarters across every SIC code in the sector (“est.” = ONS estimate where the register didn’t answer).
       </div>
     </div>
   );
