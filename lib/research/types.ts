@@ -122,6 +122,8 @@ export interface PostDraft {
   body_md: string;
   faq: { q: string; a: string }[];
   related: { label: string; href: string }[];
+  /** The "Key takeaways" box — plain sentences (see takeaways.ts). */
+  key_takeaways?: string[];
 }
 
 export interface Study {

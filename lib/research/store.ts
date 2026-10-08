@@ -69,6 +69,7 @@ export async function upsertResearchPost(
     body_md: draft.body_md,
     faq: draft.faq,
     related: draft.related,
+    ...(draft.key_takeaways?.length ? { key_takeaways: draft.key_takeaways } : {}),
     author: opts.author,
     status: opts.status,
     updated_at: now,

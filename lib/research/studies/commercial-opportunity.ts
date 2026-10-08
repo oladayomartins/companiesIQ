@@ -247,8 +247,8 @@ function renderFor(m: Market) {
 
 ## What we found
 
-- **${fmtInt(total)} new ${lower}** in ${p.label}, against ${fmtInt(t.prevIncorporations)} in ${comp.label} (${fmtDelta(t.changePct)}).
-- **${fmtPct(total / (t.ukIncorporations || 1), 2)} of all ${fmtInt(t.ukIncorporations)} UK incorporations** in the quarter.
+- **${fmtInt(total)} new ${lower} were registered in ${p.label}**, against ${fmtInt(t.prevIncorporations)} in ${comp.label} (${fmtDelta(t.changePct)}).
+- **They made up ${fmtPct(total / (t.ukIncorporations || 1), 2)} of all ${fmtInt(t.ukIncorporations)} UK incorporations** in the quarter.
 - **${leader.label} led** with ${fmtInt(leader.value)}${cities[1] ? `, followed by ${cities[1].label} (${fmtInt(cities[1].value)})` : ""}${cities[2] ? ` and ${cities[2].label} (${fmtInt(cities[2].value)})` : ""}.
 - **${fmtPct(t.cohortSurvival, 1)} of ${lower} formed in ${t.cohortYear} had not been dissolved five years later**, ${survivalWord} the ${fmtPct(t.allCohortSurvival, 1)} for all UK companies formed that year.
 

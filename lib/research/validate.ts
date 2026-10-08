@@ -154,6 +154,13 @@ export function checkDraft(draft: PostDraft, d: Dataset): Issue[] {
     issues.push({ level: "block", check: "meta-length", detail: `Meta description is ${draft.meta_description.length} characters (max 155).` });
   }
   if (!draft.faq.length) issues.push({ level: "warn", check: "faq", detail: "No FAQ block — weakens the answer surface." });
+  // Every blog post carries a Key takeaways box; a research edition without one
+  // breaks the format (and loses the summary search engines and AI assistants read).
+  const kt = draft.key_takeaways ?? [];
+  if (kt.length < 3) issues.push({ level: "block", check: "takeaways", detail: `Only ${kt.length} key takeaways (need 3–5).` });
+  if (kt.some((t) => /\bNaN\b|\bundefined\b|\*\*|\]\(/.test(t))) {
+    issues.push({ level: "block", check: "takeaways", detail: "A key takeaway contains an unrendered value or raw markdown." });
+  }
 
   // Every caveat the dataset declares must actually appear in the article.
   for (const caveat of d.caveats) {

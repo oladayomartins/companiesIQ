@@ -62,6 +62,13 @@ const ARTICLES = [
   // ------------------------------------------------------------ Business strategy: what the data means
   {
     slug: "what-company-formation-data-tells-us-about-the-uk-economy",
+    key_takeaways: [
+      "Company formation data is exact and published daily, but it measures registrations — not trading businesses, turnover or jobs.",
+      "In H1 2026, 400,176 companies were incorporated in the UK, 5.9% fewer than in H1 2025.",
+      "Software development registrations rose 71.4% year on year while buying and selling own real estate fell 14.0%, a sharp shift in what founders are setting up.",
+      "A registered office is a legal address, not a place of business, so place counts show where companies register rather than where they operate.",
+      "Most dissolutions are voluntary strike-offs, so treating dissolution counts as failure rates overstates business failure by a wide margin."
+    ],
     title: "What company formation data can — and can't — tell you about the UK economy",
     excerpt:
       "New company registrations are fast, exact and free to read. They are also easy to over-read. What the Companies House register reliably shows, where it misleads, and how to use it well.",
@@ -154,6 +161,13 @@ The point of reading formation data is usually to act on it. If software develop
   // ------------------------------------------------------------ Lead intelligence: why lists go stale
   {
     slug: "why-b2b-prospect-lists-go-stale",
+    key_takeaways: [
+      "60.1% of UK companies formed in 2022 have already been dissolved, so a static prospect list decays quickly.",
+      "Between 42% and 55% of each year's new companies are dissolved within three calendar years of incorporation.",
+      "Early dissolution is rising: 26.3% of companies formed in 2024 were dissolved by the end of 2025, against 17.6% of the 2016 cohort.",
+      "Decay varies by line of business: 68.3% of 2020's property-letting companies were still on the register five years later, against 26.5% of online retailers.",
+      "Build lists from the live register, reach new companies early and check status before outreach."
+    ],
     title: "Why B2B prospect lists go stale: what ten years of Companies House data shows",
     excerpt:
       "More than half of the companies formed in 2022 have already been dissolved. Exact register data on how fast company lists decay — and what that means for how you build and refresh one.",
@@ -233,6 +247,13 @@ CompaniesIQ reads the register live, so every list reflects company status at th
   // ------------------------------------------------------------ Market intelligence: London's share
   {
     slug: "london-share-of-new-uk-companies",
+    key_takeaways: [
+      "London's share of new UK company registrations rose from 22.5% in 2016 to 27.2% in the first half of 2026.",
+      "In Q2 2026, London registrations rose 5.5% year on year while UK-wide registrations fell 8.5%.",
+      "Part of the rise reflects addresses, not activity: formation agents and virtual offices register many companies at central London addresses.",
+      "Falling registrations elsewhere also lift London's share — the register shows the rise but not its cause.",
+      "For suppliers to new businesses London is the deepest single market, but check where a company actually operates before assigning territory."
+    ],
     title: "London's growing share of new UK companies — and what's really behind it",
     excerpt:
       "London's share of UK company registrations has risen from 22.5% in 2016 to 27.2% in the first half of 2026. Exact Companies House figures, and why part of the rise is about addresses, not economics.",
@@ -341,6 +362,12 @@ async function main() {
   }
   console.log("  ✓ All internal /blog/ links resolve.");
 
+  // A re-run refreshes content; it must not re-date an article already published.
+  const firstPublished = new Map();
+  {
+    const res = await fetch(`${REST}?select=slug,published_at&slug=in.(${ARTICLES.map((a) => a.slug).join(",")})`, { headers });
+    if (res.ok) for (const r of await res.json()) if (r.published_at) firstPublished.set(r.slug, r.published_at);
+  }
   const base = Date.now();
   const rows = ARTICLES.map((a, i) => ({
     slug: a.slug,
@@ -350,9 +377,10 @@ async function main() {
     body_md: a.body_md,
     faq: a.faq,
     related: a.related,
+    key_takeaways: a.key_takeaways,
     author: AUTHOR,
     status,
-    published_at: DRAFT ? null : new Date(base - i * 60000).toISOString(),
+    published_at: DRAFT ? null : firstPublished.get(a.slug) ?? new Date(base - i * 60000).toISOString(),
     updated_at: new Date(base).toISOString(),
   }));
 

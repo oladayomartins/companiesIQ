@@ -12,6 +12,7 @@ import "server-only";
 import type { Study, Period, PostDraft } from "./types";
 import { yearEarlier } from "./periods";
 import { blocking, checkDataset, checkDraft, type Issue } from "./validate";
+import { withTakeaways } from "./takeaways";
 import { logRun, saveDataset, upsertResearchPost } from "./store";
 
 export const RESEARCH_AUTHOR = "CompaniesIQ Research";
@@ -36,7 +37,7 @@ export async function runStudy(study: Study, period: Period, opts: { dryRun?: bo
   try {
     const dataset = await study.collect(period, yearEarlier(period));
     const issues = [...checkDataset(dataset), ...(study.check?.(dataset) ?? [])];
-    const draft = study.render(dataset);
+    const draft = withTakeaways(study.render(dataset));
     issues.push(...checkDraft(draft, dataset));
 
     const blockers = blocking(issues);
