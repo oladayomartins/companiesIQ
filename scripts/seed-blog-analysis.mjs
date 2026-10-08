@@ -14,7 +14,7 @@
 //
 // Sources for the figures below:
 //   · uk-company-survival-rates-h1-2026 (company-survival study, retrieved 2026-10-08)
-//   · top-sic-codes-uk-company-registrations-h1-2026 (sic-formations study, retrieved 2026-09-06)
+//   · top-sic-codes-uk-company-registrations-h1-2026 (sic-formations study, regenerated 2026-10-08)
 //   · London/UK annual and quarterly counts re-run 2026-10-08 (location=London,
 //     incorporated_from/to, advanced company search)
 //
@@ -75,7 +75,7 @@ This guide sets out what the Companies House register can support, using figures
 
 Every UK limited company, LLP and PLC is created by registration at Companies House. The register records the date, the registered office, up to four SIC codes describing the intended activity, and later the company's status — including when it is dissolved. Because registration is a legal requirement, the count is a census, not a survey: nobody is sampled, and the figure for a period is exact.
 
-Our [H1 2026 edition](${SIC_H1}) measured **400,150 incorporations in the first half of 2026, down 5.9% on the 425,084 in the first half of 2025.** That is a precise statement about company registrations. Whether it is a statement about the economy is the question this article is about.
+Our [H1 2026 edition](${SIC_H1}) measured **400,176 incorporations in the first half of 2026, down 5.9% on the 425,088 in the first half of 2025.** That is a precise statement about company registrations. Whether it is a statement about the economy is the question this article is about.
 
 ## What formation data is good for
 
@@ -83,11 +83,10 @@ Our [H1 2026 edition](${SIC_H1}) measured **400,150 incorporations in the first 
 
 Changes in what people register are a fast read on where founders think the opportunity is. In H1 2026 the clearest movement was in software:
 
-- **Software development (SIC 62012):** 20,729 registrations, up 71.6% year on year.
-- **Software publishing (SIC 58290):** 4,062, up 74.8%.
-- **Data processing and hosting (SIC 63110):** 3,802, up 56.7%.
+- **Software development (SIC 62012):** 20,765 registrations, up 71.4% year on year.
+- **Data processing and hosting (SIC 63110):** 3,810, up 56.4%.
 
-Over the same period **buying and selling own real estate (SIC 68100) fell 14.1%** and online retail (47910) fell 7.1%, although online retail remained the single most-registered activity. Those are large, simultaneous movements in opposite directions — the kind of shift that shows up in the register months before it appears in output statistics.
+Over the same period **buying and selling own real estate (SIC 68100) fell 14.0%** and online retail (47910) fell 7.1%, although online retail remained the single most-registered activity. Those are large, simultaneous movements in opposite directions — the kind of shift that shows up in the register months before it appears in output statistics.
 
 What the register cannot tell you is *why*. A surge in software registrations is consistent with a wave of AI-related start-ups, with contractors re-describing their activity, or with formation agents changing the default codes they file. The register alone doesn't separate those. What it does tell you, unambiguously, is that a lot more companies are now *declaring* software as their business — which is exactly what a supplier selling to software companies needs to know.
 
@@ -134,12 +133,12 @@ The register also contains administrative events that look like economic ones:
 
 ## From pattern to prospects
 
-The point of reading formation data is usually to act on it. If software registrations are up 71.6%, the useful next step is the list of companies behind that number. You can open [software development companies formed in the last 12 months](/search?sic=62012&inc=12m&from=blog%3Aformation-data-uk-economy) on the live register, or browse every [SIC code we track](/sic). [Free new-company alerts](/free-alerts) send new registrations in a sector or place each week.
+The point of reading formation data is usually to act on it. If software development registrations are up 71.4%, the useful next step is the list of companies behind that number. You can open [software development companies formed in the last 12 months](/search?sic=62012&inc=12m&from=blog%3Aformation-data-uk-economy) on the live register, or browse every [SIC code we track](/sic). [Free new-company alerts](/free-alerts) send new registrations in a sector or place each week.
 
 *Figures are exact Companies House counts from CompaniesIQ research editions and queries re-run on the dates stated, under the Open Government Licence v3.0. See our [data sources](/sources).*`,
     faq: [
       { q: "Is the number of new companies a good measure of the UK economy?", a: "It is a good, fast measure of new business set-up and of where founders see opportunity, by sector and place. It is not a measure of trading activity, turnover or employment: many registered companies never trade, and registration addresses don't always reflect where businesses operate." },
-      { q: "How many companies were incorporated in the UK in the first half of 2026?", a: "400,150 according to our H1 2026 research edition (exact Companies House count, retrieved September 2026), down 5.9% on 425,084 in H1 2025. Counts for recent periods rise slightly for a few weeks as late registrations are processed." },
+      { q: "How many companies were incorporated in the UK in the first half of 2026?", a: "400,176 according to our H1 2026 research edition (exact Companies House count, retrieved October 2026), down 5.9% on 425,088 in H1 2025. Counts for recent periods rise slightly for a few weeks as late registrations are processed." },
       { q: "Does a dissolved company mean the business failed?", a: "Usually not. Most dissolutions are voluntary strike-offs by the company's own directors. In our survival study, fewer than 1% of the 2016 cohort is in liquidation, while 71.6% has been dissolved." },
       { q: "Why do SIC code counts add up to more than the total?", a: "A company can list up to four SIC codes, so it is counted under each code it lists. Shares by SIC code are shares of companies, not slices of a whole, and don't sum to 100%." },
     ],
@@ -272,7 +271,7 @@ The shape is a step up in 2020–21, a dip in 2024, and a sharp rise since. The 
 
 The register records *that* London's share rose, not *why*. There are three plausible explanations, and they are not mutually exclusive.
 
-**1. More business is genuinely being started in London.** London's sector mix leans towards professional services, software and finance — the codes that grew in our [H1 2026 SIC edition](${SIC_H1}), where software development registrations rose 71.6% and management consultancy 15.1%. Sectors that grew nationally and are London-heavy would lift London's share. *Test:* if this is the driver, London's share should be rising within individual SIC codes less than overall.
+**1. More business is genuinely being started in London.** London's sector mix leans towards professional services, software and finance — the codes that grew in our [H1 2026 SIC edition](${SIC_H1}), where software development registrations rose 71.4% and management consultancy 15.1%. Sectors that grew nationally and are London-heavy would lift London's share. *Test:* if this is the driver, London's share should be rising within individual SIC codes less than overall.
 
 **2. More companies are registered at London service addresses.** Formation agents, accountants and virtual-office providers register very large numbers of companies at a small number of central London addresses. If a growing share of founders — including founders based elsewhere in the UK or overseas — use these services, London's count rises without any change in where businesses operate. *Test:* concentration of registrations at the busiest London addresses should be rising.
 
