@@ -8,7 +8,8 @@
 // and rows we could not measure are shown greyed and excluded from the maths.
 import { useId, useState } from "react";
 import { CountUp } from "@/components/public/CountUp";
-import { Card, CardBody, Icon, Badge } from "@/components/ds";
+import { Card, CardBody, Icon, Badge, InfoTip } from "@/components/ds";
+import { GLOSS, DIM_TIPS, type DimKey } from "@/lib/glossary";
 import type { LensScore, LedgerRow, Tone, LensKey } from "@/lib/lens";
 import { LENSES } from "@/lib/lens";
 
@@ -112,10 +113,16 @@ export function LensScoreCard({
     <Card className="scorecard">
       <CardBody>
         <div className="scorecard__top">
-          <span className="app-eyebrow">Opportunity score</span>
-          <span className={`scorecard__conf mono is-${score.confidence}`}>
-            <span className="scorecard__confdot" aria-hidden="true" />
-            Confidence {score.confidence}
+          <span className="scorecard__eyebrow">
+            <span className="app-eyebrow">Opportunity score</span>
+            <InfoTip {...GLOSS.score} />
+          </span>
+          <span className="scorecard__eyebrow">
+            <span className={`scorecard__conf mono is-${score.confidence}`}>
+              <span className="scorecard__confdot" aria-hidden="true" />
+              Confidence {score.confidence}
+            </span>
+            <InfoTip {...GLOSS.confidence} source={`${GLOSS.confidence.source} · ${score.coverage}%`} />
           </span>
         </div>
 
@@ -146,11 +153,14 @@ export function LensScoreCard({
                     </span>
                   ))}
                 </div>
-                <div className="scorecard__scale mono" aria-hidden="true">
-                  <span>0</span>
-                  <span>34</span>
-                  <span>67</span>
-                  <span>100</span>
+                <div className="scorecard__scalerow">
+                  <div className="scorecard__scale mono" aria-hidden="true">
+                    <span>0</span>
+                    <span>34</span>
+                    <span>67</span>
+                    <span>100</span>
+                  </div>
+                  <InfoTip {...GLOSS.bands} label="How are the score bands set?" />
                 </div>
               </div>
             </div>
@@ -195,6 +205,7 @@ export function LensScoreCard({
 }
 
 export interface FingerprintCell {
+  key: Exclude<DimKey, "fit">;
   label: string;
   value: number;
   trend: "up" | "flat" | "down";
@@ -202,6 +213,11 @@ export interface FingerprintCell {
   tone: Tone;
 }
 
+/**
+ * Six dimensions, each an index 0–100. Cells are toggle buttons; the selected
+ * one explains itself in the panel underneath. The ⓘ sits beside the button,
+ * not inside it — a button inside a button is invalid and unreachable.
+ */
 export function Fingerprint({
   cells,
   peers,
@@ -213,34 +229,63 @@ export function Fingerprint({
   lensKey: LensKey;
   lensScore: LensScore;
 }) {
+  const [sel, setSel] = useState<DimKey>("competition");
+  const panelId = useId();
   const arrow = (t: FingerprintCell["trend"]) => (t === "up" ? "↑" : t === "down" ? "↓" : "●");
+  const all: (Omit<FingerprintCell, "key"> & { key: DimKey; badge?: boolean })[] = [
+    ...cells,
+    {
+      key: "fit",
+      label: `${LENSES[lensKey].short} fit`,
+      value: lensScore.score,
+      trend: "flat",
+      state: lensScore.verdict,
+      tone: lensScore.band === "strong" ? "good" : lensScore.band === "moderate" ? "watch" : "muted",
+      badge: true,
+    },
+  ];
+  const current = all.find((c) => c.key === sel) ?? all[0];
+
   return (
     <Card>
       <CardBody>
         <div className="fp__head">
           <span className="app-eyebrow">Company fingerprint</span>
-          <span className="fp__sub mono">Indexed 0–100 against {peers.toLocaleString("en-GB")} sector peers</span>
+          <span className="fp__sub mono">Indexed 0–100 against {peers.toLocaleString("en-GB")} sector peers · select a box</span>
         </div>
         <div className="fp">
-          {cells.map((c) => (
-            <div className={`fp__cell ${toneClass(c.tone)}`} key={c.label}>
-              <span className="fp__label mono">{c.label}</span>
-              <span className="fp__value">{c.value}</span>
-              <span className="fp__state">
-                <span className="fp__arrow" aria-hidden="true">{arrow(c.trend)}</span> {c.state}
-              </span>
+          {all.map((c) => (
+            <div className={`fp__cell ${toneClass(c.tone)}${c.key === "fit" ? " is-lens" : ""}${c.key === sel ? " is-sel" : ""}`} key={c.key}>
+              <button
+                type="button"
+                className="fp__pick"
+                aria-pressed={c.key === sel}
+                aria-controls={panelId}
+                onClick={() => setSel(c.key)}
+              >
+                <span className="fp__label mono">{c.label}</span>
+                <span className="fp__value">{c.value}</span>
+                <span className="fp__state">
+                  {c.badge ? (
+                    <Badge tone={lensScore.band === "strong" ? "pos" : lensScore.band === "moderate" ? "accent" : "neutral"}>{c.state}</Badge>
+                  ) : (
+                    <>
+                      <span className="fp__arrow" aria-hidden="true">
+                        {arrow(c.trend)}
+                      </span>{" "}
+                      {c.state}
+                    </>
+                  )}
+                </span>
+              </button>
+              <InfoTip {...DIM_TIPS[c.key].tip} className="fp__tip" />
             </div>
           ))}
-          <div className="fp__cell is-lens">
-            <span className="fp__label mono">{LENSES[lensKey].short} fit</span>
-            <span className="fp__value">{lensScore.score}</span>
-            <span className="fp__state">
-              <Badge tone={lensScore.band === "strong" ? "pos" : lensScore.band === "moderate" ? "accent" : "neutral"}>
-                {lensScore.verdict}
-              </Badge>
-            </span>
-          </div>
         </div>
+        <p className="fp__explain" id={panelId} aria-live="polite">
+          <span className="fp__explaink mono">{current.label}</span>
+          {DIM_TIPS[current.key].explain}
+        </p>
       </CardBody>
     </Card>
   );

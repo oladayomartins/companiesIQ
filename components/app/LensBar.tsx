@@ -5,7 +5,8 @@
 // free visitors get the full mechanic; saving it as a default is Pro.
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Button, Icon, Badge } from "@/components/ds";
+import { Button, Icon, Badge, InfoTip } from "@/components/ds";
+import { GLOSS } from "@/lib/glossary";
 import { PROFILES, PROFILE_BY_KEY, LENSES, DEFAULT_PROFILE, type Profile } from "@/lib/lens";
 import { toast } from "@/lib/toast";
 
@@ -223,7 +224,9 @@ export function LensBar({
   return (
     <div className="lensbar">
       <div className="lensbar__intro">
-        <div className="lensbar__eyebrow mono">Viewing as</div>
+        <div className="lensbar__eyebrow mono">
+          Viewing as <InfoTip {...GLOSS.lens} label="What does this choice change?" />
+        </div>
         <div className="lensbar__hint">Scoring, signals and actions re-weight</div>
       </div>
 

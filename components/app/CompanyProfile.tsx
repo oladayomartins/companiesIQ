@@ -16,7 +16,8 @@ import { GrowthBeacon } from "@/components/app/GrowthBeacon";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Card, CardHeader, CardBody, Tabs, tabButtonId, tabPanelId, StatusPill, Badge, Tag, CompanyAvatar, Icon, Button } from "@/components/ds";
+import { Card, CardHeader, CardBody, Tabs, tabButtonId, tabPanelId, StatusPill, Badge, Tag, CompanyAvatar, Icon, Button, InfoTip } from "@/components/ds";
+import { FACT_TIPS, ROW_TIPS, DEFAULT_ROW_TIP } from "@/lib/glossary";
 import { IntelligenceReport } from "@/components/app/IntelligenceReport";
 import type { Company, Officer, Filing, Charge, PSC } from "@/lib/types";
 import type { SectorTrend } from "@/lib/sector-trend";
@@ -74,12 +75,15 @@ const DEFAULT_GATE_WHAT =
   "The signals behind the score, this company's fingerprint against its sector peers, the market and competitive read, and what to do next";
 
 /** A small "k / v" run used by the market, competitive and lens cards. */
-function MiniRows({ rows }: { rows: { k: string; v: string }[] }) {
+function MiniRows({ rows, tips = false }: { rows: { k: string; v: string }[]; tips?: boolean }) {
   return (
     <div className="minirows">
       {rows.map((r) => (
         <div className="minirows__row" key={r.k}>
-          <span className="minirows__k">{r.k}</span>
+          <span className="minirows__k">
+            {r.k}
+            {tips ? <InfoTip title={r.k} body={ROW_TIPS[r.k] ?? DEFAULT_ROW_TIP} /> : null}
+          </span>
           <span className="minirows__v mono">{r.v}</span>
         </div>
       ))}
@@ -294,6 +298,7 @@ export function CompanyProfile({
   // comparable across lenses; only the last cell moves with the lens.
   const fingerprint: FingerprintCell[] = [
     {
+      key: "financial",
       label: "Financial",
       value: hasFiledAccounts ? 62 : 22,
       trend: hasFiledAccounts ? "up" : "flat",
@@ -301,6 +306,7 @@ export function CompanyProfile({
       tone: hasFiledAccounts ? "good" : "watch",
     },
     {
+      key: "growth",
       label: "Growth",
       value: Math.max(0, Math.min(100, Math.round(50 + report.industry.annualGrowth * 8))),
       trend: report.industry.annualGrowth >= 0 ? "up" : "down",
@@ -308,6 +314,7 @@ export function CompanyProfile({
       tone: report.industry.annualGrowth >= 1 ? "good" : report.industry.annualGrowth >= 0 ? "watch" : "risk",
     },
     {
+      key: "market",
       label: "Market",
       value: Math.max(0, Math.min(100, Math.round(report.survival.fiveYear * 1.6 + 20))),
       trend: report.regional.regionalGrowth >= report.regional.nationalGrowth ? "up" : "down",
@@ -315,6 +322,7 @@ export function CompanyProfile({
       tone: report.regional.regionalGrowth >= report.regional.nationalGrowth ? "good" : "watch",
     },
     {
+      key: "compliance",
       label: "Compliance",
       value: c.accounts?.overdue || c.confirmationStatement?.overdue ? 30 : 88,
       trend: c.accounts?.overdue || c.confirmationStatement?.overdue ? "down" : "up",
@@ -322,6 +330,7 @@ export function CompanyProfile({
       tone: c.accounts?.overdue || c.confirmationStatement?.overdue ? "risk" : "good",
     },
     {
+      key: "competition",
       label: "Competition",
       value:
         report.local.density === "Very high" ? 92 : report.local.density === "High" ? 76 : report.local.density === "Moderate" ? 52 : 28,
@@ -387,23 +396,35 @@ export function CompanyProfile({
         </div>
         <div className="changed__items">
           <div className="changed__item">
-            <span className="changed__k mono">Industry growth</span>
+            <span className="changed__k mono">
+              Industry growth
+              <InfoTip {...FACT_TIPS.growth(report.local.region)} />
+            </span>
             <span className={`changed__v ${report.industry.annualGrowth >= 0 ? "is-good" : "is-risk"}`}>
               {pc(report.industry.annualGrowth)}
             </span>
           </div>
           <div className="changed__item">
-            <span className="changed__k mono">Annual filing</span>
+            <span className="changed__k mono">
+              Annual filing
+              <InfoTip {...FACT_TIPS.filing} />
+            </span>
             <span className={`changed__v ${c.confirmationStatement?.overdue ? "is-risk" : "is-good"}`}>
               {c.confirmationStatement?.overdue ? "Overdue" : "Current"}
             </span>
           </div>
           <div className="changed__item">
-            <span className="changed__k mono">{newlyIncorporated ? "Newly incorporated" : "Company age"}</span>
+            <span className="changed__k mono">
+              {newlyIncorporated ? "Newly incorporated" : "Company age"}
+              <InfoTip {...FACT_TIPS.age} />
+            </span>
             <span className="changed__v">{incDays != null ? shortAge(incDays) : "—"}</span>
           </div>
           <div className="changed__item">
-            <span className="changed__k mono">Local competition</span>
+            <span className="changed__k mono">
+              Local competition
+              <InfoTip {...FACT_TIPS.competition} />
+            </span>
             <span className="changed__v">{report.local.density}</span>
           </div>
         </div>
@@ -694,7 +715,7 @@ export function CompanyProfile({
                     </Badge>
                   </div>
                   <div className="icard__headline">{lensCard.headline}</div>
-                  <MiniRows rows={lensCard.rows} />
+                  <MiniRows rows={lensCard.rows} tips />
                   <p className="icard__note">{lensCard.note}</p>
                   <div className="icard__foot">
                     <span />
