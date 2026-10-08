@@ -17,6 +17,7 @@ import { classifyMany, classifySic } from "./sic";
 import { resolveGeo } from "./geography";
 import { titleCaseName } from "./format";
 import { quota, type Priority } from "./ch-quota";
+import { cacheSecondsFor } from "./ch-cache-policy";
 import { telemetry, callerFromStack, captureStack, endpointShape, type Outcome } from "./ch-telemetry";
 
 const BASE = "https://api.company-information.service.gov.uk";
@@ -47,7 +48,7 @@ export function hasApiKey(): boolean {
  * it is refused — without spending a request — once the key's 5-minute budget
  * drops to the reserve, and limited in concurrency. See lib/ch-quota.ts.
  */
-async function chFetch<T>(path: string, init?: RequestInit, requested: Priority = "high"): Promise<T> {
+async function chFetch<T>(path: string, init?: RequestInit, requested: Priority = "high", cacheSeconds?: number): Promise<T> {
   // During `next build` (every deploy) ~290 pages are pre-rendered from the
   // register. That burst shares the live site's quota, so ALL build-time calls
   // are low priority: a deploy can never eat the reserve that company pages
@@ -60,7 +61,7 @@ async function chFetch<T>(path: string, init?: RequestInit, requested: Priority 
     telemetry.record({ caller, endpoint: endpointShape(path), priority, outcome, remain: quota.remaining() });
   const run = async (): Promise<T> => {
     try {
-      const [out, cached] = await chFetchNow<T>(path, init);
+      const [out, cached] = await chFetchNow<T>(path, init, cacheSeconds);
       note(cached ? "cached" : "ok");
       return out;
     } catch (e) {
@@ -117,7 +118,7 @@ const headerNum = (res: Response, name: string): number | null => {
 };
 
 /** The parsed body, and whether it came from Next's fetch cache (no quota spent). */
-async function chFetchNow<T>(path: string, init?: RequestInit): Promise<[T, boolean]> {
+async function chFetchNow<T>(path: string, init?: RequestInit, cacheSeconds?: number): Promise<[T, boolean]> {
   const key = process.env.COMPANIES_HOUSE_API_KEY;
   if (!key) {
     // The fix is ours, not the visitor's — the env var name and where to get a
@@ -135,9 +136,10 @@ async function chFetchNow<T>(path: string, init?: RequestInit): Promise<[T, bool
       Accept: "application/json",
       ...(init?.headers || {}),
     },
-    // The register updates daily; cache for a few minutes to stay
-    // within rate limits (600 requests / 5 min).
-    next: { revalidate: 300 },
+    // Shared data cache, stale-while-revalidate: windows per endpoint in
+    // lib/ch-cache-policy.ts (1h profile/filings, 6h officers/PSCs/charges,
+    // 5m searches), so each record costs at most one call per window.
+    next: { revalidate: cacheSeconds ?? cacheSecondsFor(path) },
   });
   // Every live response carries the key's remaining budget — the one signal
   // all server instances share. (Cached responses carry an expired window,
@@ -225,6 +227,8 @@ export interface AdvancedSearchParams {
   startIndex?: number;
   /** Not a query param — "low" for aggregate counts (see chFetch). */
   priority?: Priority;
+  /** Not a query param — cache window override (seconds) for shared lookups. */
+  cacheSeconds?: number;
 }
 
 /** One page of search results plus the register's total for the query. */
@@ -254,7 +258,7 @@ export async function advancedSearch(params: AdvancedSearchParams): Promise<{ to
   // zero instead of a "Not found" page.
   let data: CHAdvancedResponse;
   try {
-    data = await chFetch<CHAdvancedResponse>(`/advanced-search/companies?${qs.toString()}`, undefined, params.priority);
+    data = await chFetch<CHAdvancedResponse>(`/advanced-search/companies?${qs.toString()}`, undefined, params.priority, params.cacheSeconds);
   } catch (e) {
     if (e instanceof CompaniesHouseError && e.status === 404) return { total: 0, results: [] };
     throw e;
