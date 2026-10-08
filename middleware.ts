@@ -27,20 +27,15 @@ const COMPANY_OG_IMAGE = /^\/company\/[^/]+\/opengraph-image(?:-[\w]+)?\/?$/;
 function headShortCircuit(req: NextRequest): Response | null {
   if (req.method !== "HEAD") return null;
   const path = req.nextUrl.pathname;
-  const type = COMPANY_PAGE.test(path) ? "text/html; charset=utf-8" : COMPANY_OG_IMAGE.test(path) ? "image/png" : null;
-  if (!type) return null;
-  // An empty string body, not null: Vercel drops content-type from a bodyless
-  // middleware response (seen in production). HEAD never sends a body anyway.
-  return new Response("", {
-    status: 200,
-    headers: {
-      "content-type": type,
-      // Same freshness the pages declare (revalidate 300), so a HEAD-based
-      // freshness check doesn't come back every few seconds.
-      "cache-control": "public, max-age=0, s-maxage=300, must-revalidate",
-      "x-ciq-head": "short-circuit",
-    },
-  });
+  const kind = COMPANY_PAGE.test(path) ? "html" : COMPANY_OG_IMAGE.test(path) ? "png" : null;
+  if (!kind) return null;
+  // Rewrite (the client's URL is unchanged) to a route handler that answers
+  // with headers only. Returning a Response from middleware directly works in
+  // dev, but Vercel drops its content-type in production.
+  const target = req.nextUrl.clone();
+  target.pathname = `/api/head-ok/${kind}`;
+  target.search = "";
+  return NextResponse.rewrite(target);
 }
 
 export async function middleware(req: NextRequest) {
