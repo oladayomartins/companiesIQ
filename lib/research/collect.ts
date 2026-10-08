@@ -115,8 +115,12 @@ export class Collector {
   private calls = 0;
   private readonly auth: string;
 
-  constructor(apiKey = process.env.COMPANIES_HOUSE_API_KEY) {
-    if (!apiKey) throw new Error("COMPANIES_HOUSE_API_KEY is not set — a study cannot run without register access.");
+  // Companies House rate-limits per key (600 requests / 5 minutes). A study
+  // spends hundreds of calls, so on the site's key it starves live searches —
+  // visitors get "rate limited". COMPANIES_HOUSE_BATCH_API_KEY is a second key
+  // for bulk work only; the site's key is the fallback until it is set.
+  constructor(apiKey = process.env.COMPANIES_HOUSE_BATCH_API_KEY || process.env.COMPANIES_HOUSE_API_KEY) {
+    if (!apiKey) throw new Error("COMPANIES_HOUSE_BATCH_API_KEY / COMPANIES_HOUSE_API_KEY is not set — a study cannot run without register access.");
     this.auth = "Basic " + Buffer.from(`${apiKey}:`).toString("base64");
   }
 

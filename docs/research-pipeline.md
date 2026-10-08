@@ -53,6 +53,11 @@ Endpoint parameters: `?study=`, `?dry=1`, `?force=1`. Authorisation is
 `INGEST_SECRET`/`CRON_SECRET` as with the other cron routes; a local dev server
 accepts an unauthenticated call.
 
+Register access: studies use `COMPANIES_HOUSE_BATCH_API_KEY` when set, falling
+back to `COMPANIES_HOUSE_API_KEY`. Companies House rate-limits per key, so give
+bulk work its own key (same developer account) or a study run can rate-limit
+live searches on the site.
+
 Database objects live in `supabase/research.sql` (`research_datasets`,
 `research_runs`) — apply once.
 

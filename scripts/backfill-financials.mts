@@ -31,7 +31,8 @@ function env(name: string): string | null {
 
 const SUPABASE_URL = env("NEXT_PUBLIC_SUPABASE_URL");
 const SERVICE_KEY = env("SUPABASE_SERVICE_ROLE_KEY");
-const CH_KEY = env("COMPANIES_HOUSE_API_KEY");
+// The batch key keeps a long backfill from spending the live site's rate limit.
+const CH_KEY = env("COMPANIES_HOUSE_BATCH_API_KEY") || env("COMPANIES_HOUSE_API_KEY");
 if (!SUPABASE_URL || !SERVICE_KEY || !CH_KEY) {
   console.error("✗ NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and COMPANIES_HOUSE_API_KEY are required.");
   process.exit(1);
