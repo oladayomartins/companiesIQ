@@ -49,6 +49,57 @@ const REGION_TO_LOCATION: Record<string, string> = {
   "Northern Ireland": "Northern Ireland",
 };
 
+// English regions never appear in an address, so searching the region's name
+// finds almost nothing ("North West" matched 9 software companies nationally;
+// "Manchester" alone matched 1,589). Each region is searched instead by the
+// words its addresses DO contain — its biggest cities and its counties — one
+// Companies House query per term, merged, de-duplicated, and kept only when
+// the postcode resolves to the region (which drops "Manchester Road, Bradford"
+// and Newcastle-under-Lyme). Six terms per region, ordered by yield, chosen
+// from measured hit counts; each call sits in the shared data cache.
+const REGION_TERMS: Record<string, string[]> = {
+  "North West": ["Manchester", "Liverpool", "Lancashire", "Cheshire", "Merseyside", "Cumbria"],
+  "North East": ["Newcastle", "Sunderland", "Middlesbrough", "Durham", "Tyne and Wear", "Northumberland"],
+  "Yorkshire & the Humber": ["Leeds", "Sheffield", "Bradford", "Hull", "Yorkshire", "Huddersfield"],
+  "East Midlands": ["Nottingham", "Leicester", "Derby", "Northampton", "Lincolnshire", "Leicestershire"],
+  "West Midlands": ["Birmingham", "West Midlands", "Coventry", "Wolverhampton", "Staffordshire", "Warwickshire"],
+  "East of England": ["Essex", "Hertfordshire", "Norfolk", "Suffolk", "Cambridgeshire", "Bedfordshire"],
+  "South East": ["Kent", "Surrey", "Sussex", "Hampshire", "Berkshire", "Oxfordshire"],
+  "South West": ["Bristol", "Devon", "Cornwall", "Somerset", "Dorset", "Gloucestershire"],
+};
+
+/** Location terms that cover a region on the register. */
+function regionTerms(region: string): string[] {
+  return REGION_TO_LOCATION[region] ? [REGION_TO_LOCATION[region]] : REGION_TERMS[region] ?? [region];
+}
+
+/** Rows per term when sweeping a region — enough to fill several pages once merged. */
+const REGION_TERM_SIZE = 100;
+
+/**
+ * Run one search per location term for the selected region(s), merge, and keep
+ * only rows whose postcode resolves to one of them. A term that fails (quota,
+ * upstream) is skipped rather than failing the whole search.
+ */
+async function sweepRegions(
+  regions: string[],
+  run: (location: string) => Promise<{ results: EnrichedResult[] }>
+): Promise<EnrichedResult[]> {
+  const terms = [...new Set(regions.flatMap(regionTerms))];
+  const settled = await Promise.allSettled(terms.map(run));
+  const ok = settled.filter((r): r is PromiseFulfilledResult<{ results: EnrichedResult[] }> => r.status === "fulfilled");
+  if (!ok.length) {
+    const failed = settled.find((r): r is PromiseRejectedResult => r.status === "rejected");
+    throw failed?.reason ?? new Error("Region search failed");
+  }
+  const seen = new Set<string>();
+  return ok
+    .flatMap((r) => r.value.results)
+    .filter((x) => x.region && regions.includes(x.region))
+    .filter((x) => (seen.has(x.number) ? false : (seen.add(x.number), true)))
+    .sort((a, b) => (b.incorporated ?? "").localeCompare(a.incorporated ?? ""));
+}
+
 export async function search(q: string, startIndex = 0): Promise<{ total: number; results: EnrichedResult[]; live: boolean }> {
   const r = q.trim() ? await ch.searchCompanies(q, { perPage: 40, startIndex }) : await ch.advancedSearch({ size: 40, startIndex });
   return { total: r.total, results: r.results, live: true };
@@ -66,15 +117,16 @@ export async function explore(params: ExploreParams): Promise<{ total: number; r
     if (sicCodes.length) {
       const regionText = regions.length === 1 ? REGION_TO_LOCATION[regions[0]] : undefined;
       const needsRegionFilter = regions.length > 0 && !params.location && !regionText;
-      const r = await ch.advancedSearchAcross({
-        ...params,
-        sicCodes,
-        location: params.location ?? regionText,
-        size: needsRegionFilter ? 100 : params.size ?? 40,
-      });
-      if (!needsRegionFilter) return { total: r.total, results: r.results, live: true, exact: true };
-      const inRegion = r.results.filter((x) => x.region && regions.includes(x.region));
-      return { total: inRegion.length, results: inRegion.slice(0, params.size ?? 40), live: true, exact: false };
+      if (!needsRegionFilter) {
+        // One London/nation region, or an explicit town: Companies House counts it exactly.
+        const r = await ch.advancedSearchAcross({ ...params, sicCodes, location: params.location ?? regionText, size: params.size ?? 40 });
+        return { total: r.total, results: r.results, live: true, exact: true };
+      }
+      const inRegion = await sweepRegions(regions, (location) =>
+        ch.advancedSearchAcross({ ...params, sicCodes, location, startIndex: 0, size: REGION_TERM_SIZE })
+      );
+      const start = params.startIndex ?? 0;
+      return { total: inRegion.length, results: inRegion.slice(start, start + (params.size ?? 40)), live: true, exact: false };
     }
   }
 
@@ -90,21 +142,21 @@ export async function explore(params: ExploreParams): Promise<{ total: number; r
   // text search, then refine to the resolved region. With multiple regions
   // selected, run one location query PER region and merge (a single location
   // can't cover two regions).
-  const base: ch.AdvancedSearchParams = { ...params, size: 100 };
-  let results: EnrichedResult[];
-  if (regions.length && !base.location) {
-    const perRegion = await Promise.all(
-      regions.map((rg) => ch.advancedSearch({ ...base, location: REGION_TO_LOCATION[rg] ?? rg }))
-    );
-    const seen = new Set<string>();
-    results = perRegion
-      .flatMap((r) => r.results)
-      .filter((x) => (seen.has(x.number) ? false : (seen.add(x.number), true)));
-  } else {
-    results = (await ch.advancedSearch(base)).results;
+  // One London/nation region with no sector refine: the region's name IS in its
+  // addresses, so Companies House filters and counts it exactly — no sweep.
+  if (regions.length === 1 && !params.sector && !params.location && REGION_TO_LOCATION[regions[0]]) {
+    const r = await ch.advancedSearch({ ...params, location: REGION_TO_LOCATION[regions[0]], size: params.size ?? 40 });
+    return { total: r.total, results: r.results, live: true, exact: true };
   }
 
-  if (regions.length) results = results.filter((x) => x.region && regions.includes(x.region));
+  const base: ch.AdvancedSearchParams = { ...params, startIndex: 0, size: REGION_TERM_SIZE };
+  let results: EnrichedResult[];
+  if (regions.length && !base.location) {
+    results = await sweepRegions(regions, (location) => ch.advancedSearch({ ...base, location }));
+  } else {
+    results = (await ch.advancedSearch(base)).results;
+    if (regions.length) results = results.filter((x) => x.region && regions.includes(x.region));
+  }
   if (params.sector) results = results.filter((x) => x.classification?.sector === params.sector);
 
   const start = params.startIndex ?? 0;
