@@ -348,3 +348,65 @@ export async function getCompanyBundle(number: string): Promise<CompanyBundle | 
     throw e;
   }
 }
+
+/** Our stored copy of a company (Supabase `companies`, written by the ingest
+ *  job and enrichment). Only what the row actually holds — nothing inferred. */
+export interface StoredCompany {
+  number: string;
+  name: string;
+  status: string;
+  type: string | null;
+  incorporated: string;
+  dissolved: string | null;
+  sicCodes: string[];
+  sector: string | null;
+  category: string | null;
+  region: string | null;
+  nation: string | null;
+  postcode: string | null;
+  accountsNextDue: string | null;
+  accountsOverdue: boolean | null;
+  confirmationNextDue: string | null;
+  confirmationOverdue: boolean | null;
+  filingCheckedAt: string | null;
+  updatedAt: string | null;
+}
+
+/**
+ * The stored copy, for when Companies House is rate-limiting us. Returns null
+ * unless the row is substantial enough to stand as a labelled partial page:
+ * many rows hold only a number and name (written by other features), and a
+ * near-empty page served to a crawler is worse than a temporary error.
+ */
+export async function getStoredCompany(number: string): Promise<StoredCompany | null> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return null;
+  const { data, error } = await admin
+    .from("companies")
+    .select(
+      "number,name,status,type,incorporated,dissolved,sic_codes,primary_sector,primary_category,region,nation,postcode,accounts_next_due,accounts_overdue,confirmation_next_due,confirmation_overdue,filing_checked_at,updated_at"
+    )
+    .eq("number", number.toUpperCase())
+    .maybeSingle();
+  if (error || !data || !data.name || !data.status || !data.incorporated) return null;
+  return {
+    number: data.number,
+    name: data.name,
+    status: data.status,
+    type: data.type ?? null,
+    incorporated: data.incorporated,
+    dissolved: data.dissolved ?? null,
+    sicCodes: data.sic_codes ?? [],
+    sector: data.primary_sector ?? null,
+    category: data.primary_category ?? null,
+    region: data.region ?? null,
+    nation: data.nation ?? null,
+    postcode: data.postcode ?? null,
+    accountsNextDue: data.accounts_next_due ?? null,
+    accountsOverdue: data.accounts_overdue ?? null,
+    confirmationNextDue: data.confirmation_next_due ?? null,
+    confirmationOverdue: data.confirmation_overdue ?? null,
+    filingCheckedAt: data.filing_checked_at ?? null,
+    updatedAt: data.updated_at ?? null,
+  };
+}

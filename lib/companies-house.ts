@@ -11,6 +11,7 @@
 // Government Licence.
 // ============================================================
 import "server-only";
+import { cache } from "react";
 import type { Company, Officer, Filing, Charge, SearchResult, OfficerAppointment, OfficerProfile, PSC } from "./types";
 import { classifyMany, classifySic } from "./sic";
 import { resolveGeo } from "./geography";
@@ -415,7 +416,16 @@ const TYPE_LABELS: Record<string, string> = {
   "private-limited-shares-section-30-exemption": "Private limited (s.30 exemption)",
 };
 
-export async function getCompany(number: string): Promise<Company> {
+/**
+ * One company profile. Wrapped in React's per-request cache: a company page
+ * asks for the profile in generateMetadata AND again in the page's bundle, and
+ * telemetry showed both reaching Companies House (2 of every ~6 calls per
+ * crawled page). Within one request they now share a single fetch. Outside a
+ * React render (route handlers, scripts) cache() simply calls through.
+ */
+export const getCompany = cache(getCompanyLive);
+
+async function getCompanyLive(number: string): Promise<Company> {
   const p = await chFetch<CHProfile>(`/company/${encodeURIComponent(number)}`);
   const classifications = classifyMany(p.sic_codes || []);
   const geo = resolveGeo({ postcode: p.registered_office_address?.postal_code, locality: p.registered_office_address?.locality });

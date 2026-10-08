@@ -7,7 +7,8 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getCompanyBundle } from "@/lib/data";
+import { getCompanyBundle, getStoredCompany } from "@/lib/data";
+import { StoredCompanyView } from "@/components/report/StoredCompanyView";
 import { getCompany, CompaniesHouseError } from "@/lib/companies-house";
 import { buildIntelligenceReport } from "@/lib/analytics";
 import { getSimilarCompanies } from "@/lib/similar";
@@ -40,7 +41,23 @@ export async function generateMetadata({ params }: { params: Promise<{ number: s
   // Metadata only needs the company profile (1 call) — not the full 5-call
   // bundle. The call dedupes with the page render's getCompany within the request.
   // Never throw from metadata — a CH error (404, 429, …) just yields a fallback title.
-  const c = await getCompany(number).catch(() => null);
+  // When Companies House is rate-limiting, the page may render our stored copy
+  // (see below); give it the same title/description template from that row.
+  const c =
+    (await getCompany(number).catch(() => null)) ??
+    (await getStoredCompany(number)
+      .then((st) =>
+        st
+          ? {
+              name: st.name,
+              number: st.number,
+              status: st.status,
+              incorporated: st.incorporated,
+              address: st.postcode ? ({ postcode: st.postcode } as { line1?: string; locality?: string; postcode?: string }) : undefined,
+            }
+          : null
+      )
+      .catch(() => null));
   if (!c) return { title: "Company" };
   // Search Console (Oct 2026): company pages are found by LOOK-UP searches —
   // "<name> company address", "<name> companies house" — and the old snippet
@@ -84,16 +101,28 @@ export default async function CompanyPage({ params }: { params: Promise<{ number
     // Anything else is ours to fix, and telling the visitor to keep refreshing
     // would leave them doing it forever.
     const busy = e instanceof CompaniesHouseError && e.kind === "rate_limited";
+    if (busy) {
+      // Rate-limited (crawler bursts can outrun the key: ~160 req/min vs 120).
+      // A substantial stored copy renders as a labelled partial page; otherwise
+      // throw, so the response is a 5xx (app router pages can't send 503):
+      // crawlers neither index a "busy" page as this company's content nor keep
+      // hammering — Google slows its crawl on 5xx. People get error.tsx.
+      const stored = await getStoredCompany(number).catch(() => null);
+      if (stored) {
+        return (
+          <PublicShell>
+            <StoredCompanyView c={stored} />
+          </PublicShell>
+        );
+      }
+      throw e;
+    }
     return (
       <PublicShell>
         <div className="screen">
           <ErrorState
-            title={busy ? "The register is busy right now" : "We couldn't load this company"}
-            body={
-              busy
-                ? "Companies House briefly rate-limits high traffic. Reloading in a moment usually works."
-                : "Something went wrong on our side fetching this company from Companies House. It's logged — please try again shortly."
-            }
+            title="We couldn't load this company"
+            body="Something went wrong on our side fetching this company from Companies House. It's logged — please try again shortly."
             actions={
               <>
                 <Button href={`/company/${number}`} variant="primary" iconRight="arrowRight">
