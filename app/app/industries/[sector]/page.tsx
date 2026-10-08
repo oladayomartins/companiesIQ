@@ -58,7 +58,7 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
 
       <div className="profile-kpis">
         <Stat label="Active companies" value={fmtNumber(stat.businesses)} sub="UK total" />
-        <Stat label="New (12m)" value={fmtNumber(stat.newLastYear)} delta={fmtDelta(stat.annualGrowth)} />
+        <Stat label="New (12m, est.)" value={`~${fmtNumber(stat.newLastYear)}`} delta={fmtDelta(stat.annualGrowth)} sub="ONS estimate" />
         <Stat label="1-yr survival" value={`${stat.survival.oneYear.toFixed(1)}%`} />
         <Stat label="5-yr survival" value={`${stat.survival.fiveYear.toFixed(1)}%`} />
       </div>
