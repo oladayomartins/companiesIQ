@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ sector: s
   if (!stat) return { title: "Industry" };
   const desc = `${stat.sector} in the UK: ${fmtNumber(stat.businesses)} active companies, ${fmtNumber(
     stat.newLastYear,
-  )} new in the last year (${fmtDelta(stat.annualGrowth)}), with ${stat.survival.fiveYear.toFixed(
+  )} new in the last year (est., ${fmtDelta(stat.annualGrowth)}), with ${stat.survival.fiveYear.toFixed(
     1,
   )}% five-year survival. Live company data from Companies House, ONS & Nomis.`;
   return {
@@ -100,7 +100,10 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
 
         <div className="profile-kpis">
           <Stat label="Active companies" value={fmtNumber(stat.businesses)} sub="UK total" />
-          <Stat label="New (12m)" value={fmtNumber(stat.newLastYear)} delta={fmtDelta(stat.annualGrowth)} />
+          {/* Modelled sector figure, labelled as an estimate. The chart below is
+              live but covers only the tracked SIC codes, so it is a trend,
+              not a replacement for this total. */}
+          <Stat label="New (12m, est.)" value={`~${fmtNumber(stat.newLastYear)}`} delta={fmtDelta(stat.annualGrowth)} sub="ONS estimate" />
           <Stat label="1-yr survival" value={`${stat.survival.oneYear.toFixed(1)}%`} />
           <Stat label="5-yr survival" value={`${stat.survival.fiveYear.toFixed(1)}%`} />
         </div>

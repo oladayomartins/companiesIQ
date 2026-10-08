@@ -39,7 +39,9 @@ export default async function IndustriesIndex() {
   // server already painted; `value` is the string that renders without JS.
   const headline: { label: string; value: string; note: string; count?: number }[] = [
     { label: "Active companies", value: fmtNumber(totalActive), note: "across all sectors", count: totalActive },
-    { label: "New · 12 months", value: fmtNumber(totalNew), note: "incorporations", count: totalNew },
+    // Modelled (ONS), so it says so — live Companies House counts only cover
+    // a few tracked SIC codes per sector and are not comparable sector totals.
+    { label: "New · 12 months", value: fmtNumber(totalNew), note: "incorporations, ONS estimate", count: totalNew },
     { label: "Sectors", value: String(sectors.length), note: "SIC groupings" },
     // The figure slot stays numeric across all four — a long sector name set at
     // 34px breaks the rhythm and wraps unpredictably. The name is the caption.
@@ -96,8 +98,8 @@ export default async function IndustriesIndex() {
         />
 
         <p className="dx-source mono">
-          Source · Companies House register, reused under the Open Government Licence v3.0 · sector totals and growth
-          from ONS business demography
+          Source · Companies House register, reused under the Open Government Licence v3.0 · sector totals, new
+          registrations (estimated) and growth from ONS business demography
           {asOf ? ` · register queried ${fmtDate(asOf)}` : ""}
         </p>
 

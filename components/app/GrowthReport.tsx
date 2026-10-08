@@ -33,7 +33,7 @@ export interface GrowthData {
   name: string;
   sector: string;
   region: string;
-  industry: { businesses: number; newLastYear: number; annualGrowth: number; fiveYearSurvival: number };
+  industry: { businesses: number; annualGrowth: number; fiveYearSurvival: number };
   local: { inSameIndustry: number; newEntrants: number; density: string };
   subject: Subject | null;
   competitors: Competitors | null;

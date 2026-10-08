@@ -67,7 +67,6 @@ export default async function VisibilityReviewPage({
         region: report.local.region,
         industry: {
           businesses: report.industry.businesses,
-          newLastYear: report.industry.newLastYear,
           annualGrowth: report.industry.annualGrowth,
           fiveYearSurvival: report.survival.fiveYear,
         },
