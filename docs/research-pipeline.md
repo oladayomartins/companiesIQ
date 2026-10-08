@@ -94,3 +94,20 @@ Warnings are recorded but don't hold an edition.
 - Percentage changes are suppressed below a volume floor per study.
 - Attribute Companies House under the Open Government Licence and invite reuse
   with a link.
+
+## Commercial Opportunity series
+
+`studies/commercial-opportunity.ts` is a study *template*: one quarterly edition
+per market defined in `lib/research/markets.ts` (study id `opportunity-<market>`,
+slug `commercial-opportunity-<market>-<period>`). Each edition answers: how many
+new companies in the market (codes queried together — Companies House treats
+repeated `sic_codes` as "any of" and de-duplicates), where (39-city census with
+the Cardiff default-address correction), how long they last (five-year survival
+vs all companies), and who sells into it (editorial, from `markets.ts`). Every
+edition ends in a "Build this market" link: a `/search` preset with the market's
+codes and name (`?sic=69201,69202&name=New+accountancy+firms`).
+
+To add a market, append to `MARKETS` — codes, a display name and in-sentence
+noun, the buyer table and a timing paragraph. The buyer copy is reviewed like any
+other copy and must never state a statistic. ~56 register queries per edition;
+market-level year-on-year moves are held for review beyond ±75%.

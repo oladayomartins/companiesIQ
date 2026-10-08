@@ -114,11 +114,11 @@ export function checkDataset(d: Dataset): Issue[] {
   const yoy = d.totals.changePct;
   if (d.comparison) {
     if (!d.totals.prevIncorporations) issues.push({ level: "block", check: "comparison", detail: "Comparison period returned no companies." });
-    else if (Math.abs(yoy) > MAX_PLAUSIBLE_YOY) {
+    else if (Math.abs(yoy) > (d.totals.maxPlausibleYoy ?? MAX_PLAUSIBLE_YOY)) {
       issues.push({
         level: "block",
         check: "yoy-plausibility",
-        detail: `Year-on-year change of ${(yoy * 100).toFixed(1)}% exceeds the ±${MAX_PLAUSIBLE_YOY * 100}% plausibility band. Check the period boundaries before publishing.`,
+        detail: `Year-on-year change of ${(yoy * 100).toFixed(1)}% exceeds the ±${(d.totals.maxPlausibleYoy ?? MAX_PLAUSIBLE_YOY) * 100}% plausibility band. Check the period boundaries before publishing.`,
       });
     }
   }

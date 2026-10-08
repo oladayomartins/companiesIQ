@@ -29,13 +29,19 @@ export interface MarketPreset {
   /** Registered-office town, passed to Companies House as `location`. */
   place?: string;
   region?: string;
+  /** One SIC code, or several comma-separated ("69201,69202") — matched as any of. */
   sic?: string;
+  /** A market name for the search box, e.g. "Accountancy firms". */
+  name?: string;
   incorporated?: IncWindow;
   /** Where the click came from, e.g. "research:uk-company-formations-h1-2026". */
   from?: string;
 }
 
-const SIC_RE = /^\d{4,5}$/;
+const SIC_RE = /^\d{4,5}(,\d{4,5}){0,7}$/;
+// A display name only — letters, spaces and a little punctuation, so a crafted
+// link can't put arbitrary text in the page title.
+const NAME_RE = /^[A-Za-z][A-Za-z &,'-]{1,58}$/;
 const clean = (s: string | null | undefined, max = 60) => {
   const v = (s ?? "").trim();
   return v && v.length <= max ? v : undefined;
@@ -50,12 +56,14 @@ export function parsePreset(sp: Record<string, string | string[] | undefined>): 
   const sector = clean(one("sector"));
   const region = clean(one("region"));
   const sic = clean(one("sic"));
+  const name = clean(one("name"));
   const inc = one("inc") as IncWindow | undefined;
   const preset: MarketPreset = {
     sector: sector && ALL_SECTORS.includes(sector) ? sector : undefined,
     region: region && ALL_REGIONS.includes(region) ? region : undefined,
     place: clean(one("place")),
     sic: sic && SIC_RE.test(sic) ? sic : undefined,
+    name: name && NAME_RE.test(name) ? name : undefined,
     incorporated: inc && INC_WINDOWS.includes(inc) ? inc : undefined,
     from: clean(one("from"), 120),
   };
@@ -64,7 +72,7 @@ export function parsePreset(sp: Record<string, string | string[] | undefined>): 
 
 /** The sentence shown in the search box, e.g. "New construction companies in Leeds". */
 export function presetLabel(p: MarketPreset): string {
-  const what = p.sic ? `SIC ${p.sic} companies` : p.sector ? `${p.sector} companies` : "Companies";
+  const what = p.name ? p.name : p.sic ? `SIC ${p.sic.split(",").join(", ")} companies` : p.sector ? `${p.sector} companies` : "Companies";
   const where = p.place ? ` in ${p.place}` : p.region ? ` in ${p.region}` : "";
   const when = p.incorporated ? ` ${INC_LABEL[p.incorporated]}` : "";
   return `${what}${where}${when}`;
@@ -77,6 +85,7 @@ export function marketSearchHref(p: MarketPreset): string {
   if (p.place) sp.set("place", p.place);
   if (p.region) sp.set("region", p.region);
   if (p.sic) sp.set("sic", p.sic);
+  if (p.name) sp.set("name", p.name);
   if (p.incorporated) sp.set("inc", p.incorporated);
   if (p.from) sp.set("from", p.from);
   return `/search?${sp.toString()}`;
@@ -88,7 +97,7 @@ export function presetApiParams(p: MarketPreset): URLSearchParams {
   if (p.sector) sp.set("sector", p.sector);
   if (p.region) sp.set("region", p.region);
   if (p.place) sp.set("location", p.place);
-  if (p.sic) sp.append("sic", p.sic);
+  for (const code of (p.sic ?? "").split(",").filter(Boolean)) sp.append("sic", code);
   if (p.incorporated) sp.set("incorporated", p.incorporated);
   sp.append("status", "active");
   return sp;
