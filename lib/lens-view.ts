@@ -8,7 +8,7 @@
 // brief would return, so swapping in a cached Haiku brief later is a drop-in.
 // ============================================================
 import type { LensInput, LensKey, LensScore, Tone } from "@/lib/lens";
-import { LENSES, shortAge } from "@/lib/lens";
+import { LENSES, shortAge, soonestDeadline, deadlinePhrase } from "@/lib/lens";
 import { fmtDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 
@@ -49,11 +49,6 @@ export interface LensCard {
 }
 
 const DAY = 86_400_000;
-const daysUntil = (iso?: string): number | null => {
-  if (!iso) return null;
-  const t = Date.parse(iso);
-  return Number.isFinite(t) ? Math.round((t - Date.now()) / DAY) : null;
-};
 const ageDays = (iso?: string): number | null => {
   if (!iso) return null;
   const t = Date.parse(iso);
@@ -102,10 +97,16 @@ function briefTail(input: LensInput, score: LensScore): string {
       return (row(score, "Filed accounts")?.pct ?? 0) > 50
         ? "There is a filed balance sheet to underwrite against and nothing adverse on the register."
         : "Nothing adverse is on the register, but there are no filed accounts to underwrite against yet.";
-    case "legal":
-      return row(score, "Governance disclosure")?.state === "Complete"
+    case "legal": {
+      const disclosed = row(score, "Governance disclosure")?.state === "Complete";
+      if (row(score, "Filing timeliness")?.state === "Overdue")
+        return disclosed
+          ? "Ownership is disclosed, but at least one statutory filing is overdue."
+          : "At least one statutory filing is overdue, and ownership is not yet fully disclosed on the PSC register.";
+      return disclosed
         ? "Ownership is disclosed and filings are current."
         : "Filings are current, but ownership is not yet fully disclosed on the PSC register.";
+    }
     case "insurance":
       return row(score, "Trade class clarity")?.state === "Defined"
         ? "The trade is classifiable, but nothing public discloses assets, so exposure cannot be sized from the register alone."
@@ -224,9 +225,7 @@ export function buildActions(input: LensInput, score: LensScore, opts: { unlocke
   const out: NextAction[] = [];
   const push = (label: string, cta: string, href: string) => out.push({ n: String(out.length + 1).padStart(2, "0"), label, cta, href });
 
-  const soonest = [daysUntil(c.accounts?.nextDue), daysUntil(c.confirmationStatement?.nextDue)]
-    .filter((d): d is number => d != null)
-    .sort((a, b) => a - b)[0];
+  const next = soonestDeadline(c);
 
   switch (score.lens) {
     case "digital":
@@ -247,7 +246,7 @@ export function buildActions(input: LensInput, score: LensScore, opts: { unlocke
       break;
     case "accountancy":
       push(
-        soonest != null ? `Next statutory deadline in ${soonest} days` : "No published deadlines yet",
+        next ? (next.days < 0 ? deadlinePhrase(next) : `Next statutory deadline: ${deadlinePhrase(next).toLowerCase()}`) : "No published deadlines yet",
         "Set a filing alert",
         "/app/alerts"
       );
@@ -347,13 +346,14 @@ export function buildLensCard(input: LensInput, score: LensScore): LensCard {
         source: "Companies House · SIC",
       };
     case "accountancy": {
-      const soonest = [daysUntil(accountsDue), daysUntil(csDue)].filter((d): d is number => d != null).sort((a, b) => a - b)[0];
+      const next = soonestDeadline(c);
+      const late = !!c.accounts?.overdue || (next != null && next.days < 0);
       return {
         ...base,
         label: "Filing & service need",
-        flag: c.accounts?.overdue ? "Overdue" : soonest != null && soonest <= 60 ? "Immediate" : "Scheduled",
-        flagTone: c.accounts?.overdue ? "risk" : soonest != null && soonest <= 60 ? "good" : "watch",
-        headline: soonest != null ? `${soonest} days` : "No dates yet",
+        flag: late ? "Overdue" : next != null && next.days <= 60 ? "Immediate" : "Scheduled",
+        flagTone: late ? "risk" : next != null && next.days <= 60 ? "good" : "watch",
+        headline: next ? (next.days < 0 ? `${Math.abs(next.days).toLocaleString("en-GB")} days overdue` : `${next.days.toLocaleString("en-GB")} days`) : "No dates yet",
         rows: [
           { k: "Accounts next due", v: accountsDue ? fmtDate(accountsDue) : "—" },
           { k: "Confirmation statement", v: csDue ? fmtDate(csDue) : "—" },

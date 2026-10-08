@@ -14,6 +14,7 @@
 // ============================================================
 import type { Company } from "@/lib/types";
 import type { CompanyEnrichment } from "@/lib/enrichment/types";
+import { deadlinePhrase } from "@/lib/lens";
 
 export type FactState = "detected" | "not_detected" | "not_assessed";
 
@@ -139,7 +140,8 @@ function complianceSignals(c: Company, counts: Counts): OppSignal[] {
   // Accounts
   if (c.accounts) {
     const d = daysUntil(c.accounts.nextDue);
-    if (c.accounts.overdue) out.push({ label: "Accounts overdue", tone: "watch" });
+    if (c.accounts.overdue || (d != null && d < 0))
+      out.push({ label: d != null && d < 0 ? deadlinePhrase({ what: "Accounts", days: d }) : "Accounts overdue", tone: "watch" });
     else if (d != null && d <= 90) out.push({ label: `Accounts due in ${d} day${d === 1 ? "" : "s"}`, tone: "watch" });
     else if (d != null) out.push({ label: "Accounts up to date", tone: "good" });
   }
@@ -147,7 +149,11 @@ function complianceSignals(c: Company, counts: Counts): OppSignal[] {
   // Confirmation statement
   if (c.confirmationStatement) {
     const d = daysUntil(c.confirmationStatement.nextDue);
-    if (c.confirmationStatement.overdue) out.push({ label: "Confirmation statement overdue", tone: "watch" });
+    if (c.confirmationStatement.overdue || (d != null && d < 0))
+      out.push({
+        label: d != null && d < 0 ? deadlinePhrase({ what: "Confirmation statement", days: d }) : "Confirmation statement overdue",
+        tone: "watch",
+      });
     else if (d != null && d <= 30) out.push({ label: `Confirmation statement due in ${d} day${d === 1 ? "" : "s"}`, tone: "watch" });
     else if (d != null) out.push({ label: "Confirmation statement current", tone: "good" });
   }
