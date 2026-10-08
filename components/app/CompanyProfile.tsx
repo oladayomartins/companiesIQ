@@ -48,7 +48,7 @@ import {
   type LensInput,
   type Tone,
 } from "@/lib/lens";
-import { buildBrief, buildEvidence, buildActions, buildLensCard, relevantTo, weakestRow } from "@/lib/lens-view";
+import { buildBrief, buildEvidence, buildActions, buildLensCard, relevantTo, weakestRow, ASKS, soWhat, keyFactNotes } from "@/lib/lens-view";
 import { LensBar, useLensProfile } from "@/components/app/LensBar";
 import { LensScoreCard, Fingerprint, type FingerprintCell } from "@/components/app/LensScore";
 import { IntelGate } from "@/components/app/IntelGate";
@@ -191,6 +191,7 @@ export function CompanyProfile({
   const lensCard = useMemo(() => buildLensCard(lensInput, score), [lensInput, score]);
   const relevant = useMemo(() => relevantTo(lensInput, lensKey), [lensInput, lensKey]);
   const weakest = useMemo(() => weakestRow(score), [score]);
+  const factNotes = useMemo(() => keyFactNotes(lensInput), [lensInput]);
 
   // Kept for the Pro intelligence report, which still reads the original model.
   const opportunity = useMemo(
@@ -407,6 +408,7 @@ export function CompanyProfile({
             <span className={`changed__v ${report.industry.annualGrowth >= 0 ? "is-good" : "is-risk"}`}>
               {pc(report.industry.annualGrowth)}
             </span>
+            <span className="changed__note">{factNotes.growth}</span>
           </div>
           <div className="changed__item">
             <span className="changed__k mono">
@@ -416,6 +418,7 @@ export function CompanyProfile({
             <span className={`changed__v ${c.confirmationStatement?.overdue ? "is-risk" : "is-good"}`}>
               {c.confirmationStatement?.overdue ? "Overdue" : "Current"}
             </span>
+            <span className="changed__note">{factNotes.filing}</span>
           </div>
           <div className="changed__item">
             <span className="changed__k mono">
@@ -423,6 +426,7 @@ export function CompanyProfile({
               <InfoTip {...FACT_TIPS.age} />
             </span>
             <span className="changed__v">{incDays != null ? shortAge(incDays) : "—"}</span>
+            <span className="changed__note">{factNotes.age}</span>
           </div>
           <div className="changed__item">
             <span className="changed__k mono">
@@ -430,12 +434,13 @@ export function CompanyProfile({
               <InfoTip {...FACT_TIPS.competition} />
             </span>
             <span className="changed__v">{report.local.density}</span>
+            <span className="changed__note">{factNotes.competition}</span>
           </div>
         </div>
       </div>
 
       <div data-tour="fingerprint">
-        <Fingerprint cells={fingerprint} peers={report.industry.businesses} lensKey={lensKey} lensScore={score} />
+        <Fingerprint cells={fingerprint} peers={report.local.inSameIndustry} lensKey={lensKey} lensScore={score} />
       </div>
 
       <Card data-tour="next">
@@ -444,23 +449,29 @@ export function CompanyProfile({
             <span className="app-eyebrow">What to do next</span>
             <Badge tone="neutral">For {lens.audience}</Badge>
           </div>
-          <div className="steps">
-            {actions.map((a) => {
+          <div className="nextcards">
+            {actions.map((a, i) => {
               const t = tabFor(a.href);
-              return (
-                <div className="steps__row" key={a.n}>
-                  <span className="steps__n mono">{a.n}</span>
-                  <span className="steps__label">{a.label}</span>
-                  {t ? (
-                    <button type="button" className="steps__cta" onClick={() => setTab(t)}>
-                      {a.cta} <Icon name="arrowRight" size={13} />
-                    </button>
-                  ) : (
-                    <Link className="steps__cta" href={a.href}>
-                      {a.cta} <Icon name="arrowRight" size={13} />
-                    </Link>
-                  )}
-                </div>
+              const body = (
+                <>
+                  <span className="nextcards__n mono">Step {i + 1}</span>
+                  <span className="nextcards__main">
+                    <span className="nextcards__title">{a.label}</span>
+                    {a.why ? <span className="nextcards__why">{a.why}</span> : null}
+                  </span>
+                  <span className="nextcards__cta">
+                    {a.cta} <Icon name="arrowRight" size={13} />
+                  </span>
+                </>
+              );
+              return t ? (
+                <button type="button" className="nextcards__card" key={a.n} onClick={() => setTab(t)}>
+                  {body}
+                </button>
+              ) : (
+                <Link className="nextcards__card" href={a.href} key={a.n}>
+                  {body}
+                </Link>
               );
             })}
           </div>
@@ -536,8 +547,8 @@ export function CompanyProfile({
             <>
               <WatchButton companyNumber={c.number} initialWatched={watched} />
               {partner ? (
-                <Button variant="secondary" iconLeft="trendUp" onClick={() => router.push(`/visibility-review/${c.number}`)}>
-                  Founder view
+                <Button variant="secondary" iconLeft="user" onClick={() => router.push(`/visibility-review/${c.number}`)}>
+                  Directors &amp; owners
                 </Button>
               ) : null}
               <Button variant="primary" iconLeft="download" onClick={exportReport}>
@@ -653,6 +664,7 @@ export function CompanyProfile({
             <LensScoreCard
               score={score}
               weakest={weakest}
+              asks={ASKS[lensKey]}
               sources={enrichment ? "Companies House · ONS · Nomis · Google Places" : "Companies House · ONS · Nomis"}
             />
           </div>
@@ -733,7 +745,18 @@ export function CompanyProfile({
                   </div>
                 </CardBody>
               </Card>
-              <FilingStatusCard company={c} hasFiledAccounts={hasFiledAccounts} alertHref={alertHref} />
+              <FilingStatusCard
+                company={c}
+                hasFiledAccounts={hasFiledAccounts}
+                alertHref={alertHref}
+                soWhat={soWhat(lensKey, {
+                  late:
+                    !!c.accounts?.overdue ||
+                    !!c.confirmationStatement?.overdue ||
+                    (!!c.accounts?.nextDue && Date.parse(c.accounts.nextDue) < Date.now()),
+                  filed: hasFiledAccounts,
+                })}
+              />
             </div>
 
             <Card>
@@ -953,7 +976,8 @@ export function CompanyProfile({
                   action={<Badge tone="neutral">{peers.length} closest comparables</Badge>}
                 />
                 <CardBody>
-                  <div className="hist-scroll">
+                  {/* Scrolls sideways on a phone, so it must be reachable by keyboard. */}
+                  <div className="hist-scroll" tabIndex={0} role="region" aria-label="Score distribution chart">
                     <div className="hist" role="img" aria-label={`${c.name} scores ${score.score}, in the ${PEER_BUCKETS[selfBucket]} band of ${peers.length} comparables`}>
                       {PEER_BUCKETS.map((b, i) => {
                         const n = distribution[i];

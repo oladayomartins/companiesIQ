@@ -35,6 +35,8 @@ export interface NextAction {
   label: string;
   cta: string;
   href: string;
+  /** One line on why this step is worth doing. */
+  why?: string;
 }
 
 export interface LensCard {
@@ -232,40 +234,42 @@ export function buildActions(input: LensInput, score: LensScore, opts: { unlocke
   const sectorHref = c.primaryClassification?.sector ? `/industry/${slugify(c.primaryClassification.sector)}` : "/app/industries";
   const regionHref = c.geo?.region && c.geo.region !== "Unknown" ? `/market/${slugify(c.geo.region)}` : "/app/markets";
   const out: NextAction[] = [];
-  const push = (label: string, cta: string, href: string) => out.push({ n: String(out.length + 1).padStart(2, "0"), label, cta, href });
+  const push = (label: string, cta: string, href: string, why?: string) =>
+    out.push({ n: String(out.length + 1).padStart(2, "0"), label, cta, href, why });
 
   const next = soonestDeadline(c);
 
   switch (score.lens) {
     case "digital":
-      push("No confirmed website or Google Business Profile on this record", "Run a digital check", opts.unlocked ? "/app/enrich" : "/pricing");
-      push(`Track new ${report.industry.sector.toLowerCase()} registrations in ${report.local.region}`, "Set a sector alert", "/app/alerts");
+      push("No confirmed website or Google Business Profile on this record", "Run a digital check", opts.unlocked ? "/app/enrich" : "/pricing", "Confirms the gap before you spend time pitching.");
+      push(`Track new ${report.industry.sector.toLowerCase()} registrations in ${report.local.region}`, "Set a sector alert", "/app/alerts", "New businesses need a website in their first months.");
       break;
     case "banking":
-      push("No filed accounts to underwrite against yet", "Watch for first accounts", "/app/alerts");
-      push("Nothing adverse on the register today", "Monitor for charges", "/app/alerts");
+      push("No filed accounts to underwrite against yet", "Watch for first accounts", "/app/alerts", "You'll be told the day they file.");
+      push("Nothing adverse on the register today", "Monitor for charges", "/app/alerts", "Catch any new security registered by another lender.");
       break;
     case "legal":
-      push("Confirm the PSC position before onboarding", "Open the register record", "#records");
-      push("Filing dates are the cheapest compliance tripwire", "Set a filing alert", "/app/alerts");
+      push("Confirm the PSC position before onboarding", "Open the register record", "#records", "Check the declared owners match who you speak to.");
+      push("Filing dates are the cheapest compliance tripwire", "Set a filing alert", "/app/alerts", "You'll know before the next notice lands.");
       break;
     case "insurance":
-      push("Exposure cannot be sized from public data alone", "Review the evidence", "#lens");
-      push("Trade class is the strongest public signal here", "Compare sector peers", "#competitors");
+      push("Exposure cannot be sized from public data alone", "Review the evidence", "#lens", "Premises and assets aren't public — you'll need them to quote.");
+      push("Trade class is the strongest public signal here", "Compare sector peers", "#competitors", "Start from the standard policy for this trade.");
       break;
     case "accountancy":
       push(
         next ? (next.days < 0 ? deadlinePhrase(next) : `Next statutory deadline: ${deadlinePhrase(next).toLowerCase()}`) : "No published deadlines yet",
         "Set a filing alert",
-        "/app/alerts"
+        "/app/alerts",
+        next && next.days < 0 ? "Every week of delay raises the risk of a strike-off." : "You'll hear before the deadline, not after it."
       );
-      push("No evidence of an agent already on record", "Add to prospect list", opts.unlocked ? "/app/prospects" : "/pricing");
+      push("No evidence of an agent already on record", "Add to prospect list", opts.unlocked ? "/app/prospects" : "/pricing", "Companies House can't confirm it either way — ask on the call.");
       break;
     default:
-      push("Keep this company on the radar", "Add to a watchlist", opts.unlocked ? "/app/watchlists" : "/pricing");
-      push(`See how ${report.local.region} compares`, "Open the market", regionHref);
+      push("Keep this company on the radar", "Add to a watchlist", opts.unlocked ? "/app/watchlists" : "/pricing", "You'll hear when it files or its status changes.");
+      push(`See how ${report.local.region} compares`, "Open the market", regionHref, "Regional growth and density put this company in context.");
   }
-  push(`Build a list from ${num(report.local.inSameIndustry)} comparable companies`, "Open the sector", sectorHref);
+  push(`Build a list from ${num(report.local.inSameIndustry)} comparable companies`, "Open the sector", sectorHref, "Same industry, same region.");
   return out;
 }
 
@@ -390,4 +394,108 @@ export function buildLensCard(input: LensInput, score: LensScore): LensCard {
         source: "Companies House · ONS",
       };
   }
+}
+
+// ---- Copy pass: what to ask, what it means ----------------------------------
+//
+// Static strings keyed by lens + ledger label (the labels in lib/lens.ts —
+// never rename those; look-ups depend on them). Each "ask" is something the
+// reader can confirm on a first call, phrased so it is true whatever this
+// particular company's record says. No model calls; nothing company-specific
+// is asserted here.
+
+export const ASKS: Record<LensKey, Record<string, string>> = {
+  general: {
+    "Market growth": "Ask: is trade up for them this year?",
+    "Company activity": "Ask: are they still actively trading from this address?",
+    Reachability: "Check: search the name and town before you call.",
+    "Competitive intensity": "Ask: what makes customers choose them over rivals nearby?",
+    "Company maturity": "Ask: how long has the current owner run it?",
+  },
+  digital: {
+    "Market growth": "Pitch growth: more local competitors are going online.",
+    "Register standing": "Ask: are they up to date with Companies House?",
+    "Competitive intensity": "Show them the rivals who appear above them in search.",
+    "Company maturity": "Ask: where do most customers come from today?",
+    "Digital presence": "Check: search the name and postcode before you pitch.",
+  },
+  banking: {
+    "Register standing": "Ask: why were any filings missed?",
+    "Charges & security": "Ask: any existing finance that isn't on the register?",
+    "Insolvency flags": "Confirm: no CCJs against the company or its directors.",
+    "Trading history": "Ask: how many of those years were actively trading?",
+    "Filed accounts": "Ask for 12 months of bank statements or management accounts.",
+  },
+  legal: {
+    "Filing timeliness": "Lead with: “we can bring your filings up to date.”",
+    "Litigation found": "Ask: any disputes or claims open?",
+    "Register standing": "Ask: who handles their Companies House filings?",
+    "Charges & security": "Ask: any security they've given that you should review?",
+    "Governance disclosure": "Confirm the PSC details are still accurate.",
+  },
+  insurance: {
+    "Trade class clarity": "Confirm on the call: what exactly do they do day to day?",
+    "Claims history": "Ask: any claims in the last five years?",
+    "Sector risk": "Ask: do they hold customer goods or vehicles on site?",
+    "Premises identified": "Ask: where do they trade from, and is it owned or rented?",
+    "Asset disclosure": "Ask: roughly what are their stock, tools and vehicles worth?",
+  },
+  accountancy: {
+    "Filing need": "Lead with the next filing they have to make, and the date.",
+    "Agent on record": "Ask: who looks after your books today?",
+    "Deadline proximity": "Offer a fixed-fee package to meet the next deadline.",
+    "VAT registration": "Ask: are they VAT registered?",
+    "Ledger complexity": "Price it from the directors, owners and charges on record.",
+  },
+};
+
+/** "What this means for you" — one line per lens, under the filing status. */
+export function soWhat(lens: LensKey, f: { late: boolean; filed: boolean }): string {
+  switch (lens) {
+    case "digital":
+      return f.late
+        ? "Not a blocker for a website sale, but it hints at stretched admin — agree a deposit up front."
+        : "Filings are in order, so the conversation can stay on growth rather than housekeeping.";
+    case "banking":
+      return f.filed
+        ? "There are filed accounts to read; check the date they were made up to before relying on them."
+        : "You can't assess affordability from the register. Ask for bank statements or management accounts.";
+    case "legal":
+      return f.late
+        ? "Getting them back in good standing is the opening — a strike-off notice is the real risk."
+        : "Filings are current, so lead with ongoing compliance rather than a rescue.";
+    case "insurance":
+      return f.filed
+        ? "Filed accounts give you a balance sheet to size cover against — read them before you quote."
+        : "Without accounts you can't see their assets. Ask for a stock, tools and vehicle list before you quote.";
+    case "accountancy":
+      return f.late
+        ? "This is your opening. Offer to clear the backlog before a strike-off notice arrives."
+        : "Nothing is overdue, so this is a pipeline entry — be the name they know when the deadline nears.";
+    default:
+      return f.late
+        ? "Overdue filings are the first thing a new supplier will notice — raise it gently, it shows you did your homework."
+        : "Filings are up to date, which makes this an easier first conversation.";
+  }
+}
+
+/** The implication line under each key fact, chosen by state. */
+export function keyFactNotes(input: LensInput): { growth: string; filing: string; age: string; competition: string } {
+  const { company: c, report } = input;
+  const g = report.industry.annualGrowth;
+  const age = ageDays(c.incorporated);
+  const d = report.local.density;
+  return {
+    growth: g >= 1 ? "More demand each year" : g >= 0 ? "Demand roughly flat" : "A shrinking market",
+    filing: c.confirmationStatement?.overdue ? "Risk of a strike-off notice" : "Up to date with Companies House",
+    age:
+      age == null
+        ? "No incorporation date"
+        : age < 730
+          ? "Still in the riskier early years"
+          : age < 1826
+            ? "Building a track record"
+            : "Past the riskiest first five years",
+    competition: d === "Very high" || d === "High" ? "Many rivals nearby" : d === "Moderate" ? "Some rivals nearby" : "Few rivals nearby",
+  };
 }

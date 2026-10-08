@@ -258,7 +258,7 @@
 .ciq-tab--active { color: var(--text-strong); }
 .ciq-tab--active::after { opacity: 1; }
 .ciq-tab__count { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-faint); background: var(--surface-sunken); border-radius: var(--radius-pill); padding: 1px 7px; }
-.ciq-tab--active .ciq-tab__count { color: var(--accent); background: var(--accent-tint); }
+.ciq-tab--active .ciq-tab__count { color: var(--accent-text); background: var(--accent-tint); }
 .ciq-tabs--pill { border: 0; gap: var(--space-1); background: var(--surface-sunken); padding: 3px; border-radius: var(--radius-md); display: inline-flex; }
 .ciq-tabs--pill .ciq-tab { border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4); }
 .ciq-tabs--pill .ciq-tab::after { display: none; }

@@ -199,7 +199,7 @@ export function RecordsPanel({
                 <div className="copylist__row" key={d.k}>
                   <dt className="copylist__k mono">{d.k}</dt>
                   <dd className={`copylist__v${d.risk ? " detail-overdue" : ""}`}>{d.v}</dd>
-                  <span className="copylist__act">{d.copy ? <CopyButton value={d.copy} label={d.k.toLowerCase()} /> : null}</span>
+                  <dd className="copylist__act">{d.copy ? <CopyButton value={d.copy} label={d.k.toLowerCase()} /> : null}</dd>
                 </div>
               ))}
             </dl>

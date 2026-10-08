@@ -221,10 +221,6 @@
 .empty-metric__value { font-family: var(--font-grotesk); font-weight: 800; font-size: 30px; letter-spacing: -.02em; color: var(--text-strong); }
 
 /* ---- Next steps -------------------------------------------------------- */
-.steps { border-top: 1px solid var(--border-hair); }
-.steps__row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding: 12px 2px; border-bottom: 1px solid var(--border-hair); }
-.steps__n { font-size: 11px; color: var(--text-faint); }
-.steps__label { font-size: 13.5px; color: var(--text-body); }
 
 /* ---- Evidence ---------------------------------------------------------- */
 .evidence { border-top: 1px solid var(--border-hair); }
@@ -334,7 +330,7 @@
 }
 .meter-note svg { color: var(--accent); flex: none; }
 .meter-note strong { color: var(--text-strong); font-weight: 650; }
-.meter-note a { color: var(--accent); }
+.meter-note a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; }
 
 /* ---- Report tabs (redesign) ------------------------------------------------
    The active underline is an inset box-shadow rather than the DS ::after at
@@ -363,6 +359,7 @@
 /* Company details with copy buttons */
 .copylist { margin: 0; }
 .copylist__row { display: grid; grid-template-columns: minmax(96px, 150px) minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-2) 0; border-bottom: 1px solid var(--border-hair); }
+.copylist__act { margin: 0; }
 .copylist__k { margin: 0; font-size: var(--text-micro); letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
 .copylist__v { margin: 0; font-size: var(--text-sm); color: var(--text-body); overflow-wrap: anywhere; }
 .copybtn { border: 0; background: transparent; padding: 2px 4px; font-size: var(--text-micro); color: var(--text-faint); cursor: pointer; border-radius: var(--radius-xs); }
@@ -485,3 +482,20 @@
 .tour__link { border: 0; background: transparent; padding: 4px 2px; font: inherit; font-size: var(--text-sm); color: var(--text-muted); cursor: pointer; }
 @keyframes tourUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (max-width: 640px) { .tour__card { width: auto; } }
+
+/* ---- Copy pass: key-fact notes + next-step cards ---------------------------- */
+.changed__note { display: block; margin-top: 2px; font-size: var(--text-xs); color: var(--text-muted); }
+.nextcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px; margin-top: var(--space-3); }
+.nextcards__card {
+  display: flex; flex-direction: column; gap: 8px; text-align: left; padding: 14px 16px;
+  border: 1px solid var(--border-hair); border-radius: var(--radius-md); background: var(--surface-card);
+  font: inherit; color: inherit; text-decoration: none; cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.nextcards__card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.nextcards__card:focus-visible { outline: var(--ring-w) solid var(--border-focus); outline-offset: 2px; }
+.nextcards__n { font-size: var(--text-micro); letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); }
+.nextcards__main { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.nextcards__title { font-size: var(--text-ui); font-weight: var(--fw-semibold); color: var(--text-strong); line-height: var(--lh-snug); }
+.nextcards__why { font-size: var(--text-sm); line-height: var(--lh-normal); color: var(--text-muted); }
+.nextcards__cta { display: inline-flex; align-items: center; gap: 5px; font-size: var(--text-sm); font-weight: var(--fw-semibold); color: var(--accent-text); }

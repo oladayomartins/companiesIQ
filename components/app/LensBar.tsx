@@ -1,5 +1,5 @@
 "use client";
-// The lens selector — "Viewing as". Picking what you sell re-weights the score,
+// The lens selector — "Scored for". Picking what you sell re-weights the score,
 // the signal ledger, the brief, one intelligence card, the use-case tab and the
 // recommended actions. Session choice lives in localStorage so anonymous and
 // free visitors get the full mechanic; saving it as a default is Pro.
@@ -225,7 +225,7 @@ export function LensBar({
     <div className="lensbar">
       <div className="lensbar__intro">
         <div className="lensbar__eyebrow mono">
-          Viewing as <InfoTip {...GLOSS.lens} label="What does this choice change?" />
+          Scored for <InfoTip {...GLOSS.lens} label="What does this choice change?" />
         </div>
         <div className="lensbar__hint">Scoring, signals and actions re-weight</div>
       </div>
@@ -235,7 +235,6 @@ export function LensBar({
           <Icon name="grid" size={15} />
         </span>
         <span className="lensbar__profile">{profile.label}</span>
-        <span className="lensbar__model mono">{lens.label} model</span>
         {isDefault ? (
           <Badge tone="pos">Your default</Badge>
         ) : (
@@ -244,8 +243,8 @@ export function LensBar({
       </div>
 
       <div className="lensbar__action" ref={popRef}>
-        <Button variant="secondary" onClick={() => setOpen((v) => !v)} iconRight="chevronDown">
-          Change lens
+        <Button variant="secondary" onClick={() => setOpen((v) => !v)} iconRight="chevronDown" aria-expanded={open}>
+          What do you sell?
         </Button>
         {picker}
       </div>
