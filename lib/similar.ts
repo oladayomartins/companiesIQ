@@ -15,7 +15,9 @@ export async function getSimilarCompanies(
 ): Promise<SimilarCompany[]> {
   if (!sic) return [];
   try {
-    const r = await explore({ sicCodes: [sic], status: ["active"], size: 60 });
+    // One search per SIC code, shared by every company in that industry:
+    // cache it for 6h (lib/ch-cache-policy.ts) rather than the 5m default.
+    const r = await explore({ sicCodes: [sic], status: ["active"], size: 60, cacheSeconds: 6 * 60 * 60 });
     const others = r.results.filter((x) => x.number !== number);
     const inRegion = region && region !== "Unknown" ? others.filter((x) => x.region === region) : [];
     const rest = others.filter((x) => !inRegion.includes(x));
