@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Card, CardHeader, CardBody, Stat, Badge, Icon, CompanyAvatar } from "@/components/ds";
 import { FactualTags } from "@/components/app/Tags";
 import { SECTOR_STATS } from "@/lib/ons";
+import { getSectorFormationTrend, newRegistrations } from "@/lib/sector-trend";
 import { regionBreakdown } from "@/lib/analytics";
 import { explore, type EnrichedResult } from "@/lib/data";
 import { isoDaysAgo } from "@/lib/companies-house";
@@ -30,6 +31,7 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
   if (!stat) notFound();
 
   const regions = regionBreakdown().slice(0, 6);
+  const trend = await getSectorFormationTrend(stat.sector);
 
   // Live recent companies classified into this sector (best-effort sample).
   let recent: EnrichedResult[] = [];
@@ -58,7 +60,17 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
 
       <div className="profile-kpis">
         <Stat label="Active companies" value={fmtNumber(stat.businesses)} sub="UK total" />
-        <Stat label="New (12m, est.)" value={`~${fmtNumber(stat.newLastYear)}`} delta={fmtDelta(stat.annualGrowth)} sub="ONS estimate" />
+        {(() => {
+          const nr = newRegistrations(trend, stat.newLastYear);
+          return (
+            <Stat
+              label={nr.label}
+              value={nr.display}
+              delta={nr.live ? (nr.change != null ? `${fmtDelta(nr.change)} vs prior 4` : undefined) : fmtDelta(stat.annualGrowth)}
+              sub={nr.note}
+            />
+          );
+        })()}
         <Stat label="1-yr survival" value={`${stat.survival.oneYear.toFixed(1)}%`} />
         <Stat label="5-yr survival" value={`${stat.survival.fiveYear.toFixed(1)}%`} />
       </div>
