@@ -125,3 +125,13 @@ export function resolveGeo(input: { postcode?: string; locality?: string }): Geo
     nation,
   };
 }
+
+// Compass-point regions take "the" in running text ("in the North West");
+// named places and nations don't ("in London", "in Scotland", "in Yorkshire &
+// the Humber"). Headings that start with the region name stay bare.
+const NEEDS_ARTICLE = /^(North|South|East|West)\b/;
+
+/** A region as it reads mid-sentence: "the North West", "London". */
+export function regionInSentence(region: string): string {
+  return NEEDS_ARTICLE.test(region) ? `the ${region}` : region;
+}

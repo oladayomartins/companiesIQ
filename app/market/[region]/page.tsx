@@ -19,6 +19,7 @@ import { guidesForPlace } from "@/lib/guides";
 import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/cities";
+import { regionInSentence } from "@/lib/geography";
 import { MARKETS } from "@/lib/research/markets";
 import { latestMarketEditions } from "@/lib/research/editions";
 import { MarketReports } from "@/components/public/MarketReports";
@@ -190,8 +191,8 @@ export default async function MarketPage({ params }: { params: Promise<{ region:
             // Biggest regional markets first.
             .then((e) => e.sort((a, b) => (b.placeCount ?? 0) - (a.placeCount ?? 0)))
             .catch(() => [])}
-          place={stat.region}
-          title={`New-company markets in ${stat.region}`}
+          place={regionInSentence(stat.region)}
+          title={`New-company markets in ${regionInSentence(stat.region)}`}
           compact
         />
 
