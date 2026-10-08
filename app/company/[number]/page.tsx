@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCompanyBundle, getStoredCompany } from "@/lib/data";
 import { StoredCompanyView } from "@/components/report/StoredCompanyView";
+import { companyPageAgents } from "@/lib/agent-telemetry";
 import { getCompany, CompaniesHouseError } from "@/lib/companies-house";
 import { buildIntelligenceReport } from "@/lib/analytics";
 import { getSimilarCompanies } from "@/lib/similar";
@@ -89,6 +90,10 @@ export async function generateMetadata({ params }: { params: Promise<{ number: s
 
 export default async function CompanyPage({ params }: { params: Promise<{ number: string }> }) {
   const { number } = await params;
+  // Which crawler is spending the Companies House quota? Counted first, so the
+  // requests refused during a drain (which throw below) are included. One
+  // "[ch-agents]" count line per instance per minute (lib/agent-telemetry.ts).
+  companyPageAgents.record((await headers()).get("user-agent"));
   // getCompanyBundle returns null on 404; other Companies House errors (e.g. a
   // 429 rate-limit) throw — catch them and show a graceful "register busy" page
   // instead of a 500.
