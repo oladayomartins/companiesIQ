@@ -182,3 +182,10 @@
 @media (prefers-reduced-motion: reduce) {
   .qb__bar { animation: none !important; }
 }
+
+/* Commercial Opportunity report links on industry pages (MarketReports). */
+.mkt-reports { display: grid; gap: 0; }
+.mkt-report { padding: 14px 0; border-top: 1px solid var(--border-hair); }
+.mkt-report:first-child { padding-top: 0; border-top: 0; }
+.mkt-report__name { margin: 0 0 4px; font-size: var(--text-md, 1rem); font-weight: 600; }
+.mkt-report__body { margin: 0 0 10px; color: var(--text-muted); font-size: var(--text-sm); line-height: 1.5; }

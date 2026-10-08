@@ -18,7 +18,7 @@ export interface MarketEdition {
 
 const PREFIX = "commercial-opportunity-";
 
-export async function latestMarketEditions(marketIds: string[], from: string): Promise<MarketEdition[]> {
+export async function latestMarketEditions(marketIds: string[], from: string, place?: string): Promise<MarketEdition[]> {
   const admin = getSupabaseAdmin();
   if (!admin || !marketIds.length) return [];
   const { data } = await admin
@@ -44,6 +44,7 @@ export async function latestMarketEditions(marketIds: string[], from: string): P
       buildHref: marketSearchHref({
         sic: market.codes.map((c) => c.code).join(","),
         name: `New ${market.noun}`,
+        place,
         incorporated: "12m",
         from,
       }),

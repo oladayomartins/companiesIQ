@@ -20,6 +20,9 @@ import { RelatedGuides } from "@/components/RelatedGuides";
 import { guidesForSector } from "@/lib/guides";
 import { Breadcrumbs, DatasetLd } from "@/components/public/Breadcrumbs";
 import { SITE_URL } from "@/lib/site";
+import { marketsForSector } from "@/lib/research/markets";
+import { latestMarketEditions } from "@/lib/research/editions";
+import { MarketReports } from "@/components/public/MarketReports";
 
 export const revalidate = 3600;
 
@@ -249,6 +252,14 @@ export default async function IndustryPage({ params }: { params: Promise<{ secto
             </Card>
           </div>
         ) : null}
+
+        <MarketReports
+          editions={await latestMarketEditions(
+            marketsForSector(stat.sector).map((m) => m.id),
+            `industry:${slug}`
+          ).catch(() => [])}
+          sector={stat.sector}
+        />
 
         <div style={{ marginTop: 18 }}>
           <Card>
