@@ -7,6 +7,7 @@
 // Every point is traceable — each ledger row carries its own weight and reason,
 // and rows we could not measure are shown greyed and excluded from the maths.
 import { useId, useState } from "react";
+import { CountUp } from "@/components/public/CountUp";
 import { Card, CardBody, Icon, Badge } from "@/components/ds";
 import type { LensScore, LedgerRow, Tone, LensKey } from "@/lib/lens";
 import { LENSES } from "@/lib/lens";
@@ -40,84 +41,154 @@ function Arc({ score, size = 168 }: { score: number; size?: number }) {
   );
 }
 
-function Ledger({ rows }: { rows: LedgerRow[] }) {
+// Bands mirror bandOf() in lib/lens.ts: low < 34, moderate 34–66, strong 67+.
+const BANDS = [
+  { key: "low", label: "Low", from: 0, to: 34 },
+  { key: "moderate", label: "Moderate", from: 34, to: 67 },
+  { key: "strong", label: "Strong", from: 67, to: 101 },
+] as const;
+
+/**
+ * One ledger row as a disclosure: the label, weight and bar are the button;
+ * the reason (and, where the lens has one, what to ask) is the panel. The
+ * panel is always rendered — `hidden` when closed — so every reason is in the
+ * server HTML.
+ */
+function LedgerItem({
+  row,
+  open,
+  onToggle,
+  ask,
+  id,
+}: {
+  row: LedgerRow;
+  open: boolean;
+  onToggle: () => void;
+  ask?: string | null;
+  id: string;
+}) {
   return (
-    <div className="ledger">
-      {rows.map((r) => (
-        <div className={`ledger__row ${toneClass(r.tone)}${r.measured ? "" : " is-unmeasured"}`} key={r.label}>
-          <span className="ledger__label">
-            {r.label}
-            <span className="ledger__weight mono">{r.weight}%</span>
+    <div className={`ledger__item ${toneClass(row.tone)}${row.measured ? "" : " is-unmeasured"}${open ? " is-open" : ""}`}>
+      <button type="button" className="ledger__row" aria-expanded={open} aria-controls={id} onClick={onToggle}>
+        <span className="ledger__label">
+          {row.label}
+          <span className="ledger__weight mono">
+            {row.weight}%{row.invert ? " · lower is better" : ""}
           </span>
-          <span className="ledger__bar" aria-hidden="true">
-            <span className="ledger__fill" style={{ width: `${r.measured ? r.pct : 0}%` }} />
-          </span>
-          <span className="ledger__state mono">{r.measured ? r.state : "Not checked"}</span>
-        </div>
-      ))}
+        </span>
+        <span className="ledger__bar" aria-hidden="true">
+          <span className="ledger__fill" style={{ width: `${row.measured ? row.pct : 0}%` }} />
+        </span>
+        <span className="ledger__state mono">{row.measured ? row.state : "Not checked"}</span>
+        <Icon name="chevronRight" size={13} className="ledger__chev" />
+      </button>
+      <div className="ledger__why" id={id} hidden={!open}>
+        {row.reason}
+        {!row.measured ? " Left out of the score rather than counted as zero." : ""}
+        {ask ? <div className="ledger__ask">→ {ask}</div> : null}
+      </div>
     </div>
   );
 }
 
 export function LensScoreCard({
   score,
-  updated,
-  delta,
+  weakest,
+  asks,
+  sources = "Companies House · ONS · Nomis",
 }: {
   score: LensScore;
-  updated?: string;
-  delta?: string | null;
+  /** The row dragging the score down most (lens-view weakestRow). */
+  weakest?: LedgerRow | null;
+  /** "What to ask" per ledger label, when the lens has copy for it. */
+  asks?: Record<string, string>;
+  sources?: string;
 }) {
-  const [why, setWhy] = useState(false);
+  const [open, setOpen] = useState<number | null>(0);
+  const uid = useId();
   const lens = LENSES[score.lens];
-  const bands: { key: string; label: string }[] = [
-    { key: "low", label: "Low" },
-    { key: "moderate", label: "Moderate" },
-    { key: "strong", label: "Strong" },
-  ];
 
   return (
     <Card className="scorecard">
       <CardBody>
         <div className="scorecard__top">
           <span className="app-eyebrow">Opportunity score</span>
-          {delta ? <span className="scorecard__delta mono">{delta}</span> : null}
+          <span className={`scorecard__conf mono is-${score.confidence}`}>
+            <span className="scorecard__confdot" aria-hidden="true" />
+            Confidence {score.confidence}
+          </span>
         </div>
 
-        <div className="scorecard__hero">
-          <div className="scorecard__gauge">
-            <Arc score={score.score} />
-            <div className="scorecard__num">
-              <span className="scorecard__value">{score.score}</span>
-              <span className="scorecard__outof mono">out of 100</span>
+        <div className="scorecard__grid">
+          <div className="scorecard__left">
+            <div className="scorecard__hero">
+              <div className="scorecard__gauge">
+                <Arc score={score.score} size={128} />
+                <div className="scorecard__num">
+                  <span className="scorecard__value">
+                    <CountUp value={score.score} />
+                  </span>
+                  <span className="scorecard__outof mono">out of 100</span>
+                </div>
+              </div>
+
+              <div className="scorecard__verdict">
+                <div className="scorecard__verdictTitle">{score.verdict}</div>
+                <p className="scorecard__verdictSub">{score.sub}</p>
+                <div className="scorecard__bands" role="img" aria-label={`${score.band} band`}>
+                  {BANDS.map((b) => (
+                    <span
+                      key={b.key}
+                      className={`scorecard__band mono${b.key === score.band ? " is-on" : ""}`}
+                      style={{ flexGrow: b.to - b.from }}
+                    >
+                      {b.label}
+                    </span>
+                  ))}
+                </div>
+                <div className="scorecard__scale mono" aria-hidden="true">
+                  <span>0</span>
+                  <span>34</span>
+                  <span>67</span>
+                  <span>100</span>
+                </div>
+              </div>
             </div>
+
+            {weakest ? (
+              <div className="scorecard__weak">
+                <div className="scorecard__weakk mono">Weakest point · what to do about it</div>
+                <div className="scorecard__weakt">
+                  {weakest.label} <span className="mono">· {weakest.weight}% weight</span>
+                </div>
+                <p className="scorecard__weakr">{weakest.reason}</p>
+                {asks?.[weakest.label] ? <div className="scorecard__weaka">→ {asks[weakest.label]}</div> : null}
+              </div>
+            ) : null}
           </div>
 
-          <div className="scorecard__verdict">
-            <div className="scorecard__verdictTitle">{score.verdict}</div>
-            <p className="scorecard__verdictSub">{score.sub}</p>
-            <div className="scorecard__bands" role="img" aria-label={`Band: ${score.band}`}>
-              {bands.map((b) => (
-                <span key={b.key} className={`scorecard__band mono${b.key === score.band ? " is-on" : ""}`}>
-                  {b.label}
-                </span>
+          <div className="scorecard__right">
+            <div className="ledger__head mono">
+              <span>What we checked · weight</span>
+              <span>Select a row for why</span>
+            </div>
+            <div className="ledger">
+              {score.ledger.map((r, i) => (
+                <LedgerItem
+                  key={r.label}
+                  row={r}
+                  id={`${uid}-why-${i}`}
+                  open={open === i}
+                  onToggle={() => setOpen((o) => (o === i ? null : i))}
+                  ask={asks?.[r.label]}
+                />
               ))}
             </div>
+            <p className="scorecard__src mono">
+              {sources} · {lens.label} model · {score.coverage}% of the model measurable
+            </p>
           </div>
         </div>
-
-        <Ledger rows={score.ledger} />
-
-        <button className="scorecard__why" onClick={() => setWhy((v) => !v)} aria-expanded={why}>
-          Why this score? <Icon name="chevronDown" size={14} style={why ? { transform: "rotate(180deg)" } : undefined} />
-        </button>
-        {why ? (
-          <div className="scorecard__whybody">
-            <div className="mono scorecard__model">{lens.label} weighting · {score.coverage}% of the model measurable</div>
-            <p>{score.why}</p>
-            <p className="scorecard__src mono">Source · Companies House, ONS &amp; Nomis{updated ? ` · updated ${updated}` : ""}</p>
-          </div>
-        ) : null}
       </CardBody>
     </Card>
   );

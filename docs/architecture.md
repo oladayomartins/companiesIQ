@@ -28,6 +28,17 @@ CompaniesIQ must **never** show:
 Everything is factual and source-backed. If a fact is unknown → **"Not Assessed" / "Unknown"**, never an assumption.
 (We already removed scoring/lead language in prior work — keep it out.)
 
+**One score — decided 2026-10-08 (report redesign).** The company report shows exactly one score: the
+**lens score** (`lib/lens.ts` `scoreLens`). It is a transparent index, not a lead score: every ledger row
+shows its weight, state and reason; unmeasured rows are excluded rather than counted as zero; coverage and
+confidence are always shown; and it never changes with the reader's plan. The older `opportunity.score`
+(`lib/opportunity.ts`) is not displayed anywhere — `ScoreSummary` was deleted — and only its factual
+signals remain in the Pro report. Bands stay at `bandOf()`: low < 34, moderate 34–66, strong 67+.
+
+**No advice labels.** The redesign prototype's "Our advice: Pursue now / Pursue — qualify first / Not a
+priority yet" was **not** adopted. The rule above stands: no Hot/Warm/Cold, no pursue/don't-pursue
+verdicts. The report shows the band and the lens's descriptive verdict only.
+
 ### Partner governance (the IP boundary)
 **CompaniesIQ owns all intelligence.** Partners — including DigitWarehouse — operate on top of it:
 - Partners **MAY** customize: **branding, CTAs, booking links, packages.**

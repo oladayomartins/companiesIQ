@@ -77,11 +77,17 @@
 .intel { display: flex; flex-direction: column; gap: 16px; }
 .intel__row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
 
-/* ---- Score card -------------------------------------------------------- */
+/* ---- Score card ----------------------------------------------------------
+   Full width, two columns: the verdict on the left (gauge, band strip, the
+   weakest point), the working on the right (ledger rows as disclosures). */
 .scorecard__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.scorecard__delta { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
-.scorecard__hero { display: flex; align-items: center; gap: 22px; margin: 10px 0 20px; flex-wrap: wrap; }
-.scorecard__gauge { position: relative; width: 168px; height: 168px; flex: none; }
+.scorecard__conf { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-micro); letter-spacing: .08em; text-transform: uppercase; color: var(--warn); }
+.scorecard__conf.is-high { color: var(--pos); }
+.scorecard__conf.is-low { color: var(--neg); }
+.scorecard__confdot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.scorecard__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: var(--space-4) var(--space-10); align-items: start; margin-top: var(--space-2); }
+.scorecard__hero { display: flex; align-items: center; gap: var(--space-5); margin: var(--space-3) 0 0; }
+.scorecard__gauge { position: relative; width: 128px; height: 128px; flex: none; }
 .arc { display: block; }
 .arc__track { stroke: var(--border-hair); }
 .arc__fill { stroke: var(--accent); }
@@ -89,48 +95,59 @@
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 2px; pointer-events: none;
 }
-.scorecard__value { font-family: var(--font-grotesk); font-weight: 800; font-size: 54px; line-height: 1; letter-spacing: -.03em; color: var(--text-strong); }
-.scorecard__outof { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
-.scorecard__verdict { min-width: 220px; flex: 1; }
-.scorecard__verdictTitle { font-family: var(--font-grotesk); font-weight: 800; font-size: 22px; letter-spacing: -.02em; color: var(--text-strong); }
-.scorecard__verdictSub { color: var(--text-muted); margin: 4px 0 14px; line-height: 1.5; }
-.scorecard__bands { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.scorecard__value { font-family: var(--font-grotesk); font-weight: var(--fw-extra); font-size: var(--text-3xl); line-height: 1; letter-spacing: -.03em; color: var(--text-strong); font-variant-numeric: tabular-nums; }
+.scorecard__outof { font-size: var(--text-micro); letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
+.scorecard__verdict { min-width: 0; flex: 1; }
+.scorecard__verdictTitle { font-family: var(--font-grotesk); font-weight: var(--fw-extra); font-size: var(--text-lg); letter-spacing: -.02em; color: var(--text-strong); }
+.scorecard__verdictSub { color: var(--text-muted); margin: 4px 0 12px; font-size: var(--text-sm); line-height: var(--lh-normal); }
+.scorecard__bands { display: flex; gap: 3px; }
 .scorecard__band {
-  text-align: center; padding: 7px 4px; border-radius: 7px;
-  border: 1px solid var(--border-hair); color: var(--text-faint);
-  font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+  flex-basis: 0; text-align: center; padding: 5px 2px; border-radius: var(--radius-xs);
+  border: 1px solid var(--border-hair); color: var(--text-faint); background: var(--surface-sunken);
+  font-size: var(--text-micro); letter-spacing: .08em; text-transform: uppercase;
 }
-.scorecard__band.is-on { border-color: var(--accent); color: var(--accent); background: var(--accent-tint); }
+.scorecard__band.is-on { border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent-text); background: var(--accent-tint); }
+.scorecard__scale { position: relative; height: 14px; margin-top: 4px; font-size: var(--text-micro); color: var(--text-faint); }
+.scorecard__scale span { position: absolute; top: 0; }
+.scorecard__scale span:nth-child(1) { left: 0; }
+.scorecard__scale span:nth-child(2) { left: 34%; transform: translateX(-50%); }
+.scorecard__scale span:nth-child(3) { left: 67%; transform: translateX(-50%); }
+.scorecard__scale span:nth-child(4) { right: 0; }
+.scorecard__weak { margin-top: var(--space-5); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--surface-sunken); }
+.scorecard__weakk { font-size: var(--text-micro); letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
+.scorecard__weakt { margin-top: 5px; font-size: var(--text-sm); font-weight: var(--fw-semibold); color: var(--text-strong); }
+.scorecard__weakt .mono { font-size: var(--text-2xs); font-weight: var(--fw-regular); color: var(--text-faint); }
+.scorecard__weakr { margin: 3px 0 0; font-size: var(--text-sm); line-height: var(--lh-normal); color: var(--text-muted); }
+.scorecard__weaka, .ledger__ask { margin-top: 8px; font-size: var(--text-sm); font-weight: var(--fw-semibold); color: var(--accent-text); }
+.scorecard__src { margin: var(--space-3) 0 0; font-size: var(--text-micro); letter-spacing: .06em; color: var(--text-faint); }
 
-/* ---- Signal ledger ----------------------------------------------------- */
-.ledger { border-top: 1px solid var(--border-hair); }
+/* ---- Signal ledger -------------------------------------------------------- */
+.ledger__head { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-hair); font-size: var(--text-micro); letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
+.ledger { display: flex; flex-direction: column; }
+.ledger__item { border-bottom: 1px solid var(--border-hair); }
 .ledger__row {
-  display: grid; grid-template-columns: minmax(140px, 1.1fr) 2fr auto;
-  align-items: center; gap: 14px; padding: 11px 2px;
-  border-bottom: 1px solid var(--border-hair);
+  width: 100%; display: grid; grid-template-columns: minmax(120px, 1.2fr) minmax(60px, 1fr) auto 14px;
+  align-items: center; gap: 12px; padding: 11px 2px;
+  border: 0; background: transparent; font: inherit; text-align: left; color: inherit; cursor: pointer;
 }
-.ledger__label { font-size: 13.5px; color: var(--text-body); display: flex; align-items: baseline; gap: 7px; }
-.ledger__weight { font-size: 10.5px; color: var(--text-faint); }
+.ledger__row:hover { background: color-mix(in srgb, var(--surface-sunken) 60%, transparent); }
+.ledger__row:focus-visible { outline: var(--ring-w) solid var(--border-focus); outline-offset: -2px; border-radius: var(--radius-xs); }
+.ledger__label { font-size: var(--text-sm); color: var(--text-body); display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 7px; min-width: 0; }
+.ledger__weight { font-size: var(--text-micro); color: var(--text-faint); }
 .ledger__bar { height: 6px; border-radius: 99px; background: var(--surface-sunken); overflow: hidden; }
-.ledger__fill { display: block; height: 100%; border-radius: 99px; background: var(--text-faint); }
-.ledger__row.is-good .ledger__fill { background: var(--pos); }
-.ledger__row.is-watch .ledger__fill { background: var(--warn); }
-.ledger__row.is-risk .ledger__fill { background: var(--neg); }
-.ledger__state { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--text-muted); white-space: nowrap; }
-.ledger__row.is-good .ledger__state { color: var(--pos); }
-.ledger__row.is-risk .ledger__state { color: var(--neg); }
-.ledger__row.is-unmeasured { opacity: .55; }
-.ledger__row.is-unmeasured .ledger__bar { background: repeating-linear-gradient(90deg, var(--border-hair) 0 3px, transparent 3px 7px); }
-
-.scorecard__why {
-  margin-top: 14px; display: inline-flex; align-items: center; gap: 6px;
-  background: none; border: 0; padding: 0; cursor: pointer;
-  color: var(--accent); font: inherit; font-size: 13px; font-weight: 600;
-}
-.scorecard__whybody { margin-top: 10px; padding: 13px 15px; border-radius: 11px; background: var(--surface-sunken); }
-.scorecard__whybody p { margin: 7px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--text-body); }
-.scorecard__model { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
-.scorecard__src { font-size: 10.5px; color: var(--text-faint); }
+.ledger__fill { display: block; height: 100%; border-radius: 99px; background: var(--text-faint); transition: width var(--dur-slow) var(--ease-out); }
+.ledger__item.is-good .ledger__fill { background: var(--pos); }
+.ledger__item.is-watch .ledger__fill { background: var(--warn); }
+.ledger__item.is-risk .ledger__fill { background: var(--neg); }
+.ledger__state { font-size: var(--text-2xs); letter-spacing: .07em; text-transform: uppercase; color: var(--text-muted); text-align: right; }
+.ledger__item.is-good .ledger__state { color: var(--pos); }
+.ledger__item.is-risk .ledger__state { color: var(--neg); }
+.ledger__item.is-unmeasured .ledger__state { color: var(--text-faint); }
+.ledger__item.is-unmeasured .ledger__bar { background: repeating-linear-gradient(135deg, var(--border-hair) 0 3px, transparent 3px 6px); }
+.ledger__chev { color: var(--text-faint); transition: transform var(--dur-fast) var(--ease-out); }
+.ledger__item.is-open .ledger__chev { transform: rotate(90deg); }
+.ledger__why { padding: 0 2px 12px; font-size: var(--text-sm); line-height: var(--lh-relaxed); color: var(--text-muted); }
+.ledger__why[hidden] { display: none; }
 
 /* ---- Brief ------------------------------------------------------------- */
 .brief__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
@@ -249,7 +266,7 @@
   .lensbar { grid-template-columns: 1fr; gap: 12px; }
   .lensbar__action { justify-self: start; }
   .lenspick { right: auto; left: 0; }
-  .ledger__row { grid-template-columns: 1fr auto; }
+  .ledger__row { grid-template-columns: minmax(0, 1fr) auto 14px; }
   .ledger__bar { display: none; }
 }
 
