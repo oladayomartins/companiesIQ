@@ -16,6 +16,8 @@
 // endpoint and the blog to pick it up.
 // ============================================================
 
+import { classifySic } from "@/lib/sic";
+
 export interface MarketCode {
   code: string;
   /** SIC 2007 description, shortened only where it runs long. */
@@ -228,4 +230,9 @@ export const MARKETS: Market[] = [
 
 export function marketById(id: string): Market | null {
   return MARKETS.find((m) => m.id === id) ?? null;
+}
+
+/** Markets whose codes sit in an industry sector (by the site's own SIC classification). */
+export function marketsForSector(sector: string): Market[] {
+  return MARKETS.filter((m) => classifySic(m.codes[0].code).sector === sector);
 }

@@ -28,6 +28,9 @@ import {
 } from "@/lib/sector-city";
 import { PublicShell, PublicCta } from "@/components/public/PublicShell";
 import { marketSearchHref } from "@/lib/market-link";
+import { marketsForSector } from "@/lib/research/markets";
+import { latestMarketEditions } from "@/lib/research/editions";
+import { MarketReports } from "@/components/public/MarketReports";
 import { FreeAlertForm } from "@/components/FreeAlertForm";
 import { ALERT_REGIONS, ALERT_SECTORS } from "@/lib/alert-options";
 import { getMarketSummary, getNewestInMarket, type MarketSummary } from "@/lib/market-summary";
@@ -447,6 +450,16 @@ export default async function SectorCityPage({
             </CardBody>
           </Card>
         </div>
+
+        <MarketReports
+          editions={await latestMarketEditions(
+            marketsForSector(stat.sector).map((m) => m.id),
+            `industry:${sectorSlug}/${slugify(city.name)}`,
+            city.name
+          ).catch(() => [])}
+          sector={stat.sector}
+          place={city.name}
+        />
 
         <PublicCta
           title={`Track new ${stat.sector.toLowerCase()} companies in ${city.name}`}
