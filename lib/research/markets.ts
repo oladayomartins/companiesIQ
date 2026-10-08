@@ -165,6 +165,65 @@ export const MARKETS: Market[] = [
     timing:
       "Many companies in these codes are contractor or consultancy vehicles that start billing immediately; product companies make their tooling choices in the first months and rarely revisit them.",
   },
+  {
+    id: "insurance-brokers",
+    name: "Insurance brokers",
+    noun: "insurance brokers",
+    definition: "Companies registered as insurance agents and brokers, for risk and damage evaluation, or for other activities auxiliary to insurance and pension funding.",
+    codes: [
+      { code: "66220", label: "Insurance agents and brokers" },
+      { code: "66210", label: "Risk and damage evaluation" },
+      { code: "66290", label: "Other activities auxiliary to insurance and pension funding" },
+    ],
+    buyers: [
+      { who: "Networks and authorisation consultants", why: "Insurance distribution is regulated by the FCA, so a new broker either applies for its own authorisation or joins a network as an appointed representative before it can arrange cover." },
+      { who: "Insurers and MGAs", why: "A brokerage needs agency appointments with insurers before it can place business with them." },
+      { who: "Broking software", why: "Policy administration, client records and renewals tracking are needed from the first placement." },
+      { who: "Professional indemnity insurers", why: "FCA-authorised insurance intermediaries are required to hold professional indemnity cover." },
+      { who: "Compliance and training providers", why: "Regulated firms need compliance monitoring and staff competence arrangements from the start." },
+    ],
+    timing:
+      "Regulatory set-up comes first: a new brokerage typically spends its early months on authorisation or network membership and insurer appointments, and those are the decisions that shape its suppliers.",
+  },
+  {
+    id: "recruitment-agencies",
+    name: "Recruitment agencies",
+    noun: "recruitment agencies",
+    definition: "Companies registered for employment placement, temporary employment agency activities, or other human resources provision.",
+    codes: [
+      { code: "78109", label: "Other employment placement agencies" },
+      { code: "78200", label: "Temporary employment agency activities" },
+      { code: "78300", label: "Other human resources provision" },
+    ],
+    buyers: [
+      { who: "Recruitment CRM and job boards", why: "An agency needs a candidate database and job-board access before it can run its first roles." },
+      { who: "Payroll services and invoice finance", why: "Agencies supplying temporary workers usually pay them weekly, before clients pay their invoices, so payroll and funding arrangements come early." },
+      { who: "Insurers", why: "Agencies supplying temporary workers usually need employers' liability and professional indemnity cover, and clients often ask for proof of it." },
+      { who: "Compliance and vetting providers", why: "Agencies must carry out right-to-work checks and follow the rules on how employment agencies conduct business." },
+      { who: "Accountants", why: "Temporary payroll, VAT and contractor arrangements make early accounting choices matter." },
+    ],
+    timing:
+      "Recruitment agencies are often founded by experienced consultants who bring clients with them, so they place candidates quickly — systems, insurance and funding are needed in the first weeks.",
+  },
+  {
+    id: "estate-agents",
+    name: "Estate and letting agents",
+    noun: "estate and letting agents",
+    definition: "Companies registered as real estate agencies or for the management of real estate on a fee or contract basis — sales agents, letting agents and property managers.",
+    codes: [
+      { code: "68310", label: "Real estate agencies" },
+      { code: "68320", label: "Management of real estate on a fee or contract basis" },
+    ],
+    buyers: [
+      { who: "Property portals", why: "Listing on the major portals is how most agents win vendor and landlord instructions." },
+      { who: "Redress and client money protection schemes", why: "Estate and letting agents in England must belong to a government-approved redress scheme, and letting agents who hold client money must also belong to a client money protection scheme." },
+      { who: "AML supervision and compliance tools", why: "Estate agency businesses must register with HMRC for anti-money-laundering supervision and check their clients." },
+      { who: "Agency software", why: "Listings, viewings, tenancies and client accounts are run from property software from the first instruction." },
+      { who: "Marketing services", why: "Photography, floor plans, boards and local marketing are part of winning and selling every instruction." },
+    ],
+    timing:
+      "Scheme membership and AML registration have to be in place before an agency can take on clients, and portal and software contracts follow immediately — so the set-up period is the buying window.",
+  },
 ];
 
 export function marketById(id: string): Market | null {
