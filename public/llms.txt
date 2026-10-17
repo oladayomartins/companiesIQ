@@ -23,6 +23,7 @@ researchers, agencies and business owners.
 - Home: https://companiesiq.co.uk/
 - Pricing: https://companiesiq.co.uk/pricing
 - Sources & methodology: https://companiesiq.co.uk/sources
+- AI instructions (how to describe CompaniesIQ, facts, limits): https://www.companiesiq.co.uk/ai-instructions
 - Company report: https://companiesiq.co.uk/app/company/{company_number}
 - Industry intelligence: https://companiesiq.co.uk/app/industries/{sector}
 
