@@ -4,7 +4,7 @@ import "./globals.css";
 import { Analytics } from "@/components/Analytics";
 import { JsonLd } from "@/components/JsonLd";
 import { Toaster } from "@/components/ui/Toaster";
-import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_KEYWORDS } from "@/lib/site";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, SITE_KEYWORDS, BRAND_VARIANTS, COMPANIES_HOUSE_PROFILE } from "@/lib/site";
 
 // Exactly the three families the design system calls for, self-hosted by
 // next/font at build time. This replaces a render-blocking Google Fonts
@@ -66,16 +66,22 @@ export const metadata: Metadata = {
 const ORG_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "Organization",
+  "@id": `${SITE_URL}/#organization`,
   name: SITE_NAME,
+  alternateName: BRAND_VARIANTS,
+  legalName: "CompaniesIQ Ltd",
   url: SITE_URL,
   description: SITE_DESCRIPTION,
+  sameAs: [COMPANIES_HOUSE_PROFILE],
   logo: `${SITE_URL}/logo/ciq-mark.svg`,
 };
 
 const SITE_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "WebSite",
+  "@id": `${SITE_URL}/#website`,
   name: SITE_NAME,
+  alternateName: BRAND_VARIANTS,
   url: SITE_URL,
   description: SITE_DESCRIPTION,
 };
