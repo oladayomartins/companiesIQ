@@ -40,6 +40,7 @@ const COLS: [string, [string, string][]][] = [
       ["SIC code search", "/sic"],
       ["Sources & methodology", "/sources"],
       ["Blog", "/blog"],
+      ["AI instructions", "/ai-instructions"],
     ],
   ],
   [

@@ -7,6 +7,13 @@
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.companiesiq.co.uk").replace(/\/$/, "");
 export const SITE_NAME = "CompaniesIQ";
 
+// Other ways people type the brand ("companies iq", "companies-iq", the bare
+// domain). Emitted as schema.org alternateName and used in on-page copy so
+// search engines and AI assistants resolve them to this site. Do NOT add
+// "CompanyIQ" — that is a different business (company-iq.co.uk).
+export const BRAND_VARIANTS = ["Companies IQ", "Companies-IQ", "Companies IQ UK", "companiesiq.co.uk"];
+export const COMPANIES_HOUSE_PROFILE = "https://find-and-update.company-information.service.gov.uk/company/14820317";
+
 // Approximate size of the live register, for copy that runs before (or without)
 // a live count from getRegisterKpis(). One constant so the marketing site and
 // the app can't disagree — they previously said 5.5M and 5.3M respectively.
@@ -33,6 +40,7 @@ export const SITE_KEYWORDS = [
   "market intelligence platform",
   "company formation trends uk",
   "uk company data",
+  "companies iq",
   "new company formations",
   "sic code search",
 ];
