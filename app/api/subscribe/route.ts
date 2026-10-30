@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ url: session.url });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Checkout failed." }, { status: 502 });
+    console.error("subscription checkout failed", e);
+    return NextResponse.json({ error: "Checkout failed. Please try again." }, { status: 502 });
   }
 }

@@ -40,12 +40,6 @@ export async function getDataset(slug: string): Promise<Dataset | null> {
   return (data?.payload as Dataset) ?? null;
 }
 
-export async function listDatasetSlugs(): Promise<string[]> {
-  const admin = getSupabaseAdmin();
-  if (!admin) return [];
-  const { data } = await admin.from("research_datasets").select("slug");
-  return ((data ?? []) as { slug: string }[]).map((r) => r.slug);
-}
 
 /**
  * Upsert the article by slug. An existing post keeps its original

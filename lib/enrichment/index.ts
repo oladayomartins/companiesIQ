@@ -14,7 +14,6 @@ import { lookupPlace } from "./places";
 import type { CompanyEnrichment } from "./types";
 
 export type { CompanyEnrichment } from "./types";
-export { aiReadiness, type ReadinessLevel, type MatchConfidence } from "./types";
 
 const DEFAULT_TTL_DAYS = 30;
 

@@ -52,7 +52,7 @@ export const KEYWORDS: KeywordDef[] = [
 ];
 
 /** Extract distinct keyword keys from a single company's text. */
-export function extractKeywords(input: { name?: string; sicText?: string[]; filings?: Filing[] }): string[] {
+function extractKeywords(input: { name?: string; sicText?: string[]; filings?: Filing[] }): string[] {
   const hay = [input.name || "", ...(input.sicText || []), ...(input.filings || []).map((f) => f.label)]
     .join(" ")
     .toLowerCase();
@@ -63,15 +63,12 @@ export function extractKeywords(input: { name?: string; sicText?: string[]; fili
   return hits;
 }
 
-export function keywordsForCompany(c: Company): string[] {
-  return extractKeywords({ name: c.name, sicText: c.classifications.map((cl) => `${cl.category} ${cl.division} ${cl.sector}`) });
-}
 
 export function keywordsForResult(r: SearchResult): string[] {
   return extractKeywords({ name: r.name, sicText: r.classification ? [`${r.classification.category} ${r.classification.sector}`] : [] });
 }
 
-export function keywordWeight(key: string): number {
+function keywordWeight(key: string): number {
   return KEYWORDS.find((k) => k.key === key)?.weight ?? 0.4;
 }
 

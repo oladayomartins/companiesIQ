@@ -17,7 +17,7 @@ export function adminEmails(): string[] {
   return allowlist(process.env.ADMIN_EMAILS);
 }
 
-export function partnerEmails(): string[] {
+function partnerEmails(): string[] {
   return allowlist(process.env.PARTNER_EMAILS);
 }
 

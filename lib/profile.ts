@@ -12,7 +12,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { deriveIdentity } from "@/lib/identity";
 
 /** The user's saved full name, or null if none set. */
-export async function getFullName(userId: string): Promise<string | null> {
+async function getFullName(userId: string): Promise<string | null> {
   const admin = getSupabaseAdmin();
   if (!admin) return null;
   const { data } = await admin.from("profiles").select("full_name").eq("id", userId).maybeSingle();

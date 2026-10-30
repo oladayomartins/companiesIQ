@@ -33,67 +33,6 @@ export function IncorporationTrend({ data }: { data: { month: string; value: num
   );
 }
 
-// Compact horizontal bars for the radar's small chart cards. Each bar is
-// clickable so a category doubles as a filter on the company table.
-export function MiniBars({
-  data,
-  onSelect,
-  active,
-  unit = "companies",
-}: {
-  data: { label: string; value: number; key?: string }[];
-  onSelect?: (key: string) => void;
-  active?: string | null;
-  unit?: string;
-}) {
-  const height = Math.max(150, data.length * 30);
-  return (
-    <div style={{ width: "100%", height }}>
-      <ResponsiveContainer>
-        <BarChart data={data} layout="vertical" margin={{ top: 2, right: 40, left: 6, bottom: 2 }}>
-          <XAxis type="number" hide />
-          <YAxis
-            type="category"
-            dataKey="label"
-            tickLine={false}
-            axisLine={false}
-            width={118}
-            tick={{ fontFamily: "var(--font-sans)", fontSize: 11, fill: "var(--text-body)" }}
-          />
-          <Tooltip
-            cursor={{ fill: "color-mix(in srgb, var(--accent) 8%, transparent)" }}
-            contentStyle={tooltipStyle}
-            formatter={(v: number) => [v.toLocaleString("en-GB"), unit]}
-          />
-          <Bar
-            dataKey="value"
-            radius={[0, 4, 4, 0]}
-            maxBarSize={16}
-            cursor={onSelect ? "pointer" : undefined}
-            onClick={(d: { payload?: { key?: string } }) => {
-              const k = d?.payload?.key;
-              if (onSelect && k) onSelect(k);
-            }}
-          >
-            {data.map((d, i) => (
-              <Cell
-                key={i}
-                fill="var(--accent)"
-                fillOpacity={active && d.key === active ? 1 : active ? 0.32 : 1 - i * 0.08}
-              />
-            ))}
-            <LabelList
-              dataKey="value"
-              position="right"
-              formatter={(v: number) => v.toLocaleString("en-GB")}
-              style={{ fontFamily: "var(--font-mono)", fontSize: 10, fill: "var(--text-muted)" }}
-            />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
 
 export function TrendLine({ data }: { data: { month: string; value: number }[] }) {
   return (

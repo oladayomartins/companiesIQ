@@ -589,16 +589,6 @@ interface CHOfficerSearch {
   items: CHOfficerSearchItem[];
 }
 
-export async function searchOfficers(q: string): Promise<{ total: number; officers: { officerId: string; name: string; description?: string; address?: string }[] }> {
-  const data = await chFetch<CHOfficerSearch>(`/search/officers?q=${encodeURIComponent(q)}&items_per_page=20`);
-  const officers = (data.items || [])
-    .map((it) => {
-      const m = it.links?.self?.match(/\/officers\/([^/]+)\/appointments/) || it.links?.self?.match(/\/officers\/([^/]+)/);
-      return { officerId: m ? m[1] : "", name: titleCaseName(it.title), description: it.description, address: it.address_snippet };
-    })
-    .filter((o) => o.officerId);
-  return { total: data.total_results ?? officers.length, officers };
-}
 
 // ---------------------------------------------------------------
 // Filing history
@@ -687,7 +677,7 @@ interface CHPscs {
 }
 
 /** Map a Companies House nature-of-control code to a readable phrase. */
-export function natureLabel(code: string): string {
+function natureLabel(code: string): string {
   const m = code.match(/ownership-of-shares-(\d+)-to-(\d+)-percent/);
   if (m) return `Owns ${m[1]}–${m[2]}% of shares`;
   const v = code.match(/voting-rights-(\d+)-to-(\d+)-percent/);

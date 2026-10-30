@@ -7,12 +7,12 @@
 // half-year on 1 July would systematically understate June.
 import type { Period } from "./types";
 
-export const PUBLICATION_LAG_DAYS = 21;
+const PUBLICATION_LAG_DAYS = 21;
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-export function halfPeriod(year: number, half: 1 | 2): Period {
+function halfPeriod(year: number, half: 1 | 2): Period {
   const from = half === 1 ? `${year}-01-01` : `${year}-07-01`;
   const to = half === 1 ? `${year}-06-30` : `${year}-12-31`;
   return {
@@ -24,7 +24,7 @@ export function halfPeriod(year: number, half: 1 | 2): Period {
   };
 }
 
-export function quarterPeriod(year: number, q: 1 | 2 | 3 | 4): Period {
+function quarterPeriod(year: number, q: 1 | 2 | 3 | 4): Period {
   const startMonth = (q - 1) * 3;
   const from = new Date(Date.UTC(year, startMonth, 1));
   const to = new Date(Date.UTC(year, startMonth + 3, 0));
@@ -32,7 +32,7 @@ export function quarterPeriod(year: number, q: 1 | 2 | 3 | 4): Period {
 }
 
 /** True once a period has ended and the publication lag has passed. */
-export function isSettled(p: Period, now: Date): boolean {
+function isSettled(p: Period, now: Date): boolean {
   const end = new Date(p.to + "T00:00:00Z").getTime();
   return now.getTime() >= end + PUBLICATION_LAG_DAYS * 86_400_000;
 }

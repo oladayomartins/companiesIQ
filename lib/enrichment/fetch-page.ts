@@ -21,8 +21,8 @@ import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { SITE_URL } from "@/lib/site";
 
-export const BOT_NAME = "CompaniesIQBot";
-export const USER_AGENT = `${BOT_NAME}/1.0 (+${SITE_URL}/bot)`;
+const BOT_NAME = "CompaniesIQBot";
+const USER_AGENT = `${BOT_NAME}/1.0 (+${SITE_URL}/bot)`;
 
 const TIMEOUT_MS = 8_000;
 const MAX_BYTES = 1_500_000; // 1.5 MB of HTML is already an outlier
@@ -108,7 +108,7 @@ const lastHit = new Map<string, number>();
  * CompaniesIQBot` block if one exists, otherwise the `*` block. Supports the
  * de-facto `Allow` override and `*`/`$` wildcards, which is what real sites use.
  */
-export function parseRobots(text: string): RobotsRules {
+function parseRobots(text: string): RobotsRules {
   const lines = text.split(/\r?\n/).map((l) => l.replace(/#.*$/, "").trim());
   const groups = new Map<string, RobotsRules>();
   let agents: string[] = [];
@@ -139,7 +139,7 @@ export function parseRobots(text: string): RobotsRules {
   return groups.get(BOT_NAME.toLowerCase()) ?? groups.get("*") ?? { disallow: [], allow: [] };
 }
 
-export function ruleMatches(path: string, rule: string): boolean {
+function ruleMatches(path: string, rule: string): boolean {
   const anchored = rule.endsWith("$");
   const pattern = anchored ? rule.slice(0, -1) : rule;
   const parts = pattern.split("*");
@@ -180,7 +180,7 @@ async function getRobots(origin: string): Promise<RobotsRules | null> {
 
 /** True when robots.txt permits us to fetch this path. Longest matching rule
  *  wins, with Allow beating Disallow at equal length (Google's resolution). */
-export async function isAllowedByRobots(url: URL): Promise<boolean> {
+async function isAllowedByRobots(url: URL): Promise<boolean> {
   const rules = await getRobots(url.origin);
   if (!rules) return true;
   const path = url.pathname + url.search;

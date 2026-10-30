@@ -47,7 +47,7 @@ export async function getUserPlan(user: User | null): Promise<string> {
 }
 
 /** True when the user has an active paid subscription (Pro features). */
-export async function isSubscribed(user: User | null): Promise<boolean> {
+async function isSubscribed(user: User | null): Promise<boolean> {
   return (await getUserPlan(user)) !== "free";
 }
 
@@ -87,12 +87,6 @@ export async function canUseAlerts(user: User | null): Promise<boolean> {
   return (await capsFor(user)).alerts;
 }
 
-/** CSV export of reports, searches and lists — Analyst and above. */
-export async function canExportCsv(user: User | null): Promise<boolean> {
-  if (!user) return false;
-  if (isAdmin(user) || isPartner(user)) return true;
-  return (await capsFor(user)).csvExport;
-}
 
 /** Full filing history. Free accounts see a recent window instead. */
 export async function canUseHistoricalData(user: User | null): Promise<boolean> {

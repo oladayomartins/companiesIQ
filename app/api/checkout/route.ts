@@ -6,10 +6,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { isKnownPriceId, getPartner } from "@/lib/partners";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const limited = rateLimit(req, "checkout", 10);
+  if (limited) return limited;
   const sp = req.nextUrl.searchParams;
   const price = sp.get("price") || "";
   const company = sp.get("company") || "";
@@ -39,6 +42,7 @@ export async function GET(req: NextRequest) {
     if (!session.url) return NextResponse.json({ error: "Checkout session has no URL." }, { status: 502 });
     return NextResponse.redirect(session.url, 303);
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Checkout failed." }, { status: 502 });
+    console.error("checkout failed", e);
+    return NextResponse.json({ error: "Checkout failed. Please try again." }, { status: 502 });
   }
 }

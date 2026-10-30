@@ -18,7 +18,7 @@ export interface GscRow {
 }
 
 /** Minimal RFC-4180 CSV parser (quoted fields may contain commas/newlines). */
-export function parseCsv(text: string): string[][] {
+function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";
@@ -76,7 +76,7 @@ export function parseGscExport(text: string): { kind: "pages" | "queries"; rows:
 }
 
 /** Typical organic CTR by position (conservative, page-one curve). */
-export function expectedCtr(position: number): number {
+function expectedCtr(position: number): number {
   const p = Math.max(1, Math.round(position));
   const curve = [0.28, 0.15, 0.1, 0.07, 0.05, 0.04, 0.03, 0.025, 0.02, 0.018];
   if (p <= 10) return curve[p - 1];

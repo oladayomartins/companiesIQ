@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ url: session.url });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Portal failed." }, { status: 502 });
+    console.error("billing portal failed", e);
+    return NextResponse.json({ error: "Could not open the billing portal. Please try again." }, { status: 502 });
   }
 }

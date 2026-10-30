@@ -25,7 +25,7 @@ export const CLIENT_EVENTS = [
   "market_alert", // opened the weekly-alert opt-in from a market header
 ] as const;
 /** Events only the server records (subscribe route, Stripe webhook). */
-export const SERVER_EVENTS = ["checkout_started", "checkout_completed", "checkout_expired"] as const;
+const SERVER_EVENTS = ["checkout_started", "checkout_completed", "checkout_expired"] as const;
 
 export type GrowthEventName = (typeof CLIENT_EVENTS)[number] | (typeof SERVER_EVENTS)[number];
 

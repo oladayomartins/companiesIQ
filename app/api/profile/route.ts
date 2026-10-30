@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     await admin.from("profiles").upsert(row, { onConflict: "id" });
     return NextResponse.json({ ok: true, full_name: row.full_name ?? null });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Save failed." }, { status: 400 });
+    console.error("profile save failed", e);
+    return NextResponse.json({ error: "Save failed." }, { status: 400 });
   }
 }

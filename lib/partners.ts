@@ -27,7 +27,7 @@ export interface Partner {
   packages: PartnerPackage[];
 }
 
-export const PARTNERS: Record<string, Partner> = {
+const PARTNERS: Record<string, Partner> = {
   digitwarehouse: {
     id: "digitwarehouse",
     name: "DigitWarehouse",
@@ -77,7 +77,7 @@ export const PARTNERS: Record<string, Partner> = {
   },
 };
 
-export const DEFAULT_PARTNER = "digitwarehouse";
+const DEFAULT_PARTNER = "digitwarehouse";
 
 /** Resolve a partner from the `source` query param (the QR campaign tag). */
 export function getPartner(source?: string | null): Partner {

@@ -39,7 +39,7 @@ export interface PageExtract {
 const TAG_STRIP = /<(script|style|noscript|template|svg)\b[^>]*>[\s\S]*?<\/\1>/gi;
 
 /** Visible text, entity-decoded and whitespace-collapsed. */
-export function visibleText(html: string): string {
+function visibleText(html: string): string {
   return decodeEntities(html.replace(TAG_STRIP, " ").replace(/<[^>]+>/g, " "))
     .replace(/\s+/g, " ")
     .trim();
@@ -78,7 +78,7 @@ function deobfuscate(domainish: string): string {
   return domainish.replace(/\s*(?:\[|\()?\s*(?:dot|\.)\s*(?:\]|\))?\s*/gi, ".").replace(/\s+/g, "");
 }
 
-export function extractEmails(html: string, text: string): ExtractedHit[] {
+function extractEmails(html: string, text: string): ExtractedHit[] {
   const hits: ExtractedHit[] = [];
   const seen = new Set<string>();
   const push = (raw: string, source: ContactSource) => {
@@ -99,7 +99,7 @@ export function extractEmails(html: string, text: string): ExtractedHit[] {
 
 // ---- Phones -----------------------------------------------------------------
 
-export function extractPhoneHits(html: string, text: string): ExtractedHit[] {
+function extractPhoneHits(html: string, text: string): ExtractedHit[] {
   const hits: ExtractedHit[] = [];
   const seen = new Set<string>();
   const push = (raw: string, source: ContactSource) => {
@@ -127,7 +127,7 @@ const ORG_TYPES = /organization|organisation|localbusiness|store|corporation|pro
  * arrays. Malformed JSON-LD is extremely common, so a parse failure on one
  * block never stops the others.
  */
-export function extractStructured(html: string): { emails: string[]; phones: string[]; urls: string[] } {
+function extractStructured(html: string): { emails: string[]; phones: string[]; urls: string[] } {
   const emails = new Set<string>();
   const phones = new Set<string>();
   const urls = new Set<string>();
@@ -197,7 +197,7 @@ const CONTACT_HINTS = [
 
 /** Same-origin links whose href or anchor text suggests contact details,
  *  ranked so the crawl budget is spent on /contact before /terms. */
-export function extractContactLinks(html: string, baseUrl: string): string[] {
+function extractContactLinks(html: string, baseUrl: string): string[] {
   let base: URL;
   try {
     base = new URL(baseUrl);

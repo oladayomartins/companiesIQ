@@ -170,7 +170,7 @@ function titleize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export function sectorForDivision(divNum: number): string {
+function sectorForDivision(divNum: number): string {
   const s = SECTIONS.find((x) => divNum >= x.min && divNum <= x.max);
   return s ? s.sector : "Other";
 }

@@ -55,7 +55,7 @@ function routeExists(path: string): boolean {
 }
 
 /** Every markdown link target in a body, deduplicated. */
-export function linksIn(md: string): string[] {
+function linksIn(md: string): string[] {
   const out = new Set<string>();
   for (const m of md.matchAll(/\]\(([^)\s]+)/g)) out.add(m[1]);
   return [...out];
@@ -67,7 +67,7 @@ export function linksIn(md: string): string[] {
  * — the Companies House default address in Cardiff being the clearest example.
  * Flagged rows are published but never used as a headline finding.
  */
-export const ANOMALY_BAND = 0.75;
+const ANOMALY_BAND = 0.75;
 
 /** Flag outsized movers in place and return them. */
 export function markAnomalies(cells: Cell[], band = ANOMALY_BAND): Cell[] {

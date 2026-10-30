@@ -72,7 +72,7 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
 /** Never send more than one lifecycle email per account inside this window. */
-export const MIN_GAP_MS = 2 * DAY;
+const MIN_GAP_MS = 2 * DAY;
 
 const count = (evs: UserEvent[], name: string, since: number) =>
   evs.filter((e) => e.event === name && e.at >= since).length;
@@ -85,7 +85,7 @@ export function openCheckout(s: UserSnapshot): UserEvent | null {
   return completedAfter ? null : started;
 }
 
-export function scoreUser(s: UserSnapshot, now: number): { score: number; signals: string[] } {
+function scoreUser(s: UserSnapshot, now: number): { score: number; signals: string[] } {
   const since14 = now - 14 * DAY;
   const signals: string[] = [];
   let score = 0;
@@ -158,7 +158,7 @@ function stageOf(s: UserSnapshot, open: UserEvent | null): string {
 const sentTemplate = (s: UserSnapshot, t: Template, ref?: string) =>
   s.emails.find((e) => e.template === t && (ref === undefined || e.ref === ref));
 
-export function decide(s: UserSnapshot, now: number): Decision | null {
+function decide(s: UserSnapshot, now: number): Decision | null {
   if (s.paid || s.comped || s.optOut || !s.email) return null;
   if (s.emails[0] && now - s.emails[0].at < MIN_GAP_MS) return null;
 

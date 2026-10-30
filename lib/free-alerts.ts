@@ -162,7 +162,7 @@ export async function unsubscribeByToken(token: string): Promise<boolean> {
   return !error;
 }
 
-export async function getActiveSubscribers(): Promise<Subscriber[]> {
+async function getActiveSubscribers(): Promise<Subscriber[]> {
   const admin = getSupabaseAdmin();
   if (!admin) return [];
   const { data } = await admin.from("alert_subscribers").select("*").eq("status", "active");

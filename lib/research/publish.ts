@@ -15,7 +15,7 @@ import { blocking, checkDataset, checkDraft, type Issue } from "./validate";
 import { withTakeaways } from "./takeaways";
 import { logRun, saveDataset, upsertResearchPost } from "./store";
 
-export const RESEARCH_AUTHOR = "CompaniesIQ Research";
+const RESEARCH_AUTHOR = "CompaniesIQ Research";
 
 export interface RunResult {
   study: string;

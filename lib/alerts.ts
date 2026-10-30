@@ -34,7 +34,7 @@ export function ruleSummary(a: AlertRule): string {
 }
 
 /** Does a company result satisfy this alert rule? (all factual) */
-export function matchesRule(rule: AlertRule, r: EnrichedResult): boolean {
+function matchesRule(rule: AlertRule, r: EnrichedResult): boolean {
   if (rule.status?.length && !rule.status.includes(String(r.status))) return false;
   if (rule.region && r.region !== rule.region) return false;
   if (rule.sector && r.classification?.sector !== rule.sector) return false;

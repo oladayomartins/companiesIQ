@@ -6,7 +6,7 @@ import { slugify } from "@/lib/slug";
 // ids for in-page anchors.
 marked.setOptions({ gfm: true, breaks: false });
 
-export function renderMarkdown(md: string): string {
+function renderMarkdown(md: string): string {
   const html = marked.parse(md ?? "", { async: false }) as string;
   // Data tables are wide and the article column is not. Wrapping each table in
   // its own scroll container keeps the page from scrolling sideways as a whole,

@@ -89,5 +89,5 @@ export function regionStat(region?: string): RegionStat | null {
   return REGION_STATS[region] || null;
 }
 
-export const TOTAL_ACTIVE_COMPANIES = 5312884;
-export const TOTAL_FILINGS_TRACKED = "214M";
+
+

@@ -130,7 +130,7 @@ export const LENSES: Record<LensKey, LensMeta> = {
   },
 };
 
-export const LENS_ORDER: LensKey[] = ["general", "digital", "banking", "legal", "insurance", "accountancy"];
+const LENS_ORDER: LensKey[] = ["general", "digital", "banking", "legal", "insurance", "accountancy"];
 
 /** What the user sells → which model answers their question. */
 export interface Profile {
@@ -740,10 +740,6 @@ export function scoreLens(input: LensInput, lens: LensKey): LensScore {
   };
 }
 
-/** Every lens at once — powers the fingerprint strip and the "same company, different question" comparison. */
-export function scoreAllLenses(input: LensInput): Record<LensKey, LensScore> {
-  return Object.fromEntries(LENS_ORDER.map((k) => [k, scoreLens(input, k)])) as Record<LensKey, LensScore>;
-}
 
 // ---- Peers ------------------------------------------------------------------
 

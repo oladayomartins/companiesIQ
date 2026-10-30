@@ -461,5 +461,3 @@ export const sicFormationsStudy: Study = {
   collect,
   render,
 };
-
-export { yearEarlier };

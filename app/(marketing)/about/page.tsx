@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Button } from "@/components/ds";
 import { SiteFooter } from "@/components/marketing/Footer";
 import { JsonLd } from "@/components/JsonLd";
-import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { SITE_URL, SITE_NAME, BRAND_VARIANTS } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About CompaniesIQ — UK company intelligence",
@@ -27,6 +27,10 @@ const FAQS: [string, string][] = [
   [
     "Who is CompaniesIQ for?",
     "Sales and agency teams finding newly registered businesses, investors and analysts tracking emerging sectors, recruiters spotting fast-growing employers, and accountants reaching newly incorporated companies — anyone who needs to understand a UK company, sector or region quickly.",
+  ],
+  [
+    "Is CompaniesIQ the same as Companies IQ or CompanyIQ?",
+    "CompaniesIQ and Companies IQ are the same service — the one at companiesiq.co.uk. CompanyIQ (company-iq.co.uk) is a different, unaffiliated business.",
   ],
   [
     "Who runs CompaniesIQ?",
@@ -57,6 +61,7 @@ const ABOUT_PAGE = {
   mainEntity: {
     "@type": "Organization",
     name: SITE_NAME,
+    alternateName: BRAND_VARIANTS,
     url: SITE_URL,
     logo: `${SITE_URL}/logo/ciq-mark.svg`,
     foundingLocation: { "@type": "Place", name: "London, United Kingdom" },
@@ -119,6 +124,13 @@ export default function AboutPage() {
           <Link href="/city">city</Link>, or an emerging <Link href="/signals">signal</Link> — or read the{" "}
           <Link href="/blog">blog</Link>. See <Link href="/pricing">plans</Link> when you&apos;re ready for unlimited
           intelligence.
+        </p>
+
+        <h2>Our name</h2>
+        <p>
+          We are <strong>CompaniesIQ</strong> — you may also see it written <strong>Companies IQ</strong> or found at{" "}
+          <span className="mono">companiesiq.co.uk</span>. Searching for any of those brings you to this site. We are
+          not affiliated with CompanyIQ (company-iq.co.uk), which is a separate business.
         </p>
 
         <h2>Who we are</h2>

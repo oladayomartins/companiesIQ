@@ -6,6 +6,4 @@ export function slugify(s: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-export function findBySlug<T>(items: T[], get: (t: T) => string, slug: string): T | undefined {
-  return items.find((t) => slugify(get(t)) === slug);
-}
+

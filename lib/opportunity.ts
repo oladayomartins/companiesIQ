@@ -190,7 +190,7 @@ export interface ScoreCategory {
 
 export type ScoreBand = "Strong signals" | "Mixed signals" | "Limited signals";
 
-export function bandFor(score: number): ScoreBand {
+function bandFor(score: number): ScoreBand {
   if (score >= 70) return "Strong signals";
   if (score >= 45) return "Mixed signals";
   return "Limited signals";
