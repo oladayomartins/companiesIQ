@@ -1,10 +1,13 @@
 // Lead capture for the founder Growth Report funnel.
 import { NextRequest, NextResponse } from "next/server";
 import { createLead } from "@/lib/leads";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "leads", 10);
+  if (limited) return limited;
   let body: Record<string, unknown>;
   try {
     body = await req.json();

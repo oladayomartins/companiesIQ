@@ -6,10 +6,6 @@ export function fmtNumber(n: number | null | undefined): string {
   return n.toLocaleString("en-GB");
 }
 
-export function fmtPercent(n: number | null | undefined, dp = 1): string {
-  if (n == null || Number.isNaN(n)) return "—";
-  return `${n.toFixed(dp)}%`;
-}
 
 export function fmtDelta(n: number | null | undefined, dp = 1): string {
   if (n == null || Number.isNaN(n)) return "—";

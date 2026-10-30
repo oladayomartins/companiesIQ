@@ -21,27 +21,6 @@ function useSignedIn(): boolean | null {
   return signedIn;
 }
 
-/** Header CTA: "Open app" when signed in, else "Sign in" + "Get full access". */
-export function PublicHeaderCta() {
-  const signedIn = useSignedIn();
-  if (signedIn) {
-    return (
-      <Button href="/app" variant="primary" iconRight="arrowRight">
-        Open app
-      </Button>
-    );
-  }
-  return (
-    <>
-      <Link className="rep-head__link" href="/sign-in">
-        Sign in
-      </Link>
-      <Button href="/pricing" variant="primary" iconRight="arrowRight">
-        Get full access
-      </Button>
-    </>
-  );
-}
 
 /** Bottom conversion band body (sub + buttons) — swaps to an in-app prompt
  *  once the visitor is signed in, so logged-in users aren't asked to register.

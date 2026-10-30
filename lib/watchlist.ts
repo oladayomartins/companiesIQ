@@ -102,17 +102,6 @@ export async function addWatchChecked(companyNumber: string): Promise<WatchResul
   return error ? { ok: false, reason: "auth" } : { ok: true };
 }
 
-export async function addWatch(companyNumber: string): Promise<boolean> {
-  const sb = await getSupabaseServer();
-  const user = await getCurrentUser();
-  if (!sb || !user) return false;
-  const listId = await defaultListId(sb, user.id);
-  if (!listId) return false;
-  const { error } = await sb
-    .from("watchlist_companies")
-    .upsert({ watchlist_id: listId, company_number: companyNumber }, { onConflict: "watchlist_id,company_number" });
-  return !error;
-}
 
 export async function removeWatch(companyNumber: string): Promise<boolean> {
   const sb = await getSupabaseServer();

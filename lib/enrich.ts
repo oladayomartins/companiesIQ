@@ -25,13 +25,8 @@ export interface EnrichedRow {
   score: number | null;
 }
 
-export const ENRICH_MAX = 50;
+const ENRICH_MAX = 50;
 
-/** Pull UK company numbers out of arbitrary pasted/CSV text. */
-export function extractNumbers(text: string): string[] {
-  const matches = text.toUpperCase().match(/\b([A-Z]{2}\d{6}|\d{8}|[A-Z]{2}\d{5}[A-Z0-9])\b/g) ?? [];
-  return Array.from(new Set(matches));
-}
 
 async function mapPool<T, R>(items: T[], concurrency: number, fn: (t: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);

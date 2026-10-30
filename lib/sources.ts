@@ -96,10 +96,4 @@ export const SOURCES: DataSource[] = [
 export const LIVE_SOURCES = SOURCES.filter((s) => s.status === "live");
 export const REFERENCE_SOURCES = SOURCES.filter((s) => s.status === "reference");
 
-/** Short, dated attribution strings used inline on report sections. */
-export const ATTRIBUTION = {
-  companiesHouse: "Companies House (live)",
-  nomis: "Nomis / ONS (live, latest period)",
-  onsDemography: "ONS Business Demography (reference baseline)",
-  onsBpe: "ONS Business Population Estimates (reference baseline)",
-};
+

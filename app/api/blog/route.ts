@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
     const post = await upsertPost({ ...body, author, published_at });
     return NextResponse.json({ post });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Save failed." }, { status: 400 });
+    console.error("blog save failed", e);
+    return NextResponse.json({ error: "Save failed." }, { status: 400 });
   }
 }

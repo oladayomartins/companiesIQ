@@ -10,8 +10,8 @@
 // ============================================================
 import type { OfficerProfile, OfficerAppointment } from "./types";
 
-export const SERIAL_THRESHOLD = 3; // total appointments to be flagged "serial"
-export const PROLIFIC_THRESHOLD = 6; // total appointments to be flagged "prolific"
+const SERIAL_THRESHOLD = 3; // total appointments to be flagged "serial"
+const PROLIFIC_THRESHOLD = 6; // total appointments to be flagged "prolific"
 
 export type FounderTier = "Single" | "Multiple" | "Serial" | "Prolific";
 

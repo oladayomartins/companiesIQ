@@ -223,26 +223,6 @@
 .ciq-check input:checked + .ciq-check__box > svg { opacity: 1; }
 .ciq-check--disabled { opacity: 0.5; pointer-events: none; }
 
-/* ---------- Switch ---------- */
-.ciq-switch { display: inline-flex; align-items: center; gap: var(--space-3); cursor: pointer; font-family: var(--font-sans); font-size: var(--text-base); color: var(--text-body); user-select: none; }
-.ciq-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
-.ciq-switch__track {
-  width: 38px; height: 22px; border-radius: var(--radius-pill);
-  background: var(--border-strong);
-  position: relative; flex-shrink: 0;
-  transition: background var(--dur-base) var(--ease-out);
-}
-.ciq-switch__thumb {
-  position: absolute; top: 2px; left: 2px;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #fff; box-shadow: var(--shadow-sm);
-  transition: transform var(--dur-base) var(--ease-spring);
-}
-.ciq-switch input:checked + .ciq-switch__track { background: var(--accent); }
-.ciq-switch input:checked + .ciq-switch__track .ciq-switch__thumb { transform: translateX(16px); }
-.ciq-switch input:focus-visible + .ciq-switch__track { box-shadow: 0 0 0 var(--ring-w) var(--focus-ring); }
-.ciq-switch--disabled { opacity: 0.5; pointer-events: none; }
-
 /* ---------- Tabs ---------- */
 .ciq-tabs { display: flex; align-items: stretch; gap: 2px; border-bottom: var(--border-w) solid var(--border-hair); }
 .ciq-tab {

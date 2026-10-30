@@ -7,10 +7,6 @@ export const RANGES: { id: string; label: string; short: string; days: number }[
 
 export const DEFAULT_RANGE = "30d";
 
-export function rangeDays(id?: string): { id: string; label: string; days: number } {
-  const r = RANGES.find((x) => x.id === id) || RANGES.find((x) => x.id === DEFAULT_RANGE)!;
-  return { id: r.id, label: r.label, days: r.days };
-}
 
 export interface ResolvedRange {
   id: string; // preset id or "custom"

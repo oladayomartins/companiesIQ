@@ -9,10 +9,13 @@ import { fastestGrowingSectors, regionBreakdown } from "@/lib/analytics";
 import { getActivityBreakdown } from "@/lib/live-stats";
 import { REGION_STATS } from "@/lib/ons";
 import { getRegionIndicators } from "@/lib/nomis";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const limited = rateLimit(req, "insights", 30);
+  if (limited) return limited;
   const q = req.nextUrl.searchParams.get("q") ?? "";
   const parsed = q.trim() ? await parseQuery(q) : null;
 

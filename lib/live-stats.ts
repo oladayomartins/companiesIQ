@@ -83,17 +83,7 @@ export async function getRegisterKpis(days = 30, toAnchor?: string): Promise<Reg
   return { active, incorporations, dissolutions, netNew: incorporations - dissolutions, days, prevIncorporations, prevDissolutions };
 }
 
-/** Recently incorporated companies (live), enriched + scored, within the window. */
-export async function getRecentIncorporations(size = 8, days = 30): Promise<EnrichedResult[]> {
-  const r = await explore({ incorporatedFrom: isoDaysAgo(Math.min(days, 30)), incorporatedTo: isoDaysAgo(0), status: ["active"], size });
-  return r.results.slice(0, size);
-}
 
-/** Recently dissolved companies (live), within the window. */
-export async function getRecentDissolutions(size = 6, days = 30): Promise<EnrichedResult[]> {
-  const r = await explore({ dissolvedFrom: isoDaysAgo(Math.min(days, 30)), dissolvedTo: isoDaysAgo(0), status: ["dissolved"], size });
-  return r.results.slice(0, size);
-}
 
 /** Real monthly incorporation counts for the trailing 12 months. */
 export async function getIncorporationTrend(): Promise<{ month: string; value: number }[]> {

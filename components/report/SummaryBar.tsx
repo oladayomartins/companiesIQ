@@ -18,7 +18,7 @@ import type { Brief } from "@/lib/lens-view";
 const COLLAPSE_AFTER = 140;
 
 /** The brief's first sentence. Splits on ". " so "3.1%" never cuts it short. */
-export function firstSentence(prose: string): string {
+function firstSentence(prose: string): string {
   const i = prose.indexOf(". ");
   return i === -1 ? prose : prose.slice(0, i + 1);
 }

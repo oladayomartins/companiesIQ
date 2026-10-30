@@ -31,8 +31,7 @@ import { slugify } from "@/lib/slug";
 // Trailing window (days) used to pull the "recently registered" list.
 export const RECENT_WINDOW_DAYS = 365;
 
-export const MATRIX_SECTORS: SectorStat[] = Object.values(SECTOR_STATS);
-export const MATRIX_CITIES: City[] = CITIES;
+const MATRIX_SECTORS: SectorStat[] = Object.values(SECTOR_STATS);
 
 export function sectorForSlug(slug: string): SectorStat | null {
   return MATRIX_SECTORS.find((s) => slugify(s.sector) === slug) ?? null;

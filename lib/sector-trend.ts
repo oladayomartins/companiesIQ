@@ -111,13 +111,13 @@ export async function getSectorFormationTrend(sector: string, quarters = 12): Pr
  * Live incorporations over the last `quarters` completed quarters — a real
  * sector total (all SIC codes in the sector). null when unavailable.
  */
-export function recentTotal(trend: SectorTrend | null, quarters = 4): number | null {
+function recentTotal(trend: SectorTrend | null, quarters = 4): number | null {
   if (!trend || trend.points.length < quarters) return null;
   return trend.points.slice(-quarters).reduce((t, p) => t + p.value, 0);
 }
 
 /** % change of the last `quarters` against the `quarters` before them. */
-export function recentChange(trend: SectorTrend | null, quarters = 4): number | null {
+function recentChange(trend: SectorTrend | null, quarters = 4): number | null {
   if (!trend || trend.points.length < quarters * 2) return null;
   const now = recentTotal(trend, quarters)!;
   const before = trend.points.slice(-quarters * 2, -quarters).reduce((t, p) => t + p.value, 0);

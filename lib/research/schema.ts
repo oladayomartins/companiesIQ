@@ -11,7 +11,7 @@
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import type { Dataset } from "./types";
 
-export function datasetId(slug: string): string {
+function datasetId(slug: string): string {
   return `${SITE_URL}/blog/${slug}#dataset`;
 }
 

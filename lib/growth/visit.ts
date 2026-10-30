@@ -38,7 +38,7 @@ export function captureVisit(): void {
   }
 }
 
-export function readVisit(): Visit | null {
+function readVisit(): Visit | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = sessionStorage.getItem(KEY);

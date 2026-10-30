@@ -38,7 +38,7 @@ const STATUS_WORDS: Record<string, string> = {
 
 const KEYWORD_KEYS = KEYWORDS.map((k) => k.key);
 
-export function parseRuleBased(q: string): ParsedQuery {
+function parseRuleBased(q: string): ParsedQuery {
   const hay = ` ${q.toLowerCase()} `;
   const keywords = KEYWORD_KEYS.filter((k) => new RegExp(`\\b${k.toLowerCase()}\\b`).test(hay));
   const region = ALL_REGIONS.find((r) => hay.includes(r.toLowerCase()));

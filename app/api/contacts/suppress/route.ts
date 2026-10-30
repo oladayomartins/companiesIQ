@@ -15,6 +15,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { normalizePhone } from "@/lib/enrichment/phone";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,8 @@ const EMAIL_VALID = /^[a-z0-9._%+-]{1,64}@(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])
 const MAX_VALUES = 20;
 
 export async function POST(req: Request) {
+  const limited = rateLimit(req, "suppress", 10);
+  if (limited) return limited;
   const body = (await req.json().catch(() => ({}))) as {
     values?: unknown;
     reason?: unknown;

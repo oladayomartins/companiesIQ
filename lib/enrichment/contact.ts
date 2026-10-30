@@ -97,7 +97,7 @@ export async function getCompanyContacts(input: DiscoverInput): Promise<CompanyC
 
 /** The live pipeline, with no cache on either side. Exported for the probe
  *  route and the backfill worker. */
-export async function discoverContacts(input: DiscoverInput): Promise<CompanyContacts> {
+async function discoverContacts(input: DiscoverInput): Promise<CompanyContacts> {
   const notes: string[] = [];
   const pagesCrawled: string[] = [];
   const now = new Date().toISOString();

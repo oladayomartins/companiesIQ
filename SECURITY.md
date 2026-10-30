@@ -10,7 +10,15 @@ webhooks/email), and the user-owned data (watchlists, saved searches, alerts).
 
 ---
 
-## Findings fixed in this pass
+## Hardening pass — 2026-10-30
+
+- **Dependencies:** Next.js 15.1.11 → 15.5.28 (cleared the critical middleware-bypass, SSRF, cache-poisoning and DoS advisories); `postcss` pinned via `overrides`. `npm audit --omit=dev` reports 0 vulnerabilities.
+- **Response headers** (`next.config.ts`): CSP (no framing, no plugins, `base-uri`/`form-action` locked to self, `connect-src` limited to Supabase + GA), HSTS with preload, `nosniff`, `X-Frame-Options: DENY`, strict Referrer-Policy, Permissions-Policy, COOP. `X-Powered-By` removed. `script-src` keeps `'unsafe-inline'` (Next hydration + JSON-LD); moving to nonces would make every page dynamic.
+- **Cron auth** now compares secrets in constant time.
+- **Rate limiting** (`lib/rate-limit.ts`, per-IP, in-memory) on `/api/parse`, `/api/insights`, `/api/leads`, `/api/free-alerts/subscribe`, `/api/contacts/suppress`, `/api/checkout`. It is per server instance, so it blunts bursts; a distributed limit (Upstash / Vercel WAF) is still recommended.
+- **Error hygiene:** user-facing routes no longer return raw Stripe/Supabase error text; details go to server logs.
+
+## Findings fixed in the original pass
 
 | # | Severity | Finding | Fix |
 |---|---|---|---|

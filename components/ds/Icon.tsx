@@ -79,5 +79,3 @@ export function Icon({ name, size = 18, stroke = 2, color = "currentColor", clas
     />
   );
 }
-
-export const ICON_NAMES = Object.keys(PATHS);

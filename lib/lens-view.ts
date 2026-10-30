@@ -181,7 +181,7 @@ const GAP_TITLES: Partial<Record<LensKey, Record<string, string>>> = {
   accountancy: { "Filing need": "Service trigger", "Deadline proximity": "Deadline" },
 };
 
-export function gapTitle(lens: LensKey, label: string): string {
+function gapTitle(lens: LensKey, label: string): string {
   return GAP_TITLES[lens]?.[label] ?? label;
 }
 

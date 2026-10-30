@@ -107,8 +107,9 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(r);
   } catch (e) {
+    console.error("search failed", e);
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Search failed", total: 0, results: [], live: false },
+      { error: "Search failed", total: 0, results: [], live: false },
       { status: 502 }
     );
   }

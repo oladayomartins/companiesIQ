@@ -13,7 +13,10 @@ export async function GET() {
   const user = await getCurrentUser();
   if (!supabase || !user) return NextResponse.json({ configured: true, authed: false, alerts: [] });
   const { data, error } = await supabase.from("alerts").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-  if (error) return NextResponse.json({ configured: true, authed: true, alerts: [], error: error.message });
+  if (error) {
+    console.error("alerts list failed", error);
+    return NextResponse.json({ configured: true, authed: true, alerts: [], error: "Could not load alerts." });
+  }
   return NextResponse.json({ configured: true, authed: true, alerts: data });
 }
 
@@ -43,7 +46,10 @@ export async function POST(req: NextRequest) {
     })
     .select()
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("alert create failed", error);
+    return NextResponse.json({ error: "Could not save the alert." }, { status: 500 });
+  }
   return NextResponse.json({ alert: data });
 }
 
@@ -55,6 +61,9 @@ export async function DELETE(req: NextRequest) {
   const user = await getCurrentUser();
   if (!supabase || !user) return NextResponse.json({ authed: false }, { status: 401 });
   const { error } = await supabase.from("alerts").delete().eq("id", id).eq("user_id", user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("alert delete failed", error);
+    return NextResponse.json({ error: "Could not delete the alert." }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }

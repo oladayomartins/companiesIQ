@@ -61,7 +61,7 @@ const WEIGHTS = {
 const WEBSITE_MAX = Object.values(WEIGHTS).reduce((a, b) => a + b, 0);
 
 /** Below this, we do not treat the site as the company's and do not crawl it. */
-export const WEBSITE_ACCEPT_SCORE = 45;
+const WEBSITE_ACCEPT_SCORE = 45;
 
 // Conservative on purpose — legal-form noise only, matching ./places. Stripping
 // distinguishing words ("group", "services", "trading") would both widen the
@@ -93,7 +93,7 @@ function isPlatform(host: string): boolean {
 }
 
 /** Candidate hosts derived from the company name, most likely first. */
-export function guessDomains(companyName: string): string[] {
+function guessDomains(companyName: string): string[] {
   const tokens = nameTokens(companyName);
   if (!tokens.length) return [];
   const joined = tokens.join("");

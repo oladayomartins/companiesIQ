@@ -102,13 +102,13 @@ const AREAS: Record<string, AreaDef> = {
 export const ALL_REGIONS = Array.from(new Set(Object.values(AREAS).map((a) => a.region)));
 
 /** Extract the leading-letters postcode area from a full postcode. */
-export function postcodeArea(postcode?: string): string | null {
+function postcodeArea(postcode?: string): string | null {
   if (!postcode) return null;
   const m = postcode.trim().toUpperCase().match(/^[A-Z]{1,2}/);
   return m ? m[0] : null;
 }
 
-export function resolveRegion(postcode?: string): { region: string; nation: string } {
+function resolveRegion(postcode?: string): { region: string; nation: string } {
   const area = postcodeArea(postcode);
   if (area && AREAS[area]) return AREAS[area];
   // try single-letter fallback (e.g. "E1" → "E")

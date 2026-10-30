@@ -3,10 +3,13 @@
 // `website` is a honeypot — if a bot fills it, we 200 without storing.
 import { NextRequest, NextResponse } from "next/server";
 import { subscribeFreeAlert } from "@/lib/free-alerts";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "free-alerts", 10);
+  if (limited) return limited;
   const b = (await req.json().catch(() => ({}))) as {
     email?: string; firstName?: string; company?: string; sector?: string; region?: string; source?: string; website?: string;
   };

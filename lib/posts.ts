@@ -81,12 +81,6 @@ export async function getPublishedPostBySlug(slug: string): Promise<Post | null>
   return normalize(data as Record<string, unknown> | null);
 }
 
-export async function getPublishedSlugs(): Promise<string[]> {
-  const admin = getSupabaseAdmin();
-  if (!admin) return [];
-  const { data } = await admin.from("posts").select("slug").eq("status", "published");
-  return ((data ?? []) as { slug: string }[]).map((r) => r.slug);
-}
 
 // ---- Admin reads / writes (service role) ----
 export async function listAllPosts(): Promise<Post[]> {
